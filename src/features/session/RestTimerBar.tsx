@@ -43,7 +43,7 @@ export function RestTimerBar() {
   return (
     <View style={[styles.wrap, { bottom: insets.bottom + spacing.md }]} pointerEvents="box-none">
       <View
-        style={[styles.bar, { backgroundColor: p.tabBar, borderColor: p.separator }]}
+        style={[styles.bar, { backgroundColor: p.elevated, borderColor: p.separator }]}
         accessibilityLiveRegion="polite"
         testID="rest-timer"
       >

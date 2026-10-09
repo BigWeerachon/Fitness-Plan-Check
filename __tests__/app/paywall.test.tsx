@@ -1,5 +1,5 @@
 import { describe, expect, it, jest } from '@jest/globals';
-import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
+import { act, fireEvent, renderRouter, screen, within } from 'expo-router/testing-library';
 import { Alert } from 'react-native';
 import { useSettings } from '@/stores/settings';
 import { freshEnv } from '../helpers/env';
@@ -29,8 +29,13 @@ describe('paywall → login → purchase (SPEC B4–B6, J2)', () => {
     expect(await screen.findByText('Try everything free for 7 days')).toBeTruthy();
     expect(screen.getByText('Then ฿19.00 per month. Cancel anytime.')).toBeTruthy();
     expect(screen.getByText('7-day free trial')).toBeTruthy();
-    expect(screen.getByText('฿19.00 / month')).toBeTruthy();
-    expect(screen.getByText('฿99.00 one-time')).toBeTruthy();
+    // ราคาเต็มจากสโตร์ (ไม่ตัดทอน) + รอบการชำระ และอ่านรวมกันสำหรับโปรแกรมอ่านหน้าจอ
+    expect(within(screen.getByTestId('plan-monthly')).getByText('฿19.00')).toBeTruthy();
+    expect(within(screen.getByTestId('plan-monthly')).getByText('per month')).toBeTruthy();
+    expect(within(screen.getByTestId('plan-lifetime')).getByText('฿99.00')).toBeTruthy();
+    expect(within(screen.getByTestId('plan-lifetime')).getByText('one-time payment')).toBeTruthy();
+    expect(screen.getByTestId('plan-monthly').props.accessibilityLabel).toContain('฿19.00 / month');
+    expect(screen.getByTestId('plan-lifetime').props.accessibilityLabel).toContain('฿99.00 one-time');
     expect(screen.getByText('Free for 7 days, then ฿19.00 per month.')).toBeTruthy();
     expect(
       screen.getByText('The subscription renews automatically each month until you cancel.'),

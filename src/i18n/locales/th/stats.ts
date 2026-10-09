@@ -13,7 +13,7 @@ const stats: LocaleShape<typeof en> = {
   metricLabel: 'วัดจาก',
   metrics: { sets: 'จำนวนเซ็ต', volume: 'ปริมาณรวม', sessions: 'จำนวนเซสชัน' },
   viewLabel: 'แยกตาม',
-  views: { program: 'ตามกรุ๊ปโปรแกรม', routineType: 'ตามประเภท routine', muscle: 'ตามกลุ่มกล้ามเนื้อ' },
+  views: { program: 'กรุ๊ป', routineType: 'ประเภท routine', muscle: 'กล้ามเนื้อ' },
   allGroups: 'ทุกโปรแกรม',
   groupFilter: 'โปรแกรม',
   noProgram: 'ไม่มีกรุ๊ป',

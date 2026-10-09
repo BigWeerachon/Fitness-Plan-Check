@@ -26,6 +26,7 @@ import { adjustTarget } from '../../../domain/progression';
 import { isExerciseComplete, restSecondsFor, sessionDurationSec } from '../../../domain/sessionSummary';
 import { displayWeight, formatWeight, weightToKg } from '../../../domain/units';
 import { useRepoQuery } from '../../../features/data/useRepoQuery';
+import { formatSet, isBodyweightExercise } from '../../../features/session/formatSet';
 import { RestTimerBar } from '../../../features/session/RestTimerBar';
 import { SetTick } from '../../../features/session/SetTick';
 import { TargetSheet } from '../../../features/session/TargetSheet';
@@ -68,10 +69,8 @@ export default function SessionScreen() {
   }
   const { session, exercises, totals, unit } = data;
   const unitLabel = t(`common.units.${unit}`);
-  const fmt = (kg: number | null, reps: number | null) =>
-    kg == null && reps == null
-      ? t('session.none')
-      : `${kg != null ? formatWeight(kg, unit) : t('session.bodyweight')} × ${reps ?? t('session.none')}`;
+  const fmt = (exerciseId: string, kg: number | null, reps: number | null) =>
+    formatSet(t, { weightKg: kg, reps, unit, bodyweight: isBodyweightExercise(exerciseId) });
 
   const toggle = (view: SessionExerciseView, set: SessionSet, n: number) => {
     const becomingDone = !set.done;
@@ -223,7 +222,7 @@ export default function SessionScreen() {
                   <AppText variant="caption" secondary style={styles.cPrev}>
                     {t('session.previous')}
                   </AppText>
-                  <AppText variant="caption" secondary style={styles.cTarget}>
+                  <AppText variant="caption" secondary style={styles.cTargetHead}>
                     {t('session.target')}
                   </AppText>
                   <AppText variant="caption" secondary style={styles.cDo}>
@@ -236,18 +235,18 @@ export default function SessionScreen() {
                     <AppText variant="tabular" style={styles.cSet}>
                       {i + 1}
                     </AppText>
-                    <AppText variant="callout" secondary style={styles.cPrev} numberOfLines={1}>
-                      {fmt(set.prevWeightKg, set.prevReps)}
+                    <AppText variant="callout" secondary style={styles.cPrev} numberOfLines={2}>
+                      {fmt(set.exerciseId, set.prevWeightKg, set.prevReps)}
                     </AppText>
                     <Pressable
                       onPress={() => setTargetFor(view)}
                       style={styles.cTarget}
                       accessibilityRole="button"
-                      accessibilityLabel={`${t('session.target')}: ${fmt(set.targetWeightKg, set.targetReps)}`}
+                      accessibilityLabel={`${t('session.target')}: ${fmt(set.exerciseId, set.targetWeightKg, set.targetReps)}`}
                       testID={`target-${view.exercise.exerciseId}-${i}`}
                     >
-                      <AppText variant="callout" accent numberOfLines={1}>
-                        {fmt(set.targetWeightKg, set.targetReps)}
+                      <AppText variant="callout" accent numberOfLines={2}>
+                        {fmt(set.exerciseId, set.targetWeightKg, set.targetReps)}
                       </AppText>
                     </Pressable>
                     <View style={[styles.cDo, styles.doRow]}>
@@ -490,6 +489,7 @@ const styles = StyleSheet.create({
   cSet: { width: 28, textAlign: 'center' },
   cPrev: { flex: 1.1 },
   cTarget: { flex: 1.1, minHeight: MIN_TOUCH, justifyContent: 'center' },
+  cTargetHead: { flex: 1.1 },
   cDo: { flex: 1.4 },
   cTick: { width: MIN_TOUCH, alignItems: 'center' },
   doRow: { flexDirection: 'row', gap: spacing.xs },

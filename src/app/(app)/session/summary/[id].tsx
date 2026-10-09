@@ -18,7 +18,7 @@ import {
   TextField,
 } from '../../../../components';
 import type { Intensity } from '../../../../db/schema';
-import { displayWeight, formatWeight, weightToKg } from '../../../../domain/units';
+import { displayWeight, weightToKg } from '../../../../domain/units';
 import { useRepoQuery } from '../../../../features/data/useRepoQuery';
 import {
   acceptSuggestion,
@@ -28,6 +28,7 @@ import {
   suggestionsFor,
   type ExerciseSuggestion,
 } from '../../../../features/session/finish';
+import { formatSet, isBodyweightExercise } from '../../../../features/session/formatSet';
 import { loadSession } from '../../../../features/session/useSessionData';
 import { formatDuration, formatNumber } from '../../../../i18n/format';
 import { spacing } from '../../../../theme/tokens';
@@ -60,9 +61,14 @@ export default function SessionSummaryScreen() {
   }
   const { session, totals, unit } = data;
   const unitLabel = t(`common.units.${unit}`);
-  const target = (weightKg: number | null, reps: number) => ({
-    weight: weightKg != null ? `${formatWeight(weightKg, unit)} ${unitLabel}` : t('session.bodyweight'),
-    reps,
+  const target = (exerciseId: string, weightKg: number | null, reps: number) => ({
+    target: formatSet(t, {
+      weightKg,
+      reps,
+      unit,
+      bodyweight: isBodyweightExercise(exerciseId),
+      withUnit: true,
+    }),
   });
 
   if (session.status === 'active') {
@@ -170,7 +176,11 @@ export default function SessionSummaryScreen() {
           </AppText>
           <View style={styles.list}>
             {suggestions.map((s) => {
-              const tg = target(s.suggestion.targetWeightKg, s.suggestion.targetReps);
+              const tg = target(
+                s.routineExercise.exerciseId,
+                s.suggestion.targetWeightKg,
+                s.suggestion.targetReps,
+              );
               const decision = decisions[s.sessionExerciseId];
               return (
                 <Card key={s.sessionExerciseId}>

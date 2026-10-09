@@ -24,9 +24,11 @@ const paywall = {
     lifetime: 'Lifetime',
     perMonth: '{{price}} / month',
     oneTime: '{{price}} one-time',
+    perMonthLabel: 'per month',
+    oneTimeLabel: 'one-time payment',
     trialBadge: '{{count}}-day free trial',
     monthlyNote: 'Renews monthly. Cancel anytime.',
-    lifetimeNote: 'Pay once, unlock forever. No free trial.',
+    lifetimeNote: 'Unlocks everything forever. No free trial.',
   },
   cta: {
     trial: 'Start {{count}}-day free trial',

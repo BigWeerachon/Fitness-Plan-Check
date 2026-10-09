@@ -81,3 +81,24 @@ describe('accent palettes (SPEC DS / N5)', () => {
     }
   });
 });
+
+describe('neutral and semantic text colors (N5)', () => {
+  it.each(MODES)('%s: text, secondary, danger, success and warning pass AA on every surface', (mode) => {
+    const n = NEUTRALS[mode];
+    for (const fg of [n.text, n.textSecondary, n.danger, n.success, n.warning]) {
+      for (const bg of [n.background, n.card, n.elevated, n.inputBg, n.cardPressed]) {
+        expect({ fg, bg, ok: contrastRatio(fg, bg) >= 4.5 }).toEqual({ fg, bg, ok: true });
+      }
+    }
+  });
+
+  it.each(MODES)('%s: accent text stays readable on selected chips/tabs for custom colors too', (mode) => {
+    for (let h = 0; h < 360; h += 30) {
+      for (const l of [0.3, 0.6, 0.85]) {
+        const p = buildPalette(mode, hslToHex({ h, s: 0.7, l }));
+        const r = contrastReport(p);
+        expect(r.accentOnSoft).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+  });
+});

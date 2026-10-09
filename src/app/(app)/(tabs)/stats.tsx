@@ -97,7 +97,10 @@ export default function StatsScreen() {
 
   return (
     <Screen withTabBar testID="stats">
-      <HeroTitle title={t('stats.title')} subtitle={periodLabel(period, v.range, model.today)} />
+      <HeroTitle
+        title={t('stats.title')}
+        subtitle={v.group ? groupName(v.group.programName) : t('stats.allGroups')}
+      />
 
       <SegmentedControl
         label={t('stats.periodLabel')}

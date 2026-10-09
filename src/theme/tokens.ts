@@ -44,7 +44,7 @@ export const NEUTRALS = {
     elevated: '#2C2C2E',
     separator: 'rgba(255,255,255,0.10)',
     text: '#FFFFFF',
-    textSecondary: '#8E8E93',
+    textSecondary: '#98989F',
     danger: '#FF7A7A',
     success: '#7EE2A8',
     warning: '#F5C46B',
@@ -60,9 +60,9 @@ export const NEUTRALS = {
     elevated: '#FFFFFF',
     separator: 'rgba(0,0,0,0.10)',
     text: '#000000',
-    textSecondary: '#6C6C70',
-    danger: '#C62828',
-    success: '#1B7A44',
+    textSecondary: '#636366',
+    danger: '#B71C1C',
+    success: '#176B3B',
     warning: '#8A5A00',
     tabBar: 'rgba(255,255,255,0.92)',
     switchOff: '#D1D1D6',
@@ -73,8 +73,8 @@ export const NEUTRALS = {
 
 /** สีพื้นที่ข้อความสีหลักต้องอ่านออก (AA 4.5:1) ในแต่ละโหมด */
 export const TEXT_SURFACES: Record<ThemeMode, string[]> = {
-  dark: [NEUTRALS.dark.background, NEUTRALS.dark.card],
-  light: [NEUTRALS.light.background, NEUTRALS.light.card],
+  dark: [NEUTRALS.dark.background, NEUTRALS.dark.card, NEUTRALS.dark.elevated],
+  light: [NEUTRALS.light.background, NEUTRALS.light.card, NEUTRALS.light.elevated],
 };
 
 export interface AccentSet {
@@ -90,11 +90,15 @@ export interface AccentSet {
   glowOpacity: number;
   /** พื้นวงรีของแท็บที่เลือก / chip ที่เลือก (สีหลักเข้มโปร่งแสง) */
   soft: string;
+  /** สีทึบที่ได้จริงเมื่อ soft วางบนการ์ด/พื้น — ข้อความสีหลักบน chip/แท็บที่เลือกต้องผ่าน 4.5:1 กับสีนี้ */
+  softSurfaces: string[];
 }
 
 export const AA_TEXT = 4.5;
 export const AA_LARGE = 3;
 export const AA_GRAPHIC = 3;
+const DARK_SOFT_ALPHA = 0.45;
+const LIGHT_SOFT_ALPHA = 0.35;
 
 export function resolveAccentBase(setting: AccentSetting | string | null | undefined): string {
   const preset = ACCENT_PRESETS.find((p) => p.id === setting);
@@ -112,17 +116,35 @@ export function deriveAccent(baseHex: string, mode: ThemeMode): AccentSet {
     const glowOpacity = 0.3;
     // หัวข้อใหญ่วางบนแสงเรือง จึงให้ข้อความสีหลักผ่าน 4.5:1 กับจุดที่สว่างที่สุดของแสงด้วย
     const peak = composite(glow, glowOpacity, n.background);
-    const text = ensureContrast(base, [...TEXT_SURFACES.dark, peak], AA_TEXT);
-    const fill = ensureContrast(base, [n.card], AA_GRAPHIC);
     const softBase = hslToHex({ h: hsl.h, s: Math.min(0.6, Math.max(0.25, hsl.s)), l: 0.4 });
-    return { text, fill, onFill: onColor(fill), glow, glowOpacity, soft: withAlpha(softBase, 0.45) };
+    const softSurfaces = [n.card, n.background].map((bg) => composite(softBase, DARK_SOFT_ALPHA, bg));
+    const text = ensureContrast(base, [...TEXT_SURFACES.dark, peak, ...softSurfaces], AA_TEXT);
+    const fill = ensureContrast(base, [n.card], AA_GRAPHIC);
+    return {
+      text,
+      fill,
+      onFill: onColor(fill),
+      glow,
+      glowOpacity,
+      soft: withAlpha(softBase, DARK_SOFT_ALPHA),
+      softSurfaces,
+    };
   }
   const glow = hslToHex({ h: hsl.h, s: Math.min(0.85, Math.max(0.4, hsl.s)), l: 0.78 });
   const glowOpacity = 0.35;
   const peak = composite(glow, glowOpacity, n.background);
-  const text = ensureContrast(base, [...TEXT_SURFACES.light, peak], AA_TEXT);
+  const softSurfaces = [n.card, n.background].map((bg) => composite(base, LIGHT_SOFT_ALPHA, bg));
+  const text = ensureContrast(base, [...TEXT_SURFACES.light, peak, ...softSurfaces], AA_TEXT);
   const fill = ensureContrast(text, [n.card, n.background], AA_GRAPHIC);
-  return { text, fill, onFill: onColor(fill), glow, glowOpacity, soft: withAlpha(base, 0.35) };
+  return {
+    text,
+    fill,
+    onFill: onColor(fill),
+    glow,
+    glowOpacity,
+    soft: withAlpha(base, LIGHT_SOFT_ALPHA),
+    softSurfaces,
+  };
 }
 
 export interface Palette {
@@ -147,6 +169,8 @@ export interface Palette {
   glow: string;
   glowOpacity: number;
   accentSoft: string;
+  /** สีทึบของ accentSoft บนการ์ด/พื้น (ใช้ตรวจ contrast) */
+  accentSoftSurfaces: string[];
   /** สีชุดสำหรับกราฟ (เริ่มจากสีหลัก แล้วหมุนโทน) ผ่าน 3:1 บนการ์ด */
   chart: string[];
 }
@@ -179,6 +203,7 @@ export function buildPalette(mode: ThemeMode, accent: AccentSetting | string): P
     glow: a.glow,
     glowOpacity: a.glowOpacity,
     accentSoft: a.soft,
+    accentSoftSurfaces: a.softSurfaces,
     chart: chartColors(base, mode),
   };
 }
@@ -195,6 +220,10 @@ export interface ContrastReport {
   fillOnCard: number;
   heroOnGlow: number;
   secondaryOnCard: number;
+  /** ข้อความสีหลักบน chip/แท็บที่เลือก (ค่าต่ำสุดของทุกพื้น) */
+  accentOnSoft: number;
+  /** ข้อความรองบนพื้นยก (sheet/ช่องกรอก) */
+  secondaryOnElevated: number;
 }
 
 export function contrastReport(p: Palette): ContrastReport {
@@ -205,6 +234,11 @@ export function contrastReport(p: Palette): ContrastReport {
     fillOnCard: contrastRatio(p.accentFill, p.card),
     heroOnGlow: contrastRatio(p.accent, glowPeakColor(p)),
     secondaryOnCard: contrastRatio(p.textSecondary, p.card),
+    accentOnSoft: Math.min(...p.accentSoftSurfaces.map((bg) => contrastRatio(p.accent, bg))),
+    secondaryOnElevated: Math.min(
+      contrastRatio(p.textSecondary, p.elevated),
+      contrastRatio(p.textSecondary, p.inputBg),
+    ),
   };
 }
 
@@ -215,7 +249,9 @@ export function passesAA(r: ContrastReport): boolean {
     r.onAccentOnFill >= AA_TEXT &&
     r.fillOnCard >= AA_GRAPHIC &&
     r.heroOnGlow >= AA_TEXT &&
-    r.secondaryOnCard >= AA_TEXT
+    r.secondaryOnCard >= AA_TEXT &&
+    r.accentOnSoft >= AA_TEXT &&
+    r.secondaryOnElevated >= AA_TEXT
   );
 }
 

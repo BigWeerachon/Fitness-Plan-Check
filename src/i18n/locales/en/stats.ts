@@ -10,7 +10,7 @@ const stats = {
   metricLabel: 'Measure by',
   metrics: { sets: 'Sets', volume: 'Volume', sessions: 'Workouts' },
   viewLabel: 'Breakdown',
-  views: { program: 'By program', routineType: 'By routine type', muscle: 'By muscle' },
+  views: { program: 'Program', routineType: 'Routine type', muscle: 'Muscle' },
   allGroups: 'All programs',
   groupFilter: 'Program',
   noProgram: 'No program',

@@ -6,16 +6,20 @@ jest.mock('./src/db/driver', () => {
   const Database = require('better-sqlite3');
   const { drizzle } = require('drizzle-orm/better-sqlite3');
   const schema = require('./src/db/schema');
+  const { createTxState, runTransaction } = require('./src/db/transaction');
   return {
     openDriver: () => {
       const sqlite = new Database(':memory:');
       const db = drizzle(sqlite, { schema });
+      const exec = (sql) => sqlite.exec(sql);
+      const tx = createTxState();
       return {
         db,
-        exec: (sql) => sqlite.exec(sql),
+        exec,
         userVersion: () => sqlite.pragma('user_version', { simple: true }),
         setUserVersion: (v) => sqlite.pragma(`user_version = ${Math.floor(v)}`),
-        transaction: (fn) => sqlite.transaction(fn)(),
+        // ใช้ตัวช่วยเดียวกับไดรเวอร์จริง (BEGIN + SAVEPOINT) เพื่อให้เทสต์จับปัญหา transaction ซ้อนได้
+        transaction: (fn) => runTransaction(exec, tx, fn),
         close: () => sqlite.close(),
       };
     },

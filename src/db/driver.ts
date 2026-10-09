@@ -1,6 +1,7 @@
 import { drizzle } from 'drizzle-orm/expo-sqlite';
 import { openDatabaseSync } from 'expo-sqlite';
 import * as schema from './schema';
+import { createTxState, runTransaction } from './transaction';
 import type { SqlDriver } from './types';
 
 /**
@@ -10,19 +11,16 @@ import type { SqlDriver } from './types';
 export function openDriver(name: string): SqlDriver {
   const sqlite = openDatabaseSync(name);
   const db = drizzle(sqlite, { schema });
+  const exec = (sql: string) => sqlite.execSync(sql);
+  const tx = createTxState();
   return {
     db,
-    exec: (sql) => sqlite.execSync(sql),
+    exec,
     userVersion: () =>
       sqlite.getFirstSync<{ user_version: number }>('PRAGMA user_version')?.user_version ?? 0,
     setUserVersion: (v) => sqlite.execSync(`PRAGMA user_version = ${Math.floor(v)}`),
-    transaction: (fn) => {
-      let result: ReturnType<typeof fn> | undefined;
-      sqlite.withTransactionSync(() => {
-        result = fn();
-      });
-      return result as ReturnType<typeof fn>;
-    },
+    // ไม่ใช้ withTransactionSync ของ expo-sqlite เพราะเรียกซ้อนกันไม่ได้ (BEGIN ซ้อน = error)
+    transaction: (fn) => runTransaction(exec, tx, fn),
     close: () => sqlite.closeSync(),
   };
 }

@@ -270,7 +270,7 @@ export default function TodayScreen() {
           style={[styles.kcal, { backgroundColor: p.card }]}
           onPress={() => setEntry('burned')}
           accessibilityRole="button"
-          accessibilityLabel={`${t('today.kcalBurned')}: ${formatNumber(model.expenditure.kcal)} kcal`}
+          accessibilityLabel={`${t('today.kcalBurned')}: ${formatNumber(model.expenditure.kcal)} ${t('common.units.kcal')}`}
           accessibilityHint={t('today.tapToEnter')}
           testID="today-kcal-burned"
         >

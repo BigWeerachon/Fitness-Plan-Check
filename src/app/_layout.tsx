@@ -13,6 +13,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { AppState } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { getDb } from '../db/client';
+import { warmUpDatabase } from '../db/warmup';
 import { bootstrapAccount, refreshEntitlement } from '../features/access/accountFlow';
 import { registerAppHooks } from '../features/bootstrap';
 import { requestSync } from '../features/sync/engine';
@@ -33,7 +34,18 @@ function bootstrap(): boolean {
 }
 
 export default function RootLayout() {
-  const [ready] = useState(bootstrap);
+  // มือถือ: เตรียมทันทีก่อน render แรก / เว็บ (พรีวิว): รอ worker ของ SQLite พร้อมก่อน
+  const [ready, setReady] = useState(() => (warmUpDatabase ? false : bootstrap()));
+  useEffect(() => {
+    if (ready || !warmUpDatabase) return;
+    let alive = true;
+    void warmUpDatabase().then(() => {
+      if (alive) setReady(bootstrap());
+    });
+    return () => {
+      alive = false;
+    };
+  }, [ready]);
   const [fontsLoaded, fontError] = useFonts({
     IBMPlexSansThai_300Light,
     IBMPlexSansThai_400Regular,

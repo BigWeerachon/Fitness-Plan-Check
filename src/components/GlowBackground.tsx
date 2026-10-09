@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useId, useState } from 'react';
 import { Animated, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { usePalette } from '../theme/useTheme';
@@ -10,7 +10,9 @@ interface Layer {
 }
 
 function GlowLayer({ layer, width, height }: { layer: Layer; width: number; height: number }) {
-  const id = `glow-${layer.key.replace(/[^a-zA-Z0-9]/g, '')}`;
+  // id ต้องไม่ซ้ำกันทั้งเอกสาร (บนเว็บทุกหน้าอยู่ใน DOM เดียว ถ้าซ้ำจะไปอ้างไล่สีของหน้าที่ซ่อนอยู่)
+  const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
+  const id = `glow-${uid}-${layer.key.replace(/[^a-zA-Z0-9]/g, '')}`;
   return (
     <Svg width={width} height={height}>
       <Defs>

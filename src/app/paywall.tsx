@@ -213,13 +213,12 @@ export default function PaywallScreen() {
                   />
                 </View>
                 {trial ? <Badge label={trial} /> : null}
-                <AppText
-                  variant="title"
-                  color={on ? p.accent : p.text}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                >
-                  {price}
+                {/* ราคาเต็มจากสโตร์ห้ามถูกตัดทอน (B5) — ราคาและรอบการชำระแยกบรรทัด ตัดคำได้ */}
+                <AppText variant="title" color={on ? p.accent : p.text}>
+                  {sp.priceString}
+                </AppText>
+                <AppText variant="callout" color={on ? p.accent : p.text}>
+                  {kind === 'monthly' ? t('paywall.plans.perMonthLabel') : t('paywall.plans.oneTimeLabel')}
                 </AppText>
                 <AppText variant="caption" secondary>
                   {note}

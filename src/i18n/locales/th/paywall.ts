@@ -27,9 +27,11 @@ const paywall: LocaleShape<typeof en> = {
     lifetime: 'ซื้อขาด',
     perMonth: '{{price}} / เดือน',
     oneTime: '{{price}} ครั้งเดียว',
+    perMonthLabel: 'ต่อเดือน',
+    oneTimeLabel: 'จ่ายครั้งเดียว',
     trialBadge: 'ทดลองฟรี {{count}} วัน',
     monthlyNote: 'ต่ออายุทุกเดือน ยกเลิกได้ทุกเมื่อ',
-    lifetimeNote: 'จ่ายครั้งเดียว ปลดล็อกถาวร ไม่มีช่วงทดลอง',
+    lifetimeNote: 'ปลดล็อกทุกฟีเจอร์ถาวร ไม่มีช่วงทดลอง',
   },
   cta: {
     trial: 'เริ่มทดลองฟรี {{count}} วัน',
