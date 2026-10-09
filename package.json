@@ -15,7 +15,8 @@
     "check": "npm run typecheck && npm run lint && npm run test -- --ci",
     "db:generate": "drizzle-kit generate && node scripts/embed-migrations.js",
     "contrast": "node scripts/check-contrast.js",
-    "doctor": "npx expo-doctor"
+    "doctor": "npx expo-doctor",
+    "supabase:verify": "bash scripts/verify-supabase.sh"
   },
   "dependencies": {
     "@expo-google-fonts/ibm-plex-sans-thai": "^0.4.1",

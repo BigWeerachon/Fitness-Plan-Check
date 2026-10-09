@@ -16,6 +16,8 @@ export interface PullResult {
 export interface SyncBackend {
   push(table: SyncedTableName, userId: string, rows: RemoteRow[]): Promise<void>;
   pull(table: SyncedTableName, userId: string, since: string | null, limit: number): Promise<PullResult>;
+  /** ปรับเคอร์เซอร์ที่เก็บไว้ก่อนเริ่มดึงแต่ละรอบ (เช่น ย้อนเวลาเผื่อธุรกรรมที่ commit ช้า) */
+  startCursor?(stored: string | null): string | null;
 }
 
 /** บัญชีไม่มีสิทธิ์ซิงก์ (RLS ปฏิเสธ) — ข้อมูลในเครื่องยังอยู่ครบ จะลองใหม่เมื่อสิทธิ์กลับมา */

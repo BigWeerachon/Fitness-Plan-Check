@@ -1,5 +1,6 @@
 import type { SyncedTableName } from '../../db/schema';
 import { getSupabase } from '../supabase';
+import { afterCursorFilter, decodeCursor, encodeCursor, rewindCursor } from './cursor';
 import {
   SyncAccessDeniedError,
   SyncNetworkError,
@@ -32,6 +33,11 @@ export class SupabaseSyncBackend implements SyncBackend {
     }
   }
 
+  /** เริ่มดึงแต่ละรอบโดยย้อนเคอร์เซอร์เล็กน้อย (ดู PULL_OVERLAP_MS) */
+  startCursor(stored: string | null): string | null {
+    return rewindCursor(stored);
+  }
+
   async pull(
     table: SyncedTableName,
     _userId: string,
@@ -43,14 +49,19 @@ export class SupabaseSyncBackend implements SyncBackend {
         .from(table)
         .select('*')
         .order('server_updated_at', { ascending: true })
+        .order('id', { ascending: true })
         .limit(limit);
-      if (since) q = q.gt('server_updated_at', since);
+      const c = decodeCursor(since);
+      if (c) q = c.id ? q.or(afterCursorFilter(c)) : q.gte('server_updated_at', c.ts);
       const { data, error } = await q;
       const mapped = mapError(error);
       if (mapped) throw mapped;
       const rows = (data ?? []) as RemoteRow[];
       const last = rows[rows.length - 1];
-      return { rows, cursor: last ? String(last.server_updated_at) : since };
+      return {
+        rows,
+        cursor: last ? encodeCursor({ ts: String(last.server_updated_at), id: last.id }) : since,
+      };
     } catch (e) {
       if (e instanceof SyncAccessDeniedError || e instanceof SyncNetworkError) throw e;
       if (e instanceof TypeError) throw new SyncNetworkError(e.message);

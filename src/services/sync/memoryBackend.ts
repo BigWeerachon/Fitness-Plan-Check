@@ -21,6 +21,8 @@ export class MemorySyncBackend implements SyncBackend {
   offline = false;
   failNext: Error | null = null;
   pushCount = 0;
+  /** เทสต์ใส่ได้เพื่อจำลองการย้อนเคอร์เซอร์แบบ Supabase */
+  startCursor?: (stored: string | null) => string | null;
 
   private key(table: string, userId: string) {
     return `${userId}:${table}`;

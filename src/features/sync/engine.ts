@@ -192,12 +192,14 @@ async function pull(userId: string): Promise<number> {
   const { sync } = getServices();
   let applied = 0;
   for (const name of SYNCED_TABLE_NAMES) {
-    let cursor = getCursor(userId, name);
+    const stored = getCursor(userId, name);
+    let cursor = sync.startCursor ? sync.startCursor(stored) : stored;
     for (;;) {
       const page = await sync.pull(name, userId, cursor, PAGE);
       transaction(() => {
         for (const r of page.rows) if (mergeRemoteRow(name, r, userId) === 'applied') applied++;
-        setCursor(userId, name, page.cursor);
+        // หน้าว่างไม่บันทึก — กันเคอร์เซอร์ที่ถูกย้อน (startCursor) ถอยหลังสะสมทุกรอบ
+        if (page.rows.length > 0) setCursor(userId, name, page.cursor);
       });
       cursor = page.cursor;
       if (page.rows.length < PAGE) break;

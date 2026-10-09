@@ -164,6 +164,40 @@ describe('sync engine (SPEC L, J6, B11)', () => {
     expect(s.sync.rowsOf('program', USER)[0].name).toBe('local newer');
   });
 
+  it('re-reading an overlap window is harmless and the stored cursor never drifts backwards', async () => {
+    // จำลอง backend ที่ย้อนเคอร์เซอร์ 2 ลำดับทุกครั้งที่เริ่มดึง (เหมือน PULL_OVERLAP_MS ของ Supabase)
+    const starts: (string | null)[] = [];
+    s.sync.startCursor = (stored) => {
+      starts.push(stored);
+      return stored === null ? null : String(Math.max(0, Number(stored) - 2));
+    };
+    const a = createRow('program', { name: 'A', templateKey: null, sortOrder: 0 });
+    createRow('program', { name: 'B', templateKey: null, sortOrder: 1 });
+    expect(await syncNow()).toBe('synced');
+    newDevice();
+    expect(await syncNow()).toBe('synced');
+    expect(
+      listRows('program')
+        .map((r) => r.name)
+        .sort(),
+    ).toEqual(['A', 'B']);
+    t += 1000;
+    updateRow('program', a.id, { name: 'A2' });
+    // ซิงก์ซ้ำหลายรอบโดยไม่มีอะไรใหม่ → เคอร์เซอร์ไม่ถอยลงเรื่อยๆ และไม่มีแถวซ้ำ
+    expect(await syncNow()).toBe('synced');
+    const runs: (string | null)[][] = [];
+    for (let i = 0; i < 3; i++) {
+      starts.length = 0;
+      expect(await syncNow()).toBe('synced');
+      runs.push([...starts]);
+    }
+    expect(runs[1]).toEqual(runs[0]);
+    expect(runs[2]).toEqual(runs[0]);
+    expect(listRows('program')).toHaveLength(2);
+    expect(getRow('program', a.id)?.name).toBe('A2');
+    delete s.sync.startCursor;
+  });
+
   it('claims rows created before sign-in and wipes a deleted account locally', () => {
     setOwner(null);
     createRow('program', { name: 'draft' });

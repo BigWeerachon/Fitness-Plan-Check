@@ -5,6 +5,7 @@
     "noUncheckedIndexedAccess": false,
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true,
+    "allowImportingTsExtensions": true,
     "paths": {
       "@/*": ["./src/*"]
     }
