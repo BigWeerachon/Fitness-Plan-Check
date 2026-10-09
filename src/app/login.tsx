@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { Alert, StyleSheet, View } from 'react-native';
 import { AppText, Button, HeroTitle, Screen, StackHeader } from '../components';
 import { restorePurchases, signIn } from '../features/access/accountFlow';
-import { useAccess } from '../features/access/useAccess';
+import { getAccess } from '../features/access/useAccess';
+import { useSettings } from '../stores/settings';
 import { AppleButton, GoogleButton } from '../features/auth/SignInButtons';
 import type { AuthProvider } from '../services/auth/types';
 import { getServices } from '../services/registry';
@@ -17,8 +18,7 @@ import { spacing } from '../theme/tokens';
  */
 export default function LoginScreen() {
   const { t } = useTranslation();
-  const params = useLocalSearchParams<{ plan?: string; then?: string }>();
-  const access = useAccess();
+  const params = useLocalSearchParams<{ plan?: string; then?: string; from?: string }>();
   const [busy, setBusy] = useState<AuthProvider | null>(null);
   const [appleAvailable, setAppleAvailable] = useState(true);
 
@@ -34,9 +34,11 @@ export default function LoginScreen() {
   }, []);
 
   const goNext = () => {
-    // บัญชีมีสิทธิ์อยู่แล้ว (เช่น ติดตั้งใหม่ B11) → เข้าแอปเลย ไม่ต้องซื้อซ้ำ
-    if (access.allowed) router.replace('/');
-    else if (router.canGoBack()) router.back();
+    // บัญชีมีสิทธิ์อยู่แล้ว (เช่น ติดตั้งใหม่ B11) → เข้าแอปเลย ไม่ต้องซื้อซ้ำ และข้ามขั้นตั้งค่าเริ่มต้น (SPEC C)
+    if (getAccess().allowed) {
+      if (!useSettings.getState().onboardingDone) useSettings.getState().set('onboardingDone', true);
+      router.replace('/');
+    } else if (router.canGoBack()) router.back();
     else router.replace({ pathname: '/paywall', params: params.plan ? { plan: params.plan } : {} });
   };
 
