@@ -30,6 +30,7 @@ export function Screen({
   keyboardShouldPersistTaps = 'handled',
   refreshControl,
   testID,
+  glow = true,
 }: {
   children: React.ReactNode;
   scroll?: boolean;
@@ -39,12 +40,14 @@ export function Screen({
   keyboardShouldPersistTaps?: ScrollViewProps['keyboardShouldPersistTaps'];
   refreshControl?: ScrollViewProps['refreshControl'];
   testID?: string;
+  /** false = พื้นดำล้วน (หน้าเซสชัน SPEC DS) */
+  glow?: boolean;
 }) {
   const p = usePalette();
   const bottom = withTabBar ? TAB_BAR_SPACE : spacing.xxl;
   return (
     <View style={[styles.root, { backgroundColor: p.background }]} testID={testID}>
-      <GlowBackground />
+      {glow ? <GlowBackground /> : null}
       <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
         {header}
         {scroll ? (
