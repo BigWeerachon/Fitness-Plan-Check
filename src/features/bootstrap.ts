@@ -2,6 +2,9 @@ import { onAccountDeleted, onBeforeSignOut, onEntitled } from './access/accountF
 import { getAccess } from './access/useAccess';
 import { claimLocalRows, configureSync, requestSync, syncNow, wipeLocalData } from './sync/engine';
 import { useAuth } from '../stores/auth';
+import { notifyDataChanged } from '../stores/dataVersion';
+import { onLocalWrite } from '../db/mutations';
+import { onOwnerChange } from '../db/owner';
 import { draftRepo } from './onboarding/draft';
 import { migrateDraftToAccount } from './onboarding/migrate';
 
@@ -25,6 +28,9 @@ const FIRST_PULL_TIMEOUT_MS = 8_000;
 export function registerAppHooks(): void {
   if (registered) return;
   registered = true;
+  // ข้อมูลในเครื่องเปลี่ยน → หน้าจอรีเฟรช
+  onLocalWrite(() => notifyDataChanged());
+  onOwnerChange(() => notifyDataChanged());
   configureSync({
     userId: () => useAuth.getState().user?.id ?? null,
     canSync: () => getAccess().allowed,

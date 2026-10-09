@@ -11,6 +11,7 @@ import {
 } from '../../db/schema';
 import { getServices } from '../../services/registry';
 import { SyncAccessDeniedError, SyncNetworkError, type RemoteRow } from '../../services/sync/types';
+import { notifyDataChanged } from '../../stores/dataVersion';
 import { useSync } from '../../stores/sync';
 import { now } from '../../utils/clock';
 import { fromRemote, toRemote } from './mapping';
@@ -264,7 +265,8 @@ async function runSync(): Promise<SyncOutcome> {
   store.set({ status: 'syncing', lastError: null });
   try {
     await push(userId);
-    await pull(userId);
+    const applied = await pull(userId);
+    if (applied > 0) notifyDataChanged();
     failures = 0;
     useSync
       .getState()

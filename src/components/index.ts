@@ -16,3 +16,4 @@ export { EmptyState, ErrorState, LoadingState, LockedState } from './States';
 export { TextField } from './TextField';
 export { Toggle } from './Toggle';
 export { WeekdayDots } from './WeekdayDots';
+export { Stepper } from './Stepper';
