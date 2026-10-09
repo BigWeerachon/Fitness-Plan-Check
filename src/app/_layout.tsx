@@ -15,6 +15,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { getDb } from '../db/client';
 import { bootstrapAccount, refreshEntitlement } from '../features/access/accountFlow';
 import { registerAppHooks } from '../features/bootstrap';
+import { requestSync } from '../features/sync/engine';
 import '../i18n';
 import { useEntitlement } from '../stores/entitlement';
 import { useSettings } from '../stores/settings';
@@ -44,7 +45,9 @@ export default function RootLayout() {
   useEffect(() => {
     // กลับเข้าแอป → ตรวจสิทธิ์กับ RevenueCat ใหม่ (สิทธิ์อาจหมด/ต่ออายุระหว่างที่ปิดแอป)
     const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') void refreshEntitlement();
+      if (state === 'active') {
+        void refreshEntitlement().then(() => requestSync(0));
+      }
     });
     return () => sub.remove();
   }, []);
@@ -55,7 +58,7 @@ export default function RootLayout() {
       const online = state.isConnected !== false && state.isInternetReachable !== false;
       const wasOnline = useEntitlement.getState().online;
       useEntitlement.getState().set({ online });
-      if (online && !wasOnline) void refreshEntitlement();
+      if (online && !wasOnline) void refreshEntitlement().then(() => requestSync(0));
     });
     return () => sub.remove();
   }, []);

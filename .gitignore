@@ -18,3 +18,4 @@ coverage/
 npm-debug.*
 .DS_Store
 /preview-shots/
+.claude/worktrees

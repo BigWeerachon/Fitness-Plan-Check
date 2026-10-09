@@ -6,3 +6,4 @@ drizzle/meta
 package-lock.json
 src/db/migrations.generated.ts
 *.md
+.claude

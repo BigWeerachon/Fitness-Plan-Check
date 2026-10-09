@@ -44,6 +44,15 @@ module.exports = defineConfig([
     rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
   {
-    ignores: ['dist/*', 'ios/*', 'android/*', 'coverage/*', 'supabase/functions/**', 'drizzle/*', '.expo/*'],
+    ignores: [
+      '.claude/**',
+      'dist/*',
+      'ios/*',
+      'android/*',
+      'coverage/*',
+      'supabase/functions/**',
+      'drizzle/*',
+      '.expo/*',
+    ],
   },
 ]);

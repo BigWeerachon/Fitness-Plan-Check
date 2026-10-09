@@ -25,6 +25,14 @@ function tableOf(name: SyncedTableName): AnyTable {
   return SYNCED_TABLES[name];
 }
 
+const writeListeners = new Set<() => void>();
+
+/** แจ้งเมื่อมีการเขียนข้อมูลที่ต้องซิงก์ (sync engine ใช้ตั้งเวลาซิงก์แบบหน่วง) */
+export function onLocalWrite(listener: () => void): () => void {
+  writeListeners.add(listener);
+  return () => writeListeners.delete(listener);
+}
+
 export function enqueue(name: SyncedTableName, rowId: string, ownerId = getOwner()): void {
   getDb()
     .insert(syncOutbox)
@@ -34,6 +42,7 @@ export function enqueue(name: SyncedTableName, rowId: string, ownerId = getOwner
       set: { queuedAt: now(), attempts: 0, lastError: null, ownerId },
     })
     .run();
+  writeListeners.forEach((l) => l());
 }
 
 export function getRow<N extends SyncedTableName>(

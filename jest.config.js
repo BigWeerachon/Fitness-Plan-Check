@@ -14,6 +14,9 @@ module.exports = {
   preset: 'jest-expo',
   testMatch: ['**/__tests__/**/*.test.ts?(x)'],
   setupFiles: ['./jest.setup.js'],
+  // worktree ของเอเจนต์อยู่ใต้ .claude/ — ไม่ให้ jest สแกนซ้ำ
+  testPathIgnorePatterns: ['/node_modules/', '<rootDir>/.claude/'],
+  modulePathIgnorePatterns: ['<rootDir>/.claude/'],
   moduleNameMapper: { '^@/(.*)$': '<rootDir>/src/$1' },
   transformIgnorePatterns: [
     expoPreset.transformIgnorePatterns[0].replace(
