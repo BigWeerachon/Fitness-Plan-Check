@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { formFromValues, parseProfileForm, type ProfileForm } from '@/domain/profileInput';
+import { formFromValues, parseProfileForm, switchFormUnits, type ProfileForm } from '@/domain/profileInput';
 
 const base: ProfileForm = {
   sex: 'female',
@@ -62,5 +62,39 @@ describe('profile form parsing (SPEC C step 2, H1)', () => {
   it('round-trips stored values back into the form in the chosen units', () => {
     const f = formFromValues({ heightCm: 180, weightKg: 80, weightUnit: 'lb', lengthUnit: 'ftin', age: 25 });
     expect(f).toMatchObject({ heightFt: '5', heightIn: '11', weight: '176.4', age: '25' });
+  });
+});
+
+describe('switchFormUnits', () => {
+  const metricForm = formFromValues({ weightKg: 70, heightCm: 180, weightUnit: 'kg', lengthUnit: 'cm' });
+
+  it('converts the typed weight when switching kg ↔ lb', () => {
+    const lb = switchFormUnits(metricForm, { weightUnit: 'lb' });
+    expect(lb.weightUnit).toBe('lb');
+    expect(lb.weight).toBe('154.3');
+    const back = switchFormUnits(lb, { weightUnit: 'kg' });
+    expect(back.weight).toBe('70');
+    expect(parseProfileForm(back).values.weightKg).toBe(70);
+  });
+
+  it('converts height between cm and ft/in', () => {
+    const imperial = switchFormUnits(metricForm, { lengthUnit: 'ftin' });
+    expect(imperial).toMatchObject({ lengthUnit: 'ftin', heightFt: '5', heightIn: '11' });
+    const metric = switchFormUnits(imperial, { lengthUnit: 'cm' });
+    expect(Number(metric.heightCm)).toBeCloseTo(180, 0);
+  });
+
+  it('keeps empty or unreadable values untouched', () => {
+    const empty = formFromValues({});
+    expect(switchFormUnits(empty, { weightUnit: 'lb', lengthUnit: 'ftin' })).toMatchObject({
+      weight: '',
+      heightFt: '',
+      heightIn: '',
+      weightUnit: 'lb',
+      lengthUnit: 'ftin',
+    });
+    const junk = { ...metricForm, weight: 'abc' };
+    expect(switchFormUnits(junk, { weightUnit: 'lb' }).weight).toBe('abc');
+    expect(switchFormUnits(metricForm, {})).toEqual(metricForm);
   });
 });

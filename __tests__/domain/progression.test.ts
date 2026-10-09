@@ -1,6 +1,8 @@
 import { describe, expect, it } from '@jest/globals';
 import {
   adjustTarget,
+  preferredWeightStepKg,
+  weightStepOptionsKg,
   applySuggestion,
   changeProgressionMode,
   customWeekIndex,
@@ -551,5 +553,22 @@ describe('adjust target: today only vs from now on', () => {
       adjustTarget({ ...custom, customWeeks: null }, { weightKg: 70, reps: 8 }, 'forward', NOW)
         .routineExercise,
     ).toEqual({ targetWeightKg: 70, targetReps: 8 });
+  });
+});
+
+describe('preferredWeightStepKg (default step for new exercises)', () => {
+  it('keeps a stored step that belongs to the current unit', () => {
+    expect(preferredWeightStepKg('kg', 1.25)).toBe(1.25);
+    const lbSmall = weightStepOptionsKg('lb')[1];
+    expect(preferredWeightStepKg('lb', lbSmall)).toBe(lbSmall);
+  });
+  it('falls back to the unit default when the stored step does not fit', () => {
+    expect(preferredWeightStepKg('lb', 2.5)).toBe(defaultWeightStepKg('lb'));
+    expect(preferredWeightStepKg('kg', null)).toBe(2.5);
+    expect(preferredWeightStepKg('kg', 3)).toBe(2.5);
+  });
+  it('lists options converted to kg', () => {
+    expect(weightStepOptionsKg('kg')).toEqual([2.5, 1.25]);
+    expect(weightStepOptionsKg('lb')[0]).toBeCloseTo(2.268, 3);
   });
 });

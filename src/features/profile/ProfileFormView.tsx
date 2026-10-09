@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { AppText, CardGroup, Chip, ListRow, SegmentedControl, TextField, Icon } from '../../components';
 import type { ActivityLevel, Goal, LengthUnit, Sex, WeightUnit } from '../../db/schema';
 import { ACTIVITY_LEVELS, GOALS } from '../../domain/nutrition';
-import type { ProfileErrors, ProfileForm } from '../../domain/profileInput';
+import { switchFormUnits, type ProfileErrors, type ProfileForm } from '../../domain/profileInput';
 import { spacing } from '../../theme/tokens';
 import { usePalette } from '../../theme/useTheme';
 
@@ -39,13 +39,13 @@ export function ProfileFormView({
         <SegmentedControl
           label={t('onboarding.weight')}
           value={form.weightUnit}
-          onChange={(v) => set('weightUnit', v)}
+          onChange={(v) => onChange(switchFormUnits(form, { weightUnit: v }))}
           options={WEIGHT_UNITS.map((u) => ({ value: u, label: t(`common.units.${u}`) }))}
         />
         <SegmentedControl
           label={t('onboarding.height')}
           value={form.lengthUnit}
-          onChange={(v) => set('lengthUnit', v)}
+          onChange={(v) => onChange(switchFormUnits(form, { lengthUnit: v }))}
           options={LENGTH_UNITS.map((u) => ({ value: u, label: t(`common.units.${u}`) }))}
         />
       </View>

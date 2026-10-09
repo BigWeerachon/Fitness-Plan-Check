@@ -1,5 +1,31 @@
 const settings = {
   title: 'Settings',
+  sections: {
+    appearance: 'Appearance',
+    workout: 'Units & workouts',
+    profile: 'Profile',
+    membership: 'Membership',
+    data: 'Your data',
+    account: 'Account',
+    about: 'About',
+  },
+  weightUnit: 'Weight unit',
+  lengthUnit: 'Height unit',
+  restTimer: 'Rest timer',
+  restTimerA11y: 'Rest timer between sets',
+  restDefault: 'Default rest',
+  weekStart: 'Week starts on',
+  weightStep: 'Weight increment',
+  weightStepHint: 'Used when suggesting your next target.',
+  profile: 'Profile & targets',
+  profileSub: 'Body stats, calorie and nutrition targets',
+  exportCsv: 'Export CSV',
+  exportSub: 'Save or share your data as a spreadsheet file',
+  exportWorkouts: 'Workouts (every set)',
+  exportDaily: 'Daily log (weight and calories)',
+  exportTitle: 'Export Fitnese data',
+  exportUnavailable: 'Sharing isn’t available on this device.',
+  exportFailed: 'Couldn’t create the file. Please try again.',
 } as const;
 
 export default settings;

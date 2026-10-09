@@ -19,6 +19,21 @@ export function defaultWeightStepKg(unit: WeightUnit): number {
   return unit === 'lb' ? lbToKg(WEIGHT_STEP_OPTIONS.lb[0]) : WEIGHT_STEP_OPTIONS.kg[0];
 }
 
+/** ตัวเลือกก้าวน้ำหนักของหน่วยนั้น แปลงเป็น kg (ค่าที่เก็บในฐานข้อมูล) */
+export function weightStepOptionsKg(unit: WeightUnit): number[] {
+  return WEIGHT_STEP_OPTIONS[unit].map((s) => (unit === 'lb' ? lbToKg(s) : s));
+}
+
+/**
+ * ก้าวน้ำหนักเริ่มต้นสำหรับท่าใหม่ (ตั้งค่าในหน้าตั้งค่า) — ค่าที่เก็บไว้ต้องเป็นตัวเลือกของหน่วยปัจจุบัน
+ * ไม่งั้น (เช่น เพิ่งสลับ kg → lb) ใช้ค่าเริ่มต้นของหน่วยนั้น
+ */
+export function preferredWeightStepKg(unit: WeightUnit, storedKg: number | null | undefined): number {
+  if (storedKg != null && weightStepOptionsKg(unit).some((o) => Math.abs(o - storedKg) < 0.01))
+    return storedKg;
+  return defaultWeightStepKg(unit);
+}
+
 /** โหมด linear: พลาดเป้าติดกันกี่ครั้งจึงแนะนำลดน้ำหนัก */
 export const LINEAR_DELOAD_AFTER = 2;
 /** ลดน้ำหนัก ~10% */

@@ -108,3 +108,47 @@ export function parseProfileForm(f: ProfileForm): { values: ProfileValues; error
     errors,
   };
 }
+
+/**
+ * สลับหน่วยในฟอร์มโดยแปลงค่าที่กรอกไว้ให้ด้วย (เช่น 70 kg → 154.3 lb) ไม่ให้ตัวเลขเดิมถูกตีความเป็นหน่วยใหม่
+ * ค่าที่อ่านไม่ได้คงไว้ตามเดิมเพื่อให้ผู้ใช้เห็นและแก้เอง
+ */
+export function switchFormUnits(
+  f: ProfileForm,
+  next: { weightUnit?: WeightUnit; lengthUnit?: LengthUnit },
+): ProfileForm {
+  let out = { ...f };
+  if (next.weightUnit && next.weightUnit !== f.weightUnit) {
+    const w = num(f.weight);
+    out = {
+      ...out,
+      weightUnit: next.weightUnit,
+      weight:
+        w === null || Number.isNaN(w)
+          ? f.weight
+          : String(displayWeight(weightToKg(w, f.weightUnit), next.weightUnit)),
+    };
+  }
+  if (next.lengthUnit && next.lengthUnit !== f.lengthUnit) {
+    if (next.lengthUnit === 'ftin') {
+      const cm = num(f.heightCm);
+      const ftIn = cm === null || Number.isNaN(cm) ? null : cmToFtIn(cm);
+      out = {
+        ...out,
+        lengthUnit: 'ftin',
+        heightFt: ftIn ? String(ftIn.ft) : f.heightFt,
+        heightIn: ftIn ? String(ftIn.in) : f.heightIn,
+      };
+    } else {
+      const ft = num(f.heightFt);
+      const inches = num(f.heightIn);
+      const valid = !Number.isNaN(ft) && !Number.isNaN(inches) && (ft !== null || inches !== null);
+      out = {
+        ...out,
+        lengthUnit: 'cm',
+        heightCm: valid ? String(roundTo(ftInToCm(ft ?? 0, inches ?? 0), 1)) : f.heightCm,
+      };
+    }
+  }
+  return out;
+}

@@ -5,7 +5,7 @@ import { routineExerciseRepo } from '../../db/repos/routineExerciseRepo';
 import { weekPlanRepo } from '../../db/repos/weekPlanRepo';
 import type { Program } from '../../db/schema';
 import { getTemplate } from '../../data/templates';
-import { defaultWeightStepKg } from '../../domain/progression';
+import { preferredWeightStepKg } from '../../domain/progression';
 import type { Language } from '../../i18n';
 
 /**
@@ -20,7 +20,7 @@ export function instantiateTemplate(
   const tpl = getTemplate(key);
   if (!tpl) return undefined;
   const profile = profileRepo.ensure();
-  const stepKg = profile.weightUnit === 'lb' ? defaultWeightStepKg('lb') : profile.weightStepKg;
+  const stepKg = preferredWeightStepKg(profile.weightUnit, profile.weightStepKg);
   return transaction(() => {
     const program = programRepo.create(tpl.name[lang], tpl.key);
     for (const r of tpl.routines) {

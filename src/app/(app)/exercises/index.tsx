@@ -20,7 +20,7 @@ import { routineExerciseRepo } from '../../../db/repos/routineExerciseRepo';
 import { sessionRepo } from '../../../db/repos/sessionRepo';
 import type { Equipment, MuscleGroup } from '../../../db/schema';
 import { exerciseName, searchExercises } from '../../../data/exerciseLibrary';
-import { defaultWeightStepKg } from '../../../domain/progression';
+import { preferredWeightStepKg } from '../../../domain/progression';
 import { useRepoQuery } from '../../../features/data/useRepoQuery';
 import { EquipmentFilter, MuscleFilter } from '../../../features/exercises/ExerciseFilters';
 import { allExercises, resolveExercise } from '../../../features/exercises/resolve';
@@ -49,10 +49,11 @@ export default function ExercisesScreen() {
 
   const confirm = (ids: string[]) => {
     if (params.routineId) {
-      const unit = profileRepo.get()?.weightUnit ?? 'kg';
+      const profile = profileRepo.get();
+      const stepKg = preferredWeightStepKg(profile?.weightUnit ?? 'kg', profile?.weightStepKg);
       for (const exerciseId of ids) {
         routineExerciseRepo.add(params.routineId, exerciseId, {
-          weightStepKg: defaultWeightStepKg(unit),
+          weightStepKg: stepKg,
           targetReps: 8,
         });
       }

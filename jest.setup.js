@@ -61,6 +61,37 @@ jest.mock('expo-network', () => ({
   useNetworkState: () => ({ isConnected: true, isInternetReachable: true }),
 }));
 
+jest.mock('expo-file-system', () => {
+  // ระบบไฟล์จำลองในหน่วยความจำ (ใช้กับการส่งออก CSV)
+  const files = new Map();
+  class Directory {
+    constructor(uri) {
+      this.uri = uri;
+    }
+  }
+  class File {
+    constructor(...parts) {
+      this.uri = parts.map((p) => (typeof p === 'string' ? p : p.uri)).join('/');
+    }
+    get exists() {
+      return files.has(this.uri);
+    }
+    create() {
+      files.set(this.uri, '');
+    }
+    delete() {
+      files.delete(this.uri);
+    }
+    write(content) {
+      files.set(this.uri, content);
+    }
+    textSync() {
+      return files.get(this.uri) ?? '';
+    }
+  }
+  return { File, Directory, Paths: { cache: new Directory('file:///cache') }, __files: files };
+});
+
 jest.mock('expo-sharing', () => ({
   isAvailableAsync: jest.fn(async () => true),
   shareAsync: jest.fn(async () => undefined),

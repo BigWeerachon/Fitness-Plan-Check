@@ -8,7 +8,7 @@ import { profileRepo } from '../../../db/repos/profileRepo';
 import { routineExerciseRepo } from '../../../db/repos/routineExerciseRepo';
 import type { Equipment, MuscleGroup } from '../../../db/schema';
 import { EQUIPMENT, MUSCLE_GROUPS } from '../../../data/exerciseLibrary';
-import { defaultWeightStepKg } from '../../../domain/progression';
+import { preferredWeightStepKg } from '../../../domain/progression';
 import { spacing } from '../../../theme/tokens';
 
 /** สร้างท่าเอง (SPEC F7): ต้องมีกลุ่มกล้ามเนื้อหลัก 1 กลุ่ม + กลุ่มรอง/อุปกรณ์/โน้ต */
@@ -32,8 +32,11 @@ export default function NewExerciseScreen() {
       notes: notes.trim() || null,
     });
     if (routineId) {
-      const unit = profileRepo.get()?.weightUnit ?? 'kg';
-      routineExerciseRepo.add(routineId, ex.id, { weightStepKg: defaultWeightStepKg(unit), targetReps: 8 });
+      const profile = profileRepo.get();
+      routineExerciseRepo.add(routineId, ex.id, {
+        weightStepKg: preferredWeightStepKg(profile?.weightUnit ?? 'kg', profile?.weightStepKg),
+        targetReps: 8,
+      });
     }
     router.back();
   };
