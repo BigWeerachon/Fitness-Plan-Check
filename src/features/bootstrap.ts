@@ -2,6 +2,8 @@ import { onAccountDeleted, onBeforeSignOut, onEntitled } from './access/accountF
 import { getAccess } from './access/useAccess';
 import { claimLocalRows, configureSync, requestSync, syncNow, wipeLocalData } from './sync/engine';
 import { useAuth } from '../stores/auth';
+import { draftRepo } from './onboarding/draft';
+import { migrateDraftToAccount } from './onboarding/migrate';
 
 /**
  * ลงทะเบียนงานที่ต้องเกิดตามเหตุการณ์ของบัญชี (เรียกครั้งเดียวตอนเปิดแอป)
@@ -18,6 +20,7 @@ export function addEntitledTask(task: (userId: string) => void | Promise<void>):
 }
 
 const SIGN_OUT_FLUSH_TIMEOUT_MS = 5_000;
+const FIRST_PULL_TIMEOUT_MS = 8_000;
 
 export function registerAppHooks(): void {
   if (registered) return;
@@ -27,8 +30,13 @@ export function registerAppHooks(): void {
     canSync: () => getAccess().allowed,
   });
   onEntitled(async (userId) => {
-    for (const task of extraEntitledHooks) await task(userId);
     claimLocalRows(userId);
+    // ดึงข้อมูลจากคลาวด์ก่อน (เครื่องใหม่ B11) แล้วค่อยย้ายข้อมูลตั้งค่าเริ่มต้น เพื่อไม่สร้างโปรแกรมซ้ำ
+    if (draftRepo.get() && !draftRepo.get()?.migratedAt) {
+      await Promise.race([syncNow(), new Promise((r) => setTimeout(r, FIRST_PULL_TIMEOUT_MS))]);
+      migrateDraftToAccount(userId);
+    }
+    for (const task of extraEntitledHooks) await task(userId);
     requestSync(0);
   });
   onBeforeSignOut(async () => {

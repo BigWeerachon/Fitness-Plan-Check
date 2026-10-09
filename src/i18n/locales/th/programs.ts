@@ -5,6 +5,7 @@ const programs: LocaleShape<typeof en> = {
   title: 'โปรแกรม',
   programTitle: 'โปรแกรม',
   templatesTitle: 'เทมเพลต',
+  defaultName: 'โปรแกรมของฉัน',
   routineTitle: 'Routine',
 };
 
