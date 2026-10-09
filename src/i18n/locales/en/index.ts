@@ -16,6 +16,7 @@ import stats from './stats';
 import nutrition from './nutrition';
 import settings from './settings';
 import sync from './sync';
+import appearance from './appearance';
 import legal from './legal';
 
 // แต่ละหมวดอยู่คนละไฟล์ เพิ่ม key ในไฟล์ของหมวดนั้นๆ
@@ -38,6 +39,7 @@ const en = {
   nutrition,
   settings,
   sync,
+  appearance,
   legal,
 };
 

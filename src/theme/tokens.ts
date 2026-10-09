@@ -224,3 +224,17 @@ export const spacing = { xxs: 2, xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32, 
 /** ปุ่มสำคัญไม่เล็กกว่า 48 dp (Android) / 44 pt (iOS) ตาม SPEC A2 — ใช้ 48 ทั้งสองแพลตฟอร์ม */
 export const MIN_TOUCH = 48;
 export const motion = { fast: 150, normal: 250, slow: 400 } as const;
+
+/** สีตามแนวทางแบรนด์ของปุ่มล็อกอิน (SPEC B10 "ใช้ปุ่มตามแนวทางแบรนด์") — ห้ามเปลี่ยนตามสีหลัก */
+export const BRAND = {
+  google: {
+    light: { background: '#FFFFFF', border: '#747775', text: '#1F1F1F' },
+    dark: { background: '#131314', border: '#8E918F', text: '#E3E3E3' },
+    logo: { blue: '#4285F4', green: '#34A853', yellow: '#FBBC05', red: '#EA4335' },
+  },
+  apple: {
+    /** พื้นมืดใช้ปุ่มขาว พื้นสว่างใช้ปุ่มดำ (Apple HIG) */
+    light: { background: '#000000', text: '#FFFFFF' },
+    dark: { background: '#FFFFFF', text: '#000000' },
+  },
+} as const;

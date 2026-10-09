@@ -25,7 +25,7 @@ describe('app shell + access gate', () => {
     useSettings.getState().set('onboardingDone', true);
     renderRouter('./src/app', { initialUrl: '/' });
     await flush();
-    expect(await screen.findByText('Fitnese Pro')).toBeTruthy();
+    expect(await screen.findByTestId('paywall')).toBeTruthy();
     expect(screen.getByTestId('glow-background')).toBeTruthy();
   });
 });
