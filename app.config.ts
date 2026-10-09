@@ -56,7 +56,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-sqlite',
     'expo-localization',
     'expo-font',
-    'expo-secure-store',
+    // ไม่ใช้ Face ID/ไบโอเมตริก → ไม่ขอสิทธิ์ (ข้อมูลขั้นต่ำ B13)
+    ['expo-secure-store', { faceIDPermission: false }],
     'expo-apple-authentication',
     ['@react-native-google-signin/google-signin', { iosUrlScheme: GOOGLE_IOS_URL_SCHEME }],
     [

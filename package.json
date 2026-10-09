@@ -17,7 +17,8 @@
     "contrast": "tsx scripts/contrast-report.ts",
     "doctor": "npx expo-doctor",
     "supabase:verify": "bash scripts/verify-supabase.sh",
-    "preview:web": "EXPO_PUBLIC_USE_MOCKS=1 expo export --platform web --output-dir dist-web && node scripts/serve-web.js dist-web 8089"
+    "preview:web": "EXPO_PUBLIC_USE_MOCKS=1 expo export --platform web --output-dir dist-web && node scripts/serve-web.js dist-web 8089",
+    "legal:export": "tsx scripts/export-legal.ts"
   },
   "dependencies": {
     "@expo-google-fonts/ibm-plex-sans-thai": "^0.4.1",

@@ -1,7 +1,7 @@
 /**
  * เทมเพลตนโยบายความเป็นส่วนตัวและข้อกำหนดการใช้งาน (SPEC N4)
  * ⚠️ เจ้าของโปรเจกต์ต้องแก้ [ชื่อผู้พัฒนา], [อีเมลติดต่อ], [ที่อยู่], [วันที่มีผล], [ประเทศ/กฎหมายที่ใช้บังคับ]
- * และให้ผู้เชี่ยวชาญด้านกฎหมายตรวจทานก่อนเผยแพร่ — สำเนาสำหรับโฮสต์บนเว็บสร้างด้วย `node scripts/export-legal.js`
+ * และให้ผู้เชี่ยวชาญด้านกฎหมายตรวจทานก่อนเผยแพร่ — สำเนาสำหรับโฮสต์บนเว็บสร้างด้วย `npm run legal:export` (→ docs/legal/)
  */
 import type { Language } from '../i18n';
 
@@ -56,7 +56,7 @@ export const LEGAL: Record<LegalKey, Record<Language, LegalDoc>> = {
         },
         {
           heading: 'การเก็บรักษาและการลบข้อมูล',
-          body: 'เราเก็บข้อมูลไว้ตราบที่คุณยังมีบัญชี คุณลบบัญชีและข้อมูลทั้งหมดได้เองในแอป (บัญชี → ลบบัญชีและข้อมูล) ซึ่งจะลบข้อมูลบนคลาวด์ เพิกถอนการเชื่อมต่อกับ Apple (ถ้าใช้) และลบข้อมูลในเครื่อง การลบบัญชีไม่ยกเลิกการสมัครสมาชิกในสโตร์ — ยกเลิกได้ในการตั้งค่าบัญชีสโตร์',
+          body: 'เราเก็บข้อมูลไว้ตราบที่คุณยังมีบัญชี คุณลบบัญชีและข้อมูลทั้งหมดได้เองในแอป (บัญชี → ลบบัญชีและข้อมูล) ซึ่งจะลบข้อมูลบนคลาวด์ เพิกถอนการเชื่อมต่อกับ Apple เมื่อลบจาก iPhone/iPad (ถ้าล็อกอินด้วย Apple บน Android ให้เอาแอปออกเองได้ที่ appleid.apple.com → ลงชื่อเข้าใช้ด้วย Apple) และลบข้อมูลในเครื่อง การลบบัญชีไม่ยกเลิกการสมัครสมาชิกในสโตร์ — ยกเลิกได้ในการตั้งค่าบัญชีสโตร์',
         },
         {
           heading: 'สิทธิ์ของคุณ',
@@ -103,7 +103,7 @@ export const LEGAL: Record<LegalKey, Record<Language, LegalDoc>> = {
         },
         {
           heading: 'Retention and deletion',
-          body: 'We keep your data while your account exists. You can delete your account and all data in the app (Account → Delete account and data). This removes your cloud data, revokes Apple sign-in (if used) and clears data on the device. Deleting your account does not cancel a store subscription — cancel it in your store account settings.',
+          body: 'We keep your data while your account exists. You can delete your account and all data in the app (Account → Delete account and data). This removes your cloud data, revokes Sign in with Apple when deleted from an iPhone or iPad (if you used Apple sign-in on Android, you can also remove the app at appleid.apple.com → Sign in with Apple) and clears data on the device. Deleting your account does not cancel a store subscription — cancel it in your store account settings.',
         },
         {
           heading: 'Your rights',
