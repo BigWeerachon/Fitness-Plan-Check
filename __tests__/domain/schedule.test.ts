@@ -2,21 +2,16 @@ import { describe, expect, it } from '@jest/globals';
 import {
   copyDay,
   estimateSessionMinutes,
-  periodRange,
   resolveDayPlan,
   resolveWeek,
   routinesOnWeekday,
-  shiftPeriod,
   toggleDay,
   weekDates,
   weekDaysOrdered,
   WORK_SEC_PER_SET,
   type OverrideEntry,
-  type Period,
   type PlanEntry,
 } from '@/domain/schedule';
-
-type RangeRow = [date: string, period: Period, n: number, start: string, end: string];
 
 // 0 = อาทิตย์ … 6 = เสาร์ — 2026-10-05 เป็นวันจันทร์
 const push: PlanEntry = { routineId: 'push', days: [1, 4], enabled: true, sortOrder: 0 };
@@ -281,35 +276,6 @@ describe('week ordering and dates', () => {
       '2026-11-06',
       '2026-11-07',
     ]);
-  });
-});
-
-describe('period ranges (day / week / month / year)', () => {
-  it.each<RangeRow>([
-    ['2026-10-09', 'day', 1, '2026-10-09', '2026-10-09'],
-    ['2026-10-09', 'week', 1, '2026-10-05', '2026-10-11'],
-    ['2026-10-09', 'week', 0, '2026-10-04', '2026-10-10'],
-    ['2027-01-01', 'week', 1, '2026-12-28', '2027-01-03'],
-    ['2026-02-15', 'month', 1, '2026-02-01', '2026-02-28'],
-    ['2028-02-10', 'month', 1, '2028-02-01', '2028-02-29'],
-    ['2026-12-31', 'month', 1, '2026-12-01', '2026-12-31'],
-    ['2026-10-09', 'year', 1, '2026-01-01', '2026-12-31'],
-  ])('%s %s (week start %d) → %s … %s', (date, period, weekStart, start, end) => {
-    expect(periodRange(date, period, weekStart)).toEqual({ start, end });
-  });
-
-  it.each<RangeRow>([
-    ['2027-01-01', 'day', -1, '2026-12-31', '2026-12-31'],
-    ['2026-10-09', 'week', -1, '2026-09-28', '2026-10-04'],
-    ['2026-12-30', 'week', 1, '2027-01-04', '2027-01-10'],
-    ['2026-03-31', 'month', -1, '2026-02-01', '2026-02-28'],
-    ['2026-01-31', 'month', 1, '2026-02-01', '2026-02-28'],
-    ['2026-12-15', 'month', 1, '2027-01-01', '2027-01-31'],
-    ['2027-01-10', 'month', -1, '2026-12-01', '2026-12-31'],
-    ['2026-10-09', 'year', -1, '2025-01-01', '2025-12-31'],
-    ['2026-10-09', 'month', 0, '2026-10-01', '2026-10-31'],
-  ])('%s shift %s by %d → %s … %s', (date, period, delta, start, end) => {
-    expect(shiftPeriod(date, period, delta, 1)).toEqual({ start, end });
   });
 });
 

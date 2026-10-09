@@ -1,5 +1,5 @@
 import type { DayOverride, WeekPlanEntry } from '../db/schema';
-import { addDays, parseLocalDate, startOfWeek, toLocalDate, weekdayOf, type LocalDate } from './dates';
+import { addDays, startOfWeek, weekdayOf, type LocalDate } from './dates';
 
 /**
  * ตารางประจำสัปดาห์และแผนของแต่ละวัน (SPEC D, E) — ฟังก์ชันล้วน
@@ -135,54 +135,6 @@ export function weekDates(date: LocalDate, weekStart: number): LocalDate[] {
   assertDay(weekStart);
   const start = startOfWeek(date, weekStart);
   return Array.from({ length: DAYS_PER_WEEK }, (_, i) => addDays(start, i));
-}
-
-export type Period = 'day' | 'week' | 'month' | 'year';
-
-export interface DateRange {
-  /** วันแรก (รวม) */
-  start: LocalDate;
-  /** วันสุดท้าย (รวม) */
-  end: LocalDate;
-}
-
-/** ช่วงวันที่ของ วัน / สัปดาห์ (ตามวันเริ่มต้น จ./อา.) / เดือน / ปี ที่มีวันนี้อยู่ */
-export function periodRange(date: LocalDate, period: Period, weekStart: number): DateRange {
-  const d = parseLocalDate(date);
-  switch (period) {
-    case 'day':
-      return { start: date, end: date };
-    case 'week': {
-      const start = startOfWeek(date, weekStart);
-      return { start, end: addDays(start, DAYS_PER_WEEK - 1) };
-    }
-    case 'month':
-      return {
-        start: toLocalDate(new Date(d.getFullYear(), d.getMonth(), 1)),
-        end: toLocalDate(new Date(d.getFullYear(), d.getMonth() + 1, 0)),
-      };
-    case 'year':
-      return {
-        start: toLocalDate(new Date(d.getFullYear(), 0, 1)),
-        end: toLocalDate(new Date(d.getFullYear(), 11, 31)),
-      };
-  }
-}
-
-/** ช่วงก่อนหน้า/ถัดไป (delta = −1 ย้อนหลัง 1 ช่วง) สำหรับ "ดูย้อนหลังได้" */
-export function shiftPeriod(date: LocalDate, period: Period, delta: number, weekStart: number): DateRange {
-  const d = parseLocalDate(date);
-  switch (period) {
-    case 'day':
-      return periodRange(addDays(date, delta), period, weekStart);
-    case 'week':
-      return periodRange(addDays(date, delta * DAYS_PER_WEEK), period, weekStart);
-    case 'month':
-      // ใช้วันที่ 1 กันวันล้นเดือน (31 ม.ค. + 1 เดือน ต้องได้ ก.พ. ไม่ใช่ มี.ค.)
-      return periodRange(toLocalDate(new Date(d.getFullYear(), d.getMonth() + delta, 1)), period, weekStart);
-    case 'year':
-      return periodRange(toLocalDate(new Date(d.getFullYear() + delta, 0, 1)), period, weekStart);
-  }
 }
 
 /** วินาทีทำงานต่อเซ็ตที่ใช้ประมาณเวลา */
