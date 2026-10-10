@@ -43,7 +43,8 @@ export function GoogleButton({
   busy?: boolean;
 }) {
   const p = usePalette();
-  const c = BRAND.google[p.mode];
+  // เด่นเท่ากับปุ่ม Apple (Guideline 4.8): พื้นมืดใช้ปุ่ม Google แบบสว่าง พื้นสว่างใช้แบบมืด — ทั้งสองแบบเป็นสไตล์ทางการของ Google
+  const c = BRAND.google[p.mode === 'dark' ? 'light' : 'dark'];
   return (
     <Pressable
       onPress={onPress}

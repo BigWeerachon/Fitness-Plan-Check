@@ -53,14 +53,32 @@ async function runHooks(hooks: Set<Hook>, userId: string) {
 }
 
 let unsubscribeInfo: (() => void) | null = null;
+let unsubscribeAuth: (() => void) | null = null;
 
-/** รับ CustomerInfo จาก RevenueCat → สถานะ → แคช → แจ้ง hook เมื่อมีสิทธิ์ */
-export function applyCustomerInfo(info: CustomerInfoLike, userId: string): void {
-  if (useAuth.getState().user?.id !== userId) return;
-  const snapshot = deriveSnapshot(info, now());
-  entitlementRepo.save(userId, snapshot);
-  useEntitlement.getState().set({ cached: { ...snapshot, userId }, fresh: true });
-  if (hasAccess(snapshot.state)) void runHooks(entitledHooks, userId);
+/** ข้อมูลที่เก่ากว่านี้ถือว่า SDK อ่านจากแคชในเครื่อง (ออฟไลน์) ไม่ใช่ผลตรวจสด */
+export const LIVE_INFO_MAX_AGE_MS = 5 * 60 * 1000;
+
+/**
+ * RevenueCat SDK ตอนออฟไลน์อาจคืน CustomerInfo จากแคชบนเครื่องแทนการ error
+ * ถ้าถือว่าเป็นข้อมูลสด ช่วงผ่อนผันออฟไลน์ 48 ชม. (B9) จะไม่ทำงาน จึงตัดสินจาก requestDate
+ */
+export function isLiveInfo(info: CustomerInfoLike, nowMs: number): boolean {
+  const requested = Date.parse(info.requestDate ?? '');
+  return Number.isNaN(requested) || nowMs - requested <= LIVE_INFO_MAX_AGE_MS;
+}
+
+/** รับ CustomerInfo จาก RevenueCat → สถานะ → แคช → แจ้ง hook เมื่อมีสิทธิ์ — คืนว่าเป็นข้อมูลสดหรือไม่ */
+export function applyCustomerInfo(info: CustomerInfoLike, userId: string): boolean {
+  if (useAuth.getState().user?.id !== userId) return false;
+  const t = now();
+  const live = isLiveInfo(info, t);
+  const snapshot = deriveSnapshot(info, t);
+  // ข้อมูลเก่าจากแคชของ SDK ไม่เขียนทับแคชของเราที่อาจใหม่กว่า
+  if (live || !useEntitlement.getState().cached) entitlementRepo.save(userId, snapshot);
+  const cached = live ? { ...snapshot, userId } : (entitlementRepo.get(userId) ?? { ...snapshot, userId });
+  useEntitlement.getState().set({ cached, fresh: live });
+  if (hasAccess(cached.state)) void runHooks(entitledHooks, userId);
+  return live;
 }
 
 async function linkPurchases(user: AuthUser): Promise<void> {
@@ -69,8 +87,8 @@ async function linkPurchases(user: AuthUser): Promise<void> {
   store.set({ checking: true });
   try {
     const info = await purchases.logIn(user.id);
-    applyCustomerInfo(info, user.id);
-    store.set({ online: true });
+    const live = applyCustomerInfo(info, user.id);
+    store.set({ online: live });
   } catch {
     // ออฟไลน์: ใช้แคช (SPEC B9) แล้วตรวจใหม่เมื่อออนไลน์
     store.set({ online: false });
@@ -107,6 +125,21 @@ export async function bootstrapAccount(): Promise<void> {
     console.warn('[account] auth init failed', e);
   }
   adoptUser(user);
+  // รับการเปลี่ยนเซสชันภายหลัง: กลับมาออนไลน์แล้วต่ออายุโทเค็นสำเร็จ / ถูกล็อกเอาต์จากเซิร์ฟเวอร์
+  unsubscribeAuth?.();
+  unsubscribeAuth = auth.onChange((next) => {
+    const current = useAuth.getState().user;
+    if (!next) {
+      if (current) adoptUser(null);
+      return;
+    }
+    if (current?.id === next.id) {
+      void refreshEntitlement();
+      return;
+    }
+    adoptUser(next);
+    void linkPurchases(next);
+  });
   if (user) await linkPurchases(user);
 }
 
@@ -119,8 +152,8 @@ export async function refreshEntitlement(): Promise<void> {
   const store = useEntitlement.getState();
   store.set({ checking: true });
   try {
-    applyCustomerInfo(await purchases.getCustomerInfo(), user.id);
-    store.set({ online: true });
+    const live = applyCustomerInfo(await purchases.getCustomerInfo(), user.id);
+    store.set({ online: live });
   } catch {
     store.set({ online: false });
   } finally {

@@ -55,7 +55,6 @@ export interface RecordedEvent {
   type: string;
   app_user_id: string | null;
   event_at: string | null;
-  payload: unknown;
 }
 
 export interface WebhookStore {
@@ -225,7 +224,6 @@ export async function handleWebhook(
       type: ev.type,
       app_user_id: ev.app_user_id ?? null,
       event_at: ev.event_timestamp_ms ? new Date(ev.event_timestamp_ms).toISOString() : null,
-      payload: req.body,
     });
 
   if (!isRelevant(ev)) {

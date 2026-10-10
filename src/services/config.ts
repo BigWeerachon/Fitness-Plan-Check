@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 /**
  * ค่าตั้งค่าจาก .env (EXPO_PUBLIC_* ถูกฝังตอน build ต้องอ้างอิงแบบตรงตัวเท่านั้น)
  * ไม่มีคีย์จริง → ใช้ mock adapter (dev/test) ดู docs/HUMAN_TASKS.md
@@ -24,8 +26,27 @@ export function missingKeys(): string[] {
   return missing;
 }
 
-/** ใช้ mock เมื่อสั่งชัดเจน หรือเป็น dev build ที่ยังไม่มีคีย์ (release build ที่ไม่มีคีย์จะไม่แอบใช้ mock) */
+export interface MockDecisionInput {
+  flag: boolean;
+  dev: boolean;
+  web: boolean;
+  missing: number;
+}
+
+/**
+ * ใช้ mock เฉพาะ dev build หรือพรีวิวเว็บ (สั่งด้วย flag หรือยังไม่มีคีย์)
+ * release build บนมือถือไม่ใช้ mock เด็ดขาดแม้ตั้ง EXPO_PUBLIC_USE_MOCKS=1 ผิด — ไม่งั้นใครก็ "ซื้อ" ฟรีได้ (B2)
+ */
+export function decideMocks({ flag, dev, web, missing }: MockDecisionInput): boolean {
+  if (!dev && !web) return false;
+  return flag || missing > 0;
+}
+
 export function shouldUseMocks(): boolean {
-  if (env.useMocksFlag) return true;
-  return typeof __DEV__ !== 'undefined' && __DEV__ && missingKeys().length > 0;
+  return decideMocks({
+    flag: env.useMocksFlag,
+    dev: typeof __DEV__ !== 'undefined' && __DEV__,
+    web: Platform.OS === 'web',
+    missing: missingKeys().length,
+  });
 }

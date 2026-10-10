@@ -44,6 +44,10 @@ const deps: DeleteDeps = {
         if (!res.ok && res.status !== 404) throw new Error(`revenuecat delete failed (${res.status})`);
       }
     : undefined,
+  async deleteWebhookEvents(userId) {
+    const { error } = await admin.from('revenuecat_events').delete().eq('app_user_id', userId);
+    if (error) throw error;
+  },
   async deleteUser(userId) {
     // ลบผู้ใช้ → ทุกตาราง (user_id references auth.users on delete cascade) ถูกลบตาม
     const { error } = await admin.auth.admin.deleteUser(userId);

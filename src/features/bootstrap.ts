@@ -50,6 +50,8 @@ export function registerAppHooks(): void {
   });
   onAccountDeleted((userId) => {
     wipeLocalData(userId);
+    // คำตอบตั้งค่าเริ่มต้น (เพศ อายุ น้ำหนัก ฯลฯ) เป็นข้อมูลส่วนตัวด้วย ต้องลบตาม "ลบข้อมูลในเครื่อง" (B12)
+    draftRepo.clear();
   });
 }
 

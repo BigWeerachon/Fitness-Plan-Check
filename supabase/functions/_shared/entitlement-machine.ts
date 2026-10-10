@@ -76,6 +76,8 @@ export interface CustomerInfoLike {
     all: Record<string, EntitlementInfoLike | undefined>;
   };
   nonSubscriptionTransactions?: { productIdentifier: string }[];
+  /** เวลาที่ RevenueCat สร้างข้อมูลนี้ (ISO) — ข้อมูลที่ SDK อ่านจากแคชในเครื่องตอนออฟไลน์จะเก่า */
+  requestDate?: string;
 }
 
 /** product id ของซื้อขาด (ตั้งใน App Store Connect / Play Console ดู docs/HUMAN_TASKS.md) */

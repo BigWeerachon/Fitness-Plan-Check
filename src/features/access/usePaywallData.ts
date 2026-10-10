@@ -12,43 +12,43 @@ export interface PaywallData {
   reload: () => void;
 }
 
+interface Loaded {
+  key: string;
+  plans: StorePlans | null;
+  error: boolean;
+}
+
 /**
  * โหลดแพ็กเกจและราคาจากสโตร์ แล้วตรวจสิทธิ์ทดลองฟรี "ก่อน" แสดง Paywall (SPEC B6, J2)
- * ตรวจใหม่ทุกครั้งที่บัญชีเปลี่ยน (เช่น หลังล็อกอิน eligibility อาจเปลี่ยน)
+ * บัญชีเปลี่ยน (เช่น หลังล็อกอิน) → ผลเดิมใช้ไม่ได้ แสดงสถานะกำลังโหลดจนกว่าจะตรวจของบัญชีใหม่เสร็จ
  */
 export function usePaywallData(): PaywallData {
   const userId = useAuth((s) => s.user?.id ?? null);
-  const [plans, setPlans] = useState<StorePlans | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const key = `${userId ?? 'anonymous'}|${attempt}`;
+  const [loaded, setLoaded] = useState<Loaded | null>(null);
 
   useEffect(() => {
     let alive = true;
+    // สิทธิ์ทดลองของบัญชีก่อนหน้าใช้กับบัญชีนี้ไม่ได้ — ไม่โฆษณาทดลองจนกว่าจะรู้ผลจริง (B6)
+    useEntitlement.getState().set({ trialEligibility: 'unknown' });
     (async () => {
       try {
-        const result = await getServices().purchases.getPlans();
-        await checkTrialEligibility(result.monthly);
-        if (!alive) return;
-        setPlans(result);
-        setError(false);
+        const plans = await getServices().purchases.getPlans();
+        await checkTrialEligibility(plans.monthly);
+        if (alive) setLoaded({ key, plans, error: false });
       } catch {
         if (!alive) return;
         useEntitlement.getState().set({ trialEligibility: 'unknown' });
-        setError(true);
-      } finally {
-        if (alive) setLoading(false);
+        setLoaded({ key, plans: null, error: true });
       }
     })();
     return () => {
       alive = false;
     };
-  }, [userId, attempt]);
+  }, [key]);
 
-  const reload = useCallback(() => {
-    setLoading(true);
-    setAttempt((a) => a + 1);
-  }, []);
-
-  return { plans, loading, error, reload };
+  const reload = useCallback(() => setAttempt((a) => a + 1), []);
+  const loading = loaded?.key !== key;
+  return { plans: loading ? null : loaded.plans, loading, error: !loading && loaded.error, reload };
 }

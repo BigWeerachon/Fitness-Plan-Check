@@ -15,6 +15,8 @@ export interface DeleteDeps {
   /** แลก authorization code เป็น refresh token แล้วเพิกถอน (ต้องทำตามข้อกำหนด Sign in with Apple) */
   revokeApple?(authorizationCode: string): Promise<void>;
   deleteRevenueCatCustomer?(userId: string): Promise<void>;
+  /** บันทึกเหตุการณ์ webhook ของผู้ใช้ (ไม่มี FK กับ auth.users จึงต้องลบเอง) */
+  deleteWebhookEvents(userId: string): Promise<void>;
   deleteUser(userId: string): Promise<void>;
   log?(message: string, error?: unknown): void;
 }
@@ -66,6 +68,7 @@ export async function handleDeleteAccount(
   }
 
   try {
+    await deps.deleteWebhookEvents(user.id);
     await deps.deleteUser(user.id);
   } catch (e) {
     deps.log?.('delete user failed', e);

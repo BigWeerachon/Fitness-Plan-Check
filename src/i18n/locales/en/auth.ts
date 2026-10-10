@@ -1,7 +1,7 @@
 const auth = {
   title: 'Sign in',
   heading: 'Sign in to continue',
-  body: 'Your account keeps your plan and purchase safe and in sync across devices. We only use your name and email from Google or Apple.',
+  body: 'Your account keeps your plan and purchase safe and in sync across devices. We only use your email from Google or Apple.',
   google: 'Continue with Google',
   apple: 'Sign in with Apple',
   working: 'Signing in…',

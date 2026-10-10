@@ -1,10 +1,11 @@
 import { GoogleSignin, isErrorWithCode, statusCodes } from '@react-native-google-signin/google-signin';
-import type { Session } from '@supabase/supabase-js';
+import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
+import { settingsRepo } from '../../db/repos/settingsRepo';
 import { env } from '../config';
 import { getSupabase } from '../supabase';
 import {
@@ -21,6 +22,14 @@ function toUser(session: Session | null): AuthUser | null {
   const provider = (session.user.app_metadata?.provider as AuthProvider | undefined) ?? 'google';
   const email = session.user.email ?? null;
   return { id: session.user.id, email, provider, isPrivateRelay: isPrivateRelayEmail(email) };
+}
+
+/** ผู้ใช้ล่าสุดที่ล็อกอิน (ข้อมูลระบุตัวตนเท่านั้น ไม่ใช่โทเค็น — โทเค็นอยู่ใน SecureStore) */
+const LAST_USER_KEY = 'auth.lastUser';
+
+function remember(user: AuthUser | null): void {
+  if (user) settingsRepo.set(LAST_USER_KEY, user);
+  else settingsRepo.remove(LAST_USER_KEY);
 }
 
 async function sha256(input: string): Promise<string> {
@@ -45,9 +54,20 @@ export class SupabaseAuthService implements AuthService {
     this.googleConfigured = true;
   }
 
+  /**
+   * โหลดเซสชันที่จำไว้ — ถ้าโทเค็นหมดอายุแล้วต่ออายุไม่ได้เพราะออฟไลน์ auth-js คืน session = null (แต่ยังเก็บเซสชันไว้)
+   * กรณีนี้ต้องไม่ถือว่าล็อกเอาต์ ใช้ผู้ใช้ล่าสุดไปก่อน แล้วรับเซสชันจริงผ่าน onChange เมื่อกลับมาออนไลน์ (B9, B10)
+   */
   async init(): Promise<AuthUser | null> {
-    const { data } = await getSupabase().auth.getSession();
-    return toUser(data.session);
+    const { data, error } = await getSupabase().auth.getSession();
+    const user = toUser(data.session);
+    if (user) {
+      remember(user);
+      return user;
+    }
+    if (error && isAuthRetryableFetchError(error)) return settingsRepo.get<AuthUser>(LAST_USER_KEY) ?? null;
+    remember(null);
+    return null;
   }
 
   async isAppleAvailable(): Promise<boolean> {
@@ -56,7 +76,9 @@ export class SupabaseAuthService implements AuthService {
   }
 
   async signIn(provider: AuthProvider): Promise<AuthUser> {
-    return provider === 'google' ? this.signInWithGoogle() : this.signInWithApple();
+    const user = provider === 'google' ? await this.signInWithGoogle() : await this.signInWithApple();
+    remember(user);
+    return user;
   }
 
   private async signInWithGoogle(): Promise<AuthUser> {
@@ -89,10 +111,8 @@ export class SupabaseAuthService implements AuthService {
     const rawNonce = Crypto.randomUUID();
     try {
       const credential = await AppleAuthentication.signInAsync({
-        requestedScopes: [
-          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-          AppleAuthentication.AppleAuthenticationScope.EMAIL,
-        ],
+        // ขอเฉพาะอีเมล — แอปไม่ใช้ชื่อ (ข้อมูลขั้นต่ำ B13)
+        requestedScopes: [AppleAuthentication.AppleAuthenticationScope.EMAIL],
         nonce: await sha256(rawNonce),
       });
       if (!credential.identityToken) throw new AuthUnavailableError('Apple did not return an identity token');
@@ -127,6 +147,7 @@ export class SupabaseAuthService implements AuthService {
   }
 
   async signOut(): Promise<void> {
+    remember(null);
     await getSupabase().auth.signOut();
     if (this.googleConfigured) await GoogleSignin.signOut().catch(() => null);
   }
@@ -142,11 +163,17 @@ export class SupabaseAuthService implements AuthService {
     if (!user) return;
     let appleAuthorizationCode: string | null = null;
     if (user.provider === 'apple' && Platform.OS === 'ios') {
-      const credential = await AppleAuthentication.signInAsync({ requestedScopes: [] });
-      appleAuthorizationCode = credential.authorizationCode;
+      try {
+        const credential = await AppleAuthentication.signInAsync({ requestedScopes: [] });
+        appleAuthorizationCode = credential.authorizationCode;
+      } catch (e) {
+        if ((e as { code?: string }).code === 'ERR_REQUEST_CANCELED') throw new AuthCancelledError();
+        throw e;
+      }
     }
     const { error } = await supabase.functions.invoke('delete-account', { body: { appleAuthorizationCode } });
     if (error) throw error;
+    remember(null);
     await supabase.auth.signOut();
   }
 
@@ -155,8 +182,21 @@ export class SupabaseAuthService implements AuthService {
     return data.session?.access_token ?? null;
   }
 
+  /** แจ้งเฉพาะการเปลี่ยนจริง: ล็อกอิน/ต่ออายุโทเค็นสำเร็จ และล็อกเอาต์ (INITIAL_SESSION ตอนออฟไลน์อาจว่างเปล่า จึงข้าม) */
   onChange(listener: (user: AuthUser | null) => void): () => void {
-    const { data } = getSupabase().auth.onAuthStateChange((_event, session) => listener(toUser(session)));
+    const { data } = getSupabase().auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION') return;
+      if (event === 'SIGNED_OUT') {
+        remember(null);
+        listener(null);
+        return;
+      }
+      const user = toUser(session);
+      if (user) {
+        remember(user);
+        listener(user);
+      }
+    });
     return () => data.subscription.unsubscribe();
   }
 }

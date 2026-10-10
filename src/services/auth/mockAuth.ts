@@ -55,6 +55,17 @@ export class MockAuthService implements AuthService {
     return () => this.listeners.delete(listener);
   }
 
+  // ───── ตัวช่วยเทสต์: จำลองเหตุการณ์จากเซิร์ฟเวอร์ ─────
+  /** ต่ออายุโทเค็นสำเร็จหลังกลับมาออนไลน์ (ผู้ใช้เดิม) */
+  simulateTokenRefreshed() {
+    this.listeners.forEach((l) => l(this.user));
+  }
+
+  /** เซิร์ฟเวอร์เพิกถอนเซสชัน (เช่น refresh token ถูกยกเลิก) */
+  simulateServerSignOut() {
+    this.setUser(null);
+  }
+
   private setUser(user: AuthUser | null) {
     this.user = user;
     if (user) settingsRepo.set(KEY, user);

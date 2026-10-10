@@ -15,6 +15,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { getDb } from '../db/client';
 import { warmUpDatabase } from '../db/warmup';
 import { bootstrapAccount, refreshEntitlement } from '../features/access/accountFlow';
+import { useEntitlementExpiryRecheck } from '../features/access/expiryRecheck';
 import { registerAppHooks } from '../features/bootstrap';
 import { requestSync } from '../features/sync/engine';
 import '../i18n';
@@ -53,6 +54,7 @@ export default function RootLayout() {
     IBMPlexSansThai_600SemiBold,
   });
   const p = usePalette();
+  useEntitlementExpiryRecheck();
 
   useEffect(() => {
     // กลับเข้าแอป → ตรวจสิทธิ์กับ RevenueCat ใหม่ (สิทธิ์อาจหมด/ต่ออายุระหว่างที่ปิดแอป)

@@ -25,15 +25,16 @@ alter table public.user_entitlements enable row level security;
 create policy user_entitlements_read_own on public.user_entitlements
   for select to authenticated using (user_id = (select auth.uid()));
 
--- กันเหตุการณ์ webhook ซ้ำ (RevenueCat ส่งซ้ำได้)
+-- กันเหตุการณ์ webhook ซ้ำ (RevenueCat ส่งซ้ำได้) — เก็บเฉพาะที่จำเป็น ไม่เก็บ payload เต็ม (ข้อมูลขั้นต่ำ B13)
+-- แถวของผู้ใช้ถูกลบตอนลบบัญชี (Edge Function delete-account, B12)
 create table public.revenuecat_events (
   id text primary key,
   type text not null,
   app_user_id text,
   event_at timestamptz,
-  received_at timestamptz not null default now(),
-  payload jsonb not null
+  received_at timestamptz not null default now()
 );
+create index revenuecat_events_user_idx on public.revenuecat_events (app_user_id);
 alter table public.revenuecat_events enable row level security;
 -- ไม่มี policy: เข้าถึงได้เฉพาะ service role
 

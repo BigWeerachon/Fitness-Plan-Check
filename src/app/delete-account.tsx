@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { AppText, Button, Card, HeroTitle, Icon, Screen, StackHeader } from '../components';
+import { AuthCancelledError } from '../services/auth/types';
 import { deleteAccount, manageSubscriptionsUrl } from '../features/access/accountFlow';
 import { useAuth } from '../stores/auth';
 import { spacing } from '../theme/tokens';
@@ -25,8 +26,9 @@ export default function DeleteAccountScreen() {
       await deleteAccount();
       Alert.alert(t('account.delete.done'));
       router.replace('/paywall');
-    } catch {
-      Alert.alert(t('common.errorTitle'), t('account.delete.failed'));
+    } catch (e) {
+      // ผู้ใช้กดยกเลิกการยืนยันตัวตนกับ Apple → ไม่ใช่ข้อผิดพลาด ไม่ต้องแจ้งว่าเครือข่ายมีปัญหา
+      if (!(e instanceof AuthCancelledError)) Alert.alert(t('common.errorTitle'), t('account.delete.failed'));
     } finally {
       setBusy(false);
     }

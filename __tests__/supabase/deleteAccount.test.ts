@@ -21,6 +21,9 @@ function deps(provider: string | null, overrides: Partial<DeleteDeps> = {}) {
     deleteRevenueCatCustomer: async (id) => {
       calls.push(`rc:${id}`);
     },
+    deleteWebhookEvents: async (id) => {
+      calls.push(`events:${id}`);
+    },
     deleteUser: async (id) => {
       calls.push(`delete:${id}`);
     },
@@ -45,7 +48,7 @@ describe('delete-account function (SPEC B12, N1)', () => {
       d,
     );
     expect(r).toEqual({ status: 200, body: { deleted: true, appleRevoked: true, revenueCatDeleted: true } });
-    expect(calls).toEqual(['revoke:code123', `rc:${USER}`, `delete:${USER}`]);
+    expect(calls).toEqual(['revoke:code123', `rc:${USER}`, `events:${USER}`, `delete:${USER}`]);
   });
 
   it('still deletes the data when Apple revocation fails, and reports it', async () => {
@@ -76,7 +79,7 @@ describe('delete-account function (SPEC B12, N1)', () => {
       d,
     );
     expect(r.status).toBe(500);
-    expect(calls).toEqual([`rc:${USER}`]);
+    expect(calls).toEqual([`rc:${USER}`, `events:${USER}`]);
   });
 });
 

@@ -27,6 +27,12 @@ export class MockPurchasesService implements PurchasesService {
   /** ตั้งค่าเพื่อจำลองข้อผิดพลาดในเทสต์ */
   failNextPurchase: PurchaseResult | null = null;
   offline = false;
+  /**
+   * พฤติกรรมตอนออฟไลน์: 'throw' = เรียกไม่ได้, 'cached' = คืนข้อมูลล่าสุดจากแคชของ SDK (requestDate เก่า)
+   * แบบหลังคือสิ่งที่ RevenueCat SDK ทำจริงเมื่อเคย logIn บนเครื่องนี้แล้ว
+   */
+  offlineMode: 'throw' | 'cached' = 'throw';
+  private lastInfo: CustomerInfoLike | null = null;
   purchaseCalls: { plan: string; appUserId: string | null }[] = [];
 
   constructor(private scenario: MockScenario = 'new') {}
@@ -119,10 +125,21 @@ export class MockPurchasesService implements PurchasesService {
     } else if (acc.everHad) {
       all.pro = acc.everHad;
     }
-    return {
+    const info: CustomerInfoLike = {
       entitlements: { active, all },
       nonSubscriptionTransactions: acc.lifetime ? [{ productIdentifier: this.lifetimePlan.productId }] : [],
+      requestDate: new Date(now()).toISOString(),
     };
+    this.lastInfo = info;
+    return info;
+  }
+
+  /** ตอนออฟไลน์: โยน error หรือคืนแคชเก่า ตาม offlineMode */
+  private offlineInfo(userId?: string): CustomerInfoLike {
+    if (this.offlineMode === 'cached' && this.lastInfo && (!userId || userId === this.appUserId)) {
+      return this.lastInfo;
+    }
+    throw new Error('network');
   }
 
   private emit() {
@@ -131,7 +148,7 @@ export class MockPurchasesService implements PurchasesService {
   }
 
   async logIn(userId: string): Promise<CustomerInfoLike> {
-    if (this.offline) throw new Error('network');
+    if (this.offline) return this.offlineInfo(userId);
     this.appUserId = userId;
     const info = this.info();
     this.emit();
@@ -148,7 +165,7 @@ export class MockPurchasesService implements PurchasesService {
   }
 
   async getCustomerInfo(): Promise<CustomerInfoLike> {
-    if (this.offline) throw new Error('network');
+    if (this.offline) return this.offlineInfo();
     return this.info();
   }
 
@@ -213,6 +230,20 @@ export class MockPurchasesService implements PurchasesService {
     if (acc.entitlement) {
       acc.everHad = { ...acc.entitlement, isActive: false };
       acc.entitlement = { ...acc.entitlement, expirationDate: new Date(now() - 1000).toISOString() };
+    }
+    this.emit();
+  }
+
+  /** สโตร์ต่ออายุรอบใหม่ (เช่น Google Play ต่ออายุตรงเวลาหมดอายุ) */
+  simulateRenew(userId: string, days = 30) {
+    const acc = this.account(userId);
+    if (acc.entitlement) {
+      acc.entitlement = {
+        ...acc.entitlement,
+        periodType: 'NORMAL',
+        isActive: true,
+        expirationDate: new Date(now() + days * DAY).toISOString(),
+      };
     }
     this.emit();
   }
