@@ -1,0 +1,30 @@
+# Supabase CLI config (supabase start / supabase functions deploy)
+# ค่าจริงของ OAuth ใส่ผ่าน env ตอน deploy — ดู docs/HUMAN_TASKS.md
+project_id = "fitnese"
+
+[api]
+schemas = ["public"]
+max_rows = 1000
+
+[auth]
+site_url = "fitnese://"
+additional_redirect_urls = ["fitnese://auth-callback"]
+enable_signup = true
+
+[auth.external.apple]
+enabled = true
+client_id = "env(APPLE_SERVICES_ID)"
+secret = "env(APPLE_OAUTH_SECRET)"
+
+[auth.external.google]
+enabled = true
+client_id = "env(GOOGLE_WEB_CLIENT_ID)"
+secret = "env(GOOGLE_WEB_CLIENT_SECRET)"
+skip_nonce_check = true
+
+[functions.revenuecat-webhook]
+# RevenueCat ไม่มี JWT ของ Supabase — ตรวจด้วย Authorization header ที่ตั้งไว้แทน
+verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = true

@@ -1,0 +1,50 @@
+import type { LocaleShape } from '../../types';
+import type en from '../en/nutrition';
+
+const nutrition: LocaleShape<typeof en> = {
+  title: 'โปรไฟล์และเป้าหมาย',
+  disclaimer:
+    'ค่าเหล่านี้เป็นเพียงการประมาณและคำแนะนำทั่วไป ไม่ใช่คำแนะนำทางการแพทย์ ไม่จำเป็นต้องปฏิบัติตาม หากมีโรคประจำตัว ตั้งครรภ์ หรือมีข้อสงสัย ควรปรึกษาแพทย์หรือนักกำหนดอาหาร',
+  aboutYou: 'ข้อมูลของคุณ',
+  results: 'ค่าประมาณของคุณ',
+  incomplete: 'กรอกเพศ อายุ ส่วนสูง น้ำหนัก ระดับกิจกรรม และเป้าหมายให้ครบเพื่อดูค่าประมาณ',
+  bmr: 'BMR (ขณะพัก)',
+  bmrHint: 'สูตร Mifflin-St Jeor',
+  tdee: 'TDEE (รวมกิจกรรม)',
+  tdeeHint: 'BMR × ตัวคูณกิจกรรม {{factor}}',
+  target: 'แคลอรี่เป้าหมายต่อวัน',
+  targetLose: 'TDEE − {{pct}}%',
+  targetMaintain: 'เท่ากับ TDEE',
+  targetGain: 'TDEE + {{pct}}%',
+  floorApplied: 'ปรับขึ้นเป็นขั้นต่ำเพื่อความปลอดภัย {{kcal}} kcal ต่อวัน',
+  minorNoDeficit: 'อายุต่ำกว่า 18 ปี: ไม่แสดงเป้าลดน้ำหนัก ใช้แคลอรี่คงที่แทน',
+  macros: 'เป้าสารอาหารต่อวัน',
+  protein: 'โปรตีน',
+  carbs: 'คาร์โบไฮเดรต',
+  fat: 'ไขมัน',
+  grams: '{{value}} ก.',
+  macroClamped: 'โปรตีนและไขมันเต็มแคลอรี่เป้าหมายแล้ว คาร์บจึงเป็น 0 ก.',
+  adjust: 'ปรับเป้าหมาย',
+  deficit: 'ลดแคลอรี่',
+  surplus: 'เพิ่มแคลอรี่',
+  percent: '{{value}}%',
+  proteinPerKg: 'โปรตีนต่อน้ำหนักตัว 1 กก.',
+  gPerKg: '{{value}} ก./กก.',
+  proteinAuto: 'ใช้ค่าแนะนำ ({{value}} ก./กก.)',
+  fatPct: 'สัดส่วนไขมันจากแคลอรี่',
+  mets: 'แคลอรี่จากการฝึก (MET)',
+  metsHint: 'แคลอรี่ = MET × น้ำหนักตัว (กก.) × ชั่วโมง',
+  met: {
+    light: 'เบา',
+    moderate: 'ปานกลาง',
+    hard: 'หนัก',
+  },
+  metValue: 'MET {{value}}',
+  intakeToday: 'แคลอรี่ที่กินวันนี้',
+  intakeTitle: 'แคลอรี่ที่กินวันนี้',
+  notEntered: 'ยังไม่ได้กรอก',
+  references: 'ที่มาของตัวเลขเหล่านี้',
+  saved: 'บันทึกแล้ว',
+};
+
+export default nutrition;
