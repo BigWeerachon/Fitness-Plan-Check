@@ -27,6 +27,22 @@ export type ProgressionMode = 'off' | 'double' | 'linear' | 'custom';
 export type Intensity = 'light' | 'moderate' | 'hard';
 export type SessionStatus = 'active' | 'completed';
 export type OverrideKind = 'rest' | 'routine' | 'empty';
+
+export type ProgressionDecision = 'accepted' | 'skipped' | 'adjusted';
+
+/** คำแนะนำของท่าหนึ่งในเซสชัน (snapshot จาก domain/progression ตอนจบเซสชัน) */
+export interface SessionProgression {
+  sessionExerciseId: string;
+  routineExerciseId: string;
+  exerciseId: string;
+  exerciseName: string;
+  targetWeightKg: number | null;
+  targetReps: number;
+  reason: 'increase' | 'repeat' | 'addRep' | 'deload' | 'custom' | 'off' | 'first';
+  failStreak: number;
+  deloadOffered: boolean;
+  decision: ProgressionDecision | null;
+}
 export type Equipment =
   'barbell' | 'dumbbell' | 'machine' | 'cable' | 'bodyweight' | 'kettlebell' | 'band' | 'other';
 export type MuscleGroup =
@@ -202,6 +218,11 @@ export const workoutSession = sqliteTable(
     status: text('status').$type<SessionStatus>().notNull().default('active'),
     /** บันทึกย้อนหลัง */
     backfilled: integer('backfilled', { mode: 'boolean' }).notNull().default(false),
+    /**
+     * "เป้าหมายครั้งหน้า" ที่คำนวณครั้งเดียวตอนจบเซสชัน พร้อมการตัดสินใจของผู้ใช้ (G2)
+     * เก็บไว้เพื่อไม่ให้คำแนะนำเปลี่ยนเองหลังกดยอมรับ และกดซ้ำแล้วไม่นับซ้ำ
+     */
+    progression: text('progression', { mode: 'json' }).$type<SessionProgression[]>(),
   },
   (t) => [index('workout_session_owner_date_idx').on(t.ownerId, t.date)],
 );

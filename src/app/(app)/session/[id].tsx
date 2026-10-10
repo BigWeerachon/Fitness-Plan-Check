@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
@@ -66,6 +66,10 @@ export default function SessionScreen() {
         <ErrorState message={t('session.notFound')} />
       </Screen>
     );
+  }
+  // เซสชันที่จบแล้วแก้ไม่ได้ (กลับมาหน้านี้จากหน้าสรุป → ไปหน้าสรุป) ประวัติเปลี่ยนได้ทางหน้าประวัติเท่านั้น
+  if (data.session.status === 'completed') {
+    return <Redirect href={{ pathname: '/session/summary/[id]', params: { id: data.session.id } }} />;
   }
   const { session, exercises, totals, unit } = data;
   const unitLabel = t(`common.units.${unit}`);

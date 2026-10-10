@@ -34,7 +34,6 @@ import { formatDuration, formatNumber } from '../../../../i18n/format';
 import { spacing } from '../../../../theme/tokens';
 
 const INTENSITIES: Intensity[] = ['light', 'moderate', 'hard'];
-type Decision = 'accepted' | 'skipped';
 
 /**
  * จบเซสชัน (SPEC G1/G2): เลือกความหนักเพื่อคำนวณแคลอรี่ → สรุปเซสชัน → "เป้าหมายครั้งหน้า" ที่ยอมรับ/ปรับ/ข้ามได้
@@ -45,7 +44,6 @@ export default function SessionSummaryScreen() {
   const data = useRepoQuery(() => loadSession(id), id);
   const [intensity, setIntensity] = useState<Intensity>('moderate');
   const [minutes, setMinutes] = useState(60);
-  const [decisions, setDecisions] = useState<Record<string, Decision>>({});
   const [adjusting, setAdjusting] = useState<ExerciseSuggestion | null>(null);
   const suggestions = useRepoQuery(
     () => (data?.session.status === 'completed' ? suggestionsFor(id) : []),
@@ -181,7 +179,7 @@ export default function SessionSummaryScreen() {
                 s.suggestion.targetWeightKg,
                 s.suggestion.targetReps,
               );
-              const decision = decisions[s.sessionExerciseId];
+              const decision = s.decision;
               return (
                 <Card key={s.sessionExerciseId}>
                   <AppText variant="headline">{s.exerciseName}</AppText>
@@ -190,16 +188,13 @@ export default function SessionSummaryScreen() {
                   </AppText>
                   {decision ? (
                     <AppText variant="caption" secondary>
-                      {decision === 'accepted' ? t('session.accepted') : t('session.skipped')}
+                      {decision === 'skipped' ? t('session.skipped') : t('session.accepted')}
                     </AppText>
                   ) : (
                     <View style={styles.row}>
                       <Button
                         title={t('session.accept')}
-                        onPress={() => {
-                          acceptSuggestion(s);
-                          setDecisions((d) => ({ ...d, [s.sessionExerciseId]: 'accepted' }));
-                        }}
+                        onPress={() => acceptSuggestion(s)}
                         style={styles.flex}
                         testID={`accept-${s.routineExercise.exerciseId}`}
                       />
@@ -212,10 +207,7 @@ export default function SessionSummaryScreen() {
                       <Button
                         title={t('session.skip')}
                         kind="plain"
-                        onPress={() => {
-                          declineSuggestion(s);
-                          setDecisions((d) => ({ ...d, [s.sessionExerciseId]: 'skipped' }));
-                        }}
+                        onPress={() => declineSuggestion(s)}
                         testID={`skip-${s.routineExercise.exerciseId}`}
                       />
                     </View>
@@ -241,7 +233,6 @@ export default function SessionSummaryScreen() {
             unit={unit}
             onSave={(weightKg, reps) => {
               setCustomTarget(adjusting, weightKg, reps);
-              setDecisions((d) => ({ ...d, [adjusting.sessionExerciseId]: 'accepted' }));
               setAdjusting(null);
             }}
           />

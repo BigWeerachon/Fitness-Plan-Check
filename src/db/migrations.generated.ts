@@ -41,5 +41,11 @@ export const MIGRATIONS: EmbeddedMigration[] = [
       "CREATE TABLE `workout_session` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`owner_id` text DEFAULT 'local' NOT NULL,\n\t`created_at` integer NOT NULL,\n\t`updated_at` integer NOT NULL,\n\t`deleted_at` integer,\n\t`date` text NOT NULL,\n\t`routine_id` text,\n\t`program_id` text,\n\t`program_name` text,\n\t`routine_name` text,\n\t`routine_type` text,\n\t`started_at` integer NOT NULL,\n\t`ended_at` integer,\n\t`duration_sec` integer,\n\t`intensity` text,\n\t`kcal` real,\n\t`body_weight_kg` real,\n\t`status` text DEFAULT 'active' NOT NULL,\n\t`backfilled` integer DEFAULT false NOT NULL\n);",
       "CREATE INDEX `workout_session_owner_date_idx` ON `workout_session` (`owner_id`,`date`);"
     ]
+  },
+  {
+    "tag": "0001_uneven_albert_cleary",
+    "statements": [
+      "ALTER TABLE `workout_session` ADD `progression` text;"
+    ]
   }
 ];

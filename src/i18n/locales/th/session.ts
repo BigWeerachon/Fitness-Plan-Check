@@ -72,7 +72,7 @@ const session: LocaleShape<typeof en> = {
     addRep: 'น้ำหนักเดิม เพิ่ม 1 ครั้ง: {{target}}',
     repeat: 'ทำซ้ำ: {{target}}',
     deload: 'พลาดเป้าติดกัน 2 ครั้ง — ลองลดลง ~10%: {{target}}',
-    custom: 'แผนสัปดาห์ถัดไป: {{target}}',
+    custom: 'ตามแผนรอบสัปดาห์: {{target}}',
     off: 'เหมือนวันนี้: {{target}}',
     first: 'ครั้งหน้าเริ่มที่: {{target}}',
   },

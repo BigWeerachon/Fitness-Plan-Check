@@ -30,6 +30,12 @@ function remoteTable(name: string): Map<string, RemoteColumn> | null {
     if (!c) continue;
     cols.set(c[1], { type: c[2], notNull: /not null|primary key/.test(c[3]) });
   }
+  // migration ถัดๆ ไปที่เพิ่มคอลัมน์
+  const alter = new RegExp(
+    `alter table public\\.${name} add column ([a-z_]+) (bigint|text|double precision|boolean|jsonb|uuid|timestamptz)([^;]*);`,
+    'g',
+  );
+  for (const a of sql.matchAll(alter)) cols.set(a[1], { type: a[2], notNull: /not null/.test(a[3]) });
   return cols;
 }
 

@@ -69,7 +69,7 @@ const session = {
     addRep: 'Same weight, one more rep: {{target}}',
     repeat: 'Repeat: {{target}}',
     deload: 'Two misses in a row — try ~10% lighter: {{target}}',
-    custom: 'Next week’s plan: {{target}}',
+    custom: 'Follows your weekly plan: {{target}}',
     off: 'Same as today: {{target}}',
     first: 'Start here next time: {{target}}',
   },

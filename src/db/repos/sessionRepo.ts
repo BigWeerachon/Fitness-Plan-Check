@@ -10,7 +10,9 @@ import {
   workoutSession,
   type Intensity,
   type MuscleGroup,
+  type RoutineExercise,
   type SessionExercise,
+  type SessionProgression,
   type SessionSet,
   type WorkoutSession,
 } from '../schema';
@@ -31,6 +33,8 @@ export interface StartSessionInput {
   backfilled?: boolean;
   bodyWeightKg?: number | null;
   resolve: ExerciseResolver;
+  /** เป้าหมายของท่าตอนเริ่มเซสชัน (เช่น โหมด custom ตามสัปดาห์ปัจจุบัน) — ไม่ระบุ = ใช้เป้าที่บันทึกไว้ */
+  targetFor?: (re: RoutineExercise) => { weightKg: number | null; reps: number };
 }
 
 /** เซสชันการฝึก (SPEC G1, F6, M) — ทุกเซสชันเก็บ snapshot ชื่อกรุ๊ป/routine/ประเภท และกลุ่มกล้ามเนื้อของแต่ละเซ็ต */
@@ -176,10 +180,14 @@ export const sessionRepo = {
       });
       if (r) {
         for (const re of routineExerciseRepo.listByRoutine(r.id)) {
+          const target = input.targetFor?.(re) ?? {
+            weightKg: re.targetWeightKg,
+            reps: re.targetReps ?? re.repMin,
+          };
           sessionRepo.addExercise(session.id, re.exerciseId, input.resolve, {
             sets: re.sets,
-            targetWeightKg: re.targetWeightKg,
-            targetReps: re.targetReps ?? re.repMin,
+            targetWeightKg: target.weightKg,
+            targetReps: target.reps,
             routineExerciseId: re.id,
             restSec: re.restSec,
           });
@@ -243,33 +251,67 @@ export const sessionRepo = {
     });
   },
 
-  /** สลับท่าระหว่างเซสชัน: เปลี่ยนท่าและ snapshot ของเซ็ตที่ยังไม่ทำ */
-  swapExercise(sessionExerciseId: string, newExerciseId: string, resolve: ExerciseResolver): void {
-    transaction(() => {
+  /**
+   * สลับท่าระหว่างเซสชัน: เซ็ตที่ทำแล้วคงเป็นท่าเดิม (ประวัติ, 1RM, "ครั้งก่อน" ถูกต้อง) ส่วนเซ็ตที่ยังไม่ทำย้ายไปเป็นท่าใหม่
+   * พร้อมเป้าหมาย/ค่าจากครั้งก่อนของท่าใหม่ (ไม่มีประวัติ → ไม่ใส่น้ำหนักเดิมของอีกท่า)
+   * คืน id ของ session_exercise ที่เป็นท่าใหม่
+   */
+  swapExercise(
+    sessionExerciseId: string,
+    newExerciseId: string,
+    resolve: ExerciseResolver,
+  ): string | undefined {
+    return transaction(() => {
       const se = getDb()
         .select()
         .from(sessionExercise)
         .where(live(sessionExercise, eq(sessionExercise.id, sessionExerciseId)))
         .get();
-      if (!se) return;
+      if (!se) return undefined;
       const info = resolve(newExerciseId);
       const prev = sessionRepo.lastPerformance(newExerciseId, se.sessionId)?.sets ?? [];
-      updateRow('session_exercise', se.id, {
-        exerciseId: newExerciseId,
-        exerciseName: info.name,
-        muscleGroup: info.muscle,
-        routineExerciseId: null,
-      });
-      sessionRepo.setsOf(se.id).forEach((s, i) => {
+      const sets = sessionRepo.setsOf(se.id);
+      const pending = sets.filter((s) => !s.done);
+      if (pending.length === 0) return se.id;
+      let targetId = se.id;
+      if (pending.length < sets.length) {
+        // มีเซ็ตที่ทำแล้ว → แยกท่าใหม่เป็นอีกรายการต่อจากท่าเดิม
+        for (const e of sessionRepo.exercises(se.sessionId)) {
+          if (e.sortOrder > se.sortOrder) updateRow('session_exercise', e.id, { sortOrder: e.sortOrder + 1 });
+        }
+        targetId = createRow('session_exercise', {
+          sessionId: se.sessionId,
+          exerciseId: newExerciseId,
+          exerciseName: info.name,
+          muscleGroup: info.muscle,
+          routineExerciseId: null,
+          sortOrder: se.sortOrder + 1,
+          restSec: se.restSec,
+        }).id;
+      } else {
+        updateRow('session_exercise', se.id, {
+          exerciseId: newExerciseId,
+          exerciseName: info.name,
+          muscleGroup: info.muscle,
+          routineExerciseId: null,
+        });
+      }
+      pending.forEach((s, i) => {
+        const p = prev[i] ?? prev[prev.length - 1];
         updateRow('session_set', s.id, {
+          sessionExerciseId: targetId,
           exerciseId: newExerciseId,
           muscleGroup: info.muscle,
+          setIndex: i,
           prevWeightKg: prev[i]?.weightKg ?? null,
           prevReps: prev[i]?.reps ?? null,
-          targetWeightKg: prev[i]?.weightKg ?? s.targetWeightKg,
-          targetReps: prev[i]?.reps ?? s.targetReps,
+          targetWeightKg: p?.weightKg ?? null,
+          targetReps: p?.reps ?? s.targetReps,
+          weightKg: p?.weightKg ?? null,
+          reps: p?.reps ?? s.targetReps,
         });
       });
+      return targetId;
     });
   },
 
@@ -335,16 +377,22 @@ export const sessionRepo = {
       durationSec: number;
       endedAt?: number;
       bodyWeightKg?: number | null;
+      progression?: SessionProgression[] | null;
     },
   ): void {
     updateRow('workout_session', sessionId, {
       status: 'completed',
+      ...(data.progression !== undefined ? { progression: data.progression } : {}),
       intensity: data.intensity,
       kcal: data.kcal,
       durationSec: Math.max(0, Math.round(data.durationSec)),
       endedAt: data.endedAt ?? now(),
       ...(data.bodyWeightKg !== undefined ? { bodyWeightKg: data.bodyWeightKg } : {}),
     });
+  },
+
+  setProgression(sessionId: string, progression: SessionProgression[]): void {
+    updateRow('workout_session', sessionId, { progression });
   },
 
   /** ลบเซสชัน (ยกเลิกเซสชันที่กำลังทำ หรือลบจากประวัติ) */

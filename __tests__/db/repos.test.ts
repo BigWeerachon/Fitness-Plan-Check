@@ -184,6 +184,34 @@ describe('repositories (T06)', () => {
     expect(sessionRepo.get(s.id)).toBeUndefined();
   });
 
+  it('swapping mid-exercise keeps done sets on the original exercise (history and 1RM stay correct)', () => {
+    const s = sessionRepo.start({ date: '2026-10-09', resolve });
+    const bench = sessionRepo.addExercise(s.id, 'barbell_bench_press', resolve, {
+      sets: 3,
+      targetWeightKg: 80,
+      targetReps: 5,
+    });
+    const after = sessionRepo.addExercise(s.id, 'triceps_pushdown', resolve, { sets: 2 });
+    const [first] = sessionRepo.setsOf(bench.id);
+    sessionRepo.setDone(first.id, true);
+
+    const newId = sessionRepo.swapExercise(bench.id, 'dumbbell_bench_press', resolve)!;
+    expect(newId).not.toBe(bench.id);
+    // เซ็ตที่ทำแล้วยังเป็นบาร์เบลเบนช์ 80 kg
+    expect(sessionRepo.setsOf(bench.id)).toEqual([
+      expect.objectContaining({ id: first.id, exerciseId: 'barbell_bench_press', weightKg: 80, done: true }),
+    ]);
+    // เซ็ตที่เหลือย้ายเป็นท่าใหม่ ไม่พกน้ำหนักของท่าเดิมมา (ไม่มีประวัติ)
+    const moved = sessionRepo.setsOf(newId);
+    expect(moved).toHaveLength(2);
+    expect(
+      moved.every((x) => x.exerciseId === 'dumbbell_bench_press' && !x.done && x.weightKg === null),
+    ).toBe(true);
+    expect(moved.map((x) => x.setIndex)).toEqual([0, 1]);
+    // ท่าใหม่อยู่ต่อจากท่าเดิม
+    expect(sessionRepo.exercises(s.id).map((e) => e.id)).toEqual([bench.id, newId, after.id]);
+  });
+
   it('daily log upserts one row per date', () => {
     dailyLogRepo.upsert('2026-10-09', { kcalIntake: 2000 });
     dailyLogRepo.upsert('2026-10-09', { bodyWeightKg: 70.5 });
