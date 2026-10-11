@@ -75,12 +75,12 @@ YOUR WEEK, YOUR WAY
 PROGRAMS AND 143 EXERCISES
 • Editable templates: Push/Pull/Legs (3 or 6 days), Upper/Lower, Full Body, Bro Split, 5×5 Beginner
 • Your own programs and routines; copy or move routines between programs
-• English/Thai library of 143 exercises with muscle-group icons, including bodyweight moves like push-ups and pull-ups. Add and edit your own.
+• English/Thai library of 143 exercises, including bodyweight moves like push-ups and pull-ups. Add your own.
 
 FAST, ONE-HANDED WORKOUTS
 • Last time and today's target side by side for every set
 • Big number pad, haptic set ticks and a rest timer per exercise
-• Add, swap, reorder and remove exercises and sets mid-workout; optional RIR/RPE; log a past day
+• Add, swap, reorder and remove exercises and sets mid-workout; optional RIR/RPE targets; log a past workout
 
 PROGRESSIVE OVERLOAD YOU CONTROL
 • Per exercise: double progression (default), linear, custom weekly plan, or off
@@ -169,12 +169,12 @@ YOUR WEEK, YOUR WAY
 PROGRAMS AND 143 EXERCISES
 • Editable templates: Push/Pull/Legs (3 or 6 days), Upper/Lower, Full Body, Bro Split, 5×5 Beginner
 • Your own programs and routines; copy or move routines between programs
-• English/Thai library of 143 exercises with muscle-group icons, including bodyweight moves like push-ups and pull-ups. Add and edit your own.
+• English/Thai library of 143 exercises, including bodyweight moves like push-ups and pull-ups. Add your own.
 
 FAST, ONE-HANDED WORKOUTS
 • Last time and today's target side by side for every set
 • Big number pad, haptic set ticks and a rest timer per exercise
-• Add, swap, reorder and remove exercises and sets mid-workout; optional RIR/RPE; log a past day
+• Add, swap, reorder and remove exercises and sets mid-workout; optional RIR/RPE targets; log a past workout
 
 PROGRESSIVE OVERLOAD YOU CONTROL
 • Per exercise: double progression (default), linear, custom weekly plan, or off

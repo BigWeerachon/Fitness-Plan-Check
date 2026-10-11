@@ -4,7 +4,7 @@
 >
 > แหล่งความจริงของค่าในเอกสารนี้คือโค้ด: `src/theme/tokens.ts`, `src/theme/typography.ts`, `src/theme/color.ts`, `src/theme/useTheme.ts`, `src/hooks/useReduceMotion.ts` และคอมโพเนนต์ใน `src/components/` — ถ้าโค้ดเปลี่ยน ให้แก้เอกสารนี้ตาม และรัน `npm run contrast` ใหม่
 >
-> ภาพอ้างอิง: [`docs/reference/theme-reference.jpg`](reference/theme-reference.jpg) · ภาพหน้าจอจริง: [`docs/screenshots/`](screenshots/) · ตาราง contrast ล่าสุดรันเมื่อ 2026-10-09 (ผ่านทั้งหมด)
+> ภาพอ้างอิง: [`docs/reference/theme-reference.jpg`](reference/theme-reference.jpg) · ภาพหน้าจอจริง: [`docs/screenshots/`](screenshots/) · ตาราง contrast ล่าสุดรันเมื่อ 2026-10-11 (ผ่านทั้งหมด)
 
 ## สารบัญ
 
@@ -59,9 +59,9 @@
 
 - SVG `RadialGradient` บนสี่เหลี่ยมกว้าง W × สูง 1.25W ติดขอบบนจอ: `cx="50%" cy="22%" rx="62%" ry="48%"` (วงรีแนวตั้งเหมือนภาพอ้างอิง)
 - จุดหยุดสี: offset 0 = `glowOpacity`, offset 0.5 = `glowOpacity × 0.45`, offset 1 = 0 (จางสู่พื้นหลัง)
-- สีแสงคำนวณจากสีหลัก (ดูข้อ 2.3): โหมดมืด L = 0.55 ความทึบ **0.30**, โหมดสว่าง L = 0.78 ความทึบ **0.35** (บนพื้น `#F2F2F7` จึงดูจางกว่า ตาม SPEC "แสงเรืองจางลง")
-- จุดสว่างสุดของสีชมพูม่วงโหมดมืด = `#3D1837` — ความสว่างใกล้กับ `#3B2645` ของภาพอ้างอิง
-- **ต่างจากภาพอ้างอิงโดยตั้งใจ:** จุดสว่างสุดอยู่ที่ ~27% ของความกว้างจอจากขอบบน (หลังหัวข้อพอดี) ไม่ใช่ต่ำลงมาหลังการ์ด ตามที่ SPEC เขียนว่า "แสงเรือง … ที่ส่วนบนของหน้าจอ" (อีกทั้งตำแหน่งการ์ดแรกของแต่ละหน้าไม่คงที่เหมือนในภาพอ้างอิง) ผลคือหัวข้อสีหลักวางบนจุดที่สว่างที่สุด จึงบังคับให้สีหลักผ่าน 4.5:1 กับจุดนั้นด้วย (คอลัมน์ "หัวข้อบนแสงเรือง" ในข้อ 5)
+- สีแสงคำนวณจากสีหลัก (ดูข้อ 2.3): โหมดมืด L = 0.55 ความทึบเริ่มที่ **30%**, โหมดสว่าง L = 0.78 ความทึบเริ่มที่ **35%** (บนพื้น `#F2F2F7` จึงดูจางกว่า ตาม SPEC "แสงเรืองจางลง") แล้ว **ลดลงทีละ 1% จนข้อความรองสีเทา (`textSecondary`) ที่วางบนจุดสว่างสุดของแสงผ่าน 4.5:1** — สีที่ทำให้สีเทาอ่านยากบนแสง (โหมดมืด: มินต์ 27%, ไลม์ 26%, ทอง 27%; โหมดสว่าง: ชมพูม่วง 34%, ลาเวนเดอร์ 24%, คอรัล 28%) จึงได้แสงจางกว่าเริ่มต้นเล็กน้อย (พาเลต 8 สี: ต่ำสุด 24% = lavender สว่าง, 26% = lime มืด; สีเองที่ทดสอบ: ต่ำสุด 22%; เพดานล่างในโค้ด `GLOW_OPACITY_MIN` = 12% ไม่เคยถูกใช้จริง) ค่าที่ใช้จริงอยู่ใน `Palette.glowOpacity` — ห้ามฮาร์ดโค้ด 0.30/0.35 ที่อื่น
+- จุดสว่างสุดของสีชมพูม่วงโหมดมืด (ทึบ 30%) = `#3D1837` — ความสว่างใกล้กับ `#3B2645` ของภาพอ้างอิง
+- **ต่างจากภาพอ้างอิงโดยตั้งใจ:** จุดสว่างสุดอยู่ที่ ~27% ของความกว้างจอจากขอบบน (หลังหัวข้อพอดี) ไม่ใช่ต่ำลงมาหลังการ์ด ตามที่ SPEC เขียนว่า "แสงเรือง … ที่ส่วนบนของหน้าจอ" (อีกทั้งตำแหน่งการ์ดแรกของแต่ละหน้าไม่คงที่เหมือนในภาพอ้างอิง) ผลคือหัวข้อสีหลักและบรรทัดย่อยสีเทาของ `HeroTitle` วางบนจุดที่สว่างที่สุด จึงบังคับให้ทั้งสีหลัก (`heroOnGlow`) และสีเทา (`secondaryOnGlow`) ผ่าน 4.5:1 กับจุดนั้น (คอลัมน์ "หัวข้อ/ข้อความรองบนแสงเรือง" ในข้อ 5)
 - แสงอยู่กับที่ (อยู่นอก `ScrollView`) ไม่เลื่อนตามเนื้อหา `pointerEvents="none"`
 - เปลี่ยนสีหลัก/โหมดแล้ว แสงใหม่ค่อยๆ ซ้อนทับแสงเดิม (crossfade 350 ms)
 
@@ -84,7 +84,7 @@
 | มุมโค้ง | ~65 px ≈ 6% ของจอ (~25 dp) | `radius.card` = 28 (ตาม SPEC ~28 dp) |
 | การรวมแถว | ทุกแถวอยู่ในกรอบเดียว | แถวทั้งหมดเป็นลูกของ `CardGroup` ตัวเดียว |
 | เส้นคั่น | เส้นบาง `#3A3A3A` เยื้องเข้าจากขอบการ์ดข้างละ ~45 px (~4% ของจอ) | `StyleSheet.hairlineWidth` สี `separator` (`rgba(255,255,255,0.10)` ≈ `#333335` บนการ์ด) เยื้องข้างละ 28 dp (`inset` ค่าเริ่มต้น `true`) |
-| ระยะต่อแถว | ~321 px ≈ 30% ของจอ (~122 dp) | `BigRow` สูงอย่างน้อย 104 dp (padding บนล่าง 24) |
+| ระยะต่อแถว | ~321 px ≈ 30% ของจอ (~122 dp) | `BigRow` สูงอย่างน้อย 104 dp (`MIN_TOUCH + 56`, padding บนล่าง 24); ถ้ามี `footer` สูงอย่างน้อย 72 dp (padding ล่าง 4 แล้วต่อด้วย `footer`) |
 
 ### 1.5 โครงสร้างแถว (row anatomy)
 
@@ -99,7 +99,7 @@
 | ส่วน | ภาพอ้างอิง | ของเรา |
 |---|---|---|
 | ข้อความใหญ่ | ตัวเลขเวลา น้ำหนักบาง สีขาว เว้นจากขอบการ์ด ~73 px (~28 dp) ตัวเลขสูง ~7.7% ของจอ | `BigRow` → `typography.rowTitle` IBM Plex Sans Thai **Light** 30/42 สี `text`, เว้นซ้ายขวา 32 dp, ตัดได้ 2 บรรทัด (แถวของเราเป็นชื่อ routine/โปรแกรมซึ่งยาวกว่าเวลา 5 ตัวอักษร จึงเล็กกว่าภาพอ้างอิง ตัวเลขใหญ่จริง 48 ใช้ที่ `NumberPad`) |
-| ตัวอักษรวัน | 7 ตัว ห่างกันสม่ำเสมอ วันที่เปิดสีชมพูหนา วันอื่นเทา `#747474` | `WeekdayDots` → ไทย `อา จ อ พ พฤ ศ ส` (ตาม SPEC; ภาพอ้างอิงย่อพฤหัสฯ เป็น "พ"), อังกฤษ `S M T W T F S` จาก `src/i18n/locales/*/date.ts`; เปิด = `dayLetterOn` (SemiBold 13/18) สี `accent`; ปิด = `dayLetter` (Regular 13/18) สี `textSecondary` ความทึบ 0.6 (≈ `#66666B` บนการ์ดโหมดมืด ใกล้ `#747474`) |
+| ตัวอักษรวัน | 7 ตัว ห่างกันสม่ำเสมอ วันที่เปิดสีชมพูหนา วันอื่นเทา `#747474` | `WeekdayDots` → ไทย `อา จ อ พ พฤ ศ ส` (ตาม SPEC; ภาพอ้างอิงย่อพฤหัสฯ เป็น "พ"), อังกฤษ `S M T W T F S` จาก `src/i18n/locales/*/date.ts` (`date.weekdaysShort`); เปิด = `dayLetterOn` (SemiBold 13/18) สี `accent`; ปิด = `dayLetter` (Regular 13/18) สี `textSecondary` ความทึบ 0.6 (≈ `#66666B` บนการ์ดโหมดมืด ใกล้ `#747474`) แถวแบบอ่านอย่างเดียวห่างกัน 8 dp; แบบแตะได้ (หน้า `week`) กว้างเท่ากันเต็มแถว วางใน `footer` ของ `BigRow` (ข้อ 3.5–3.6) |
 | จุด | วงกลม ~5 px (~2 dp) เหนือตัวอักษรที่เปิด | วงกลม 4 × 4 dp สีเดียวกับตัวอักษร เว้นล่าง 2 |
 | สวิตช์ | แคปซูล ~89 × 55 px ราง `#DE8FC6` (ชมพูเข้มกว่าข้อความเล็กน้อย) ปุ่มกลมขาว `#FCFCFC` | `Toggle` = `Switch` ของระบบ ราง `accentFill` (โหมดมืด = สีเดียวกับข้อความสีหลัก), ปุ่มกลม `#FFFFFF`, รางปิด `switchOff` |
 
@@ -119,7 +119,7 @@
 
 - ภาพอ้างอิง: "+" เส้นบาง และ "⋮" (จุดสามจุดแนวตั้ง) สีหลัก สูง ~52 px (~20 dp) ชิดขวา อยู่เหนือขอบบนการ์ด ~66 px (~25 dp)
 - ของเรา: `ActionBar` (แถวชิดขวา padding ข้าง 12 gap 4) + `IconButton` ไอคอน `add` และ `ellipsis-vertical` ขนาด 26 สี `accent` พื้นที่แตะ 48 × 48 ทุกปุ่มต้องมี `label` จาก i18n (เช่น `today.startEmpty`, `a11y.menu`)
-- ใช้ที่: หน้าวันนี้ (`+` = เริ่มเซสชันเปล่า, `⋮` = แผ่นเมนู), หน้าโปรแกรม (`+` = สร้างโปรแกรม, `⋮` = เมนู); หน้า Paywall ใช้ `ActionBar` เดียวกันใส่ไอคอน `settings-outline` ไป `/account`; ภายในการ์ดเซสชันใช้ `ellipsis-horizontal` (⋯) เป็นเมนูต่อท่า
+- ใช้ที่: หน้าวันนี้ (`+` = เริ่มเซสชันเปล่า, `⋮` = แผ่นเมนู), หน้าโปรแกรม (`+` = สร้างโปรแกรม, `⋮` = เมนู); หน้า Paywall (ปกติ) ใช้ `ActionBar` เดียวกันใส่ไอคอน `settings-outline` ไป `/account`; ภายในการ์ดเซสชันใช้ `ellipsis-horizontal` (⋯) เป็นเมนูต่อท่า
 
 ### 1.8 ตารางสรุป: ภาพอ้างอิง → คอมโพเนนต์
 
@@ -155,7 +155,7 @@
 | `textSecondary` | `#98989F` | `#636366` | บรรทัดย่อย, คำอธิบาย, ไอคอนแท็บไม่เลือก, ป้ายแกนกราฟ (D44) |
 | `danger` | `#FF7A7A` | `#B71C1C` | `Button kind="danger"`, `ListRow danger`, ขอบ+ข้อความ error ของ `TextField`, ไอคอน `ErrorState`, ช่องยืนยันใน `delete-account` (D44) |
 | `success` | `#7EE2A8` | `#176B3B` | ประกาศไว้สำหรับสถานะสำเร็จ (D44) — ยังไม่มีหน้าที่ใช้ |
-| `warning` | `#F5C46B` | `#8A5A00` | `Badge tone="warning"` (ปัญหาการชำระเงิน BILLING_GRACE บนหน้าแรก), ไอคอนเตือนใน `delete-account`, คำเตือนในฟอร์มโปรไฟล์ |
+| `warning` | `#F5C46B` | `#8A5A00` | `Badge tone="warning"` (ปัญหาการชำระเงิน BILLING_GRACE บนหน้าแรก), ไอคอนเตือนใน `delete-account` และการ์ดแจ้งก่อนซื้อ Lifetime ของ Paywall, คำเตือนในฟอร์มโปรไฟล์ |
 | `tabBar` | `rgba(36,36,38,0.88)` | `rgba(255,255,255,0.92)` | พื้นแคปซูลแถบเมนู |
 | `switchOff` | `#39393D` | `#D1D1D6` | รางสวิตช์ตอนปิด, ราง `ProgressBar`, รางแท่งในกราฟ % |
 | `overlay` | `rgba(0,0,0,0.6)` | `rgba(0,0,0,0.35)` | ฉากหลังมืดลงเมื่อเปิด Sheet |
@@ -167,29 +167,29 @@
 
 **โหมดมืด** — ทุกสีใช้ base เป็นสีข้อความได้เลยโดยไม่ต้องปรับ
 
-| id | ชื่อ (TH / EN) | base | `accent` (ข้อความ) | `accentFill` | `onAccent` | `glow` (ทึบ 0.30) | จุดสว่างสุดของแสง | `accentSoft` | soft บนการ์ด / บนพื้น |
-|---|---|---|---|---|---|---|---|---|---|
-| `pink` (ค่าเริ่มต้น) | ชมพูม่วง / Pink | `#E5A9DC` | `#E5A9DC` | `#E5A9DC` | `#000000` | `#CA4FB7` | `#3D1837` | `rgba(157,47,140,0.45)` | `#562550` / `#47153F` |
-| `lavender` | ลาเวนเดอร์ / Lavender | `#C3B4F7` | `#C3B4F7` | `#C3B4F7` | `#000000` | `#5D36E2` | `#1C1044` | `rgba(68,41,163,0.45)` | `#2E225A` / `#1F1249` |
-| `sky` | ฟ้า / Sky | `#A9D2F7` | `#A9D2F7` | `#A9D2F7` | `#000000` | `#3691E2` | `#102C44` | `rgba(41,105,163,0.45)` | `#223F5A` / `#122F49` |
-| `mint` | มินต์ / Mint | `#9BE3CB` | `#9BE3CB` | `#9BE3CB` | `#000000` | `#4CCDA2` | `#173E31` | `rgba(45,159,121,0.45)` | `#245747` / `#144836` |
-| `lime` | ไลม์ / Lime | `#C8E59B` | `#C8E59B` | `#C8E59B` | `#000000` | `#9BD049` | `#2F3E16` | `rgba(115,162,42,0.45)` | `#435823` / `#344913` |
-| `gold` | ทอง / Gold | `#F2D58C` | `#F2D58C` | `#F2D58C` | `#000000` | `#E2B136` | `#443510` | `rgba(163,128,41,0.45)` | `#594923` / `#493A12` |
-| `peach` | พีช / Peach | `#F7C2A2` | `#F7C2A2` | `#F7C2A2` | `#000000` | `#E27736` | `#442410` | `rgba(163,87,41,0.45)` | `#593723` / `#492712` |
-| `coral` | คอรัล / Coral | `#F5A3A8` | `#F5A3A8` | `#F5A3A8` | `#000000` | `#E23641` | `#441014` | `rgba(163,41,48,0.45)` | `#592226` / `#491216` |
+| id | ชื่อ (TH / EN) | base | `accent` (ข้อความ) | `accentFill` | `onAccent` | `glow` | `glowOpacity` (เริ่มที่ 30%) | จุดสว่างสุดของแสง | `accentSoft` | soft บนการ์ด / บนพื้น |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `pink` (ค่าเริ่มต้น) | ชมพูม่วง / Pink | `#E5A9DC` | `#E5A9DC` | `#E5A9DC` | `#000000` | `#CA4FB7` | 30% | `#3D1837` | `rgba(157,47,140,0.45)` | `#562550` / `#47153F` |
+| `lavender` | ลาเวนเดอร์ / Lavender | `#C3B4F7` | `#C3B4F7` | `#C3B4F7` | `#000000` | `#5D36E2` | 30% | `#1C1044` | `rgba(68,41,163,0.45)` | `#2E225A` / `#1F1249` |
+| `sky` | ฟ้า / Sky | `#A9D2F7` | `#A9D2F7` | `#A9D2F7` | `#000000` | `#3691E2` | 30% | `#102C44` | `rgba(41,105,163,0.45)` | `#223F5A` / `#122F49` |
+| `mint` | มินต์ / Mint | `#9BE3CB` | `#9BE3CB` | `#9BE3CB` | `#000000` | `#4CCDA2` | 27% | `#15372C` | `rgba(45,159,121,0.45)` | `#245747` / `#144836` |
+| `lime` | ไลม์ / Lime | `#C8E59B` | `#C8E59B` | `#C8E59B` | `#000000` | `#9BD049` | 26% | `#283613` | `rgba(115,162,42,0.45)` | `#435823` / `#344913` |
+| `gold` | ทอง / Gold | `#F2D58C` | `#F2D58C` | `#F2D58C` | `#000000` | `#E2B136` | 27% | `#3D300F` | `rgba(163,128,41,0.45)` | `#594923` / `#493A12` |
+| `peach` | พีช / Peach | `#F7C2A2` | `#F7C2A2` | `#F7C2A2` | `#000000` | `#E27736` | 30% | `#442410` | `rgba(163,87,41,0.45)` | `#593723` / `#492712` |
+| `coral` | คอรัล / Coral | `#F5A3A8` | `#F5A3A8` | `#F5A3A8` | `#000000` | `#E23641` | 30% | `#441014` | `rgba(163,41,48,0.45)` | `#592226` / `#491216` |
 
 **โหมดสว่าง** — ทุกสีถูกทำให้เข้มลง (คงโทนเดิม) จนผ่าน 4.5:1 บนพื้นขาว/เทาอ่อน
 
-| id | base | `accent` (ข้อความ) | `accentFill` | `onAccent` | `glow` (ทึบ 0.35) | จุดสว่างสุดของแสง | `accentSoft` | soft บนการ์ด / บนพื้น |
-|---|---|---|---|---|---|---|---|---|
-| `pink` | `#E5A9DC` | `#A53293` | `#A53293` | `#FFFFFF` | `#E5A9DC` | `#EDD8EE` | `rgba(229,169,220,0.35)` | `#F6E1F3` / `#EDD8EE` |
-| `lavender` | `#C3B4F7` | `#5F38EA` | `#5F38EA` | `#FFFFFF` | `#AE9AF4` | `#DAD3F6` | `rgba(195,180,247,0.35)` | `#EAE5FC` / `#E2DCF7` |
-| `sky` | `#A9D2F7` | `#1064AF` | `#1064AF` | `#FFFFFF` | `#98C9F5` | `#D3E4F6` | `rgba(169,210,247,0.35)` | `#E1EFFC` / `#D8E7F7` |
-| `mint` | `#9BE3CB` | `#207358` | `#207358` | `#FFFFFF` | `#A7E6D1` | `#D8EEEA` | `rgba(155,227,203,0.35)` | `#DCF5ED` / `#D4EDE8` |
-| `lime` | `#C8E59B` | `#51731E` | `#51731E` | `#FFFFFF` | `#CEE8A6` | `#E5EFDB` | `rgba(200,229,155,0.35)` | `#ECF6DC` / `#E3EDD7` |
-| `gold` | `#F2D58C` | `#84630F` | `#84630F` | `#FFFFFF` | `#F4DA9A` | `#F3EAD6` | `rgba(242,213,140,0.35)` | `#FAF0D7` / `#F2E8D2` |
-| `peach` | `#F7C2A2` | `#A5470E` | `#A5470E` | `#FFFFFF` | `#F6BB98` | `#F3DFD6` | `rgba(247,194,162,0.35)` | `#FCEADE` / `#F4E1D9` |
-| `coral` | `#F5A3A8` | `#BD141F` | `#BD141F` | `#FFFFFF` | `#F49A9F` | `#F3D3D8` | `rgba(245,163,168,0.35)` | `#FCDFE1` / `#F3D6DB` |
+| id | base | `accent` (ข้อความ) | `accentFill` | `onAccent` | `glow` | `glowOpacity` (เริ่มที่ 35%) | จุดสว่างสุดของแสง | `accentSoft` | soft บนการ์ด / บนพื้น |
+|---|---|---|---|---|---|---|---|---|---|
+| `pink` (ค่าเริ่มต้น) | `#E5A9DC` | `#A53293` | `#A53293` | `#FFFFFF` | `#E5A9DC` | 34% | `#EED9EE` | `rgba(229,169,220,0.35)` | `#F6E1F3` / `#EDD8EE` |
+| `lavender` | `#C3B4F7` | `#633CEA` | `#633CEA` | `#FFFFFF` | `#AE9AF4` | 24% | `#E2DDF6` | `rgba(195,180,247,0.35)` | `#EAE5FC` / `#E2DCF7` |
+| `sky` | `#A9D2F7` | `#1064AF` | `#1064AF` | `#FFFFFF` | `#98C9F5` | 35% | `#D3E4F6` | `rgba(169,210,247,0.35)` | `#E1EFFC` / `#D8E7F7` |
+| `mint` | `#9BE3CB` | `#207358` | `#207358` | `#FFFFFF` | `#A7E6D1` | 35% | `#D8EEEA` | `rgba(155,227,203,0.35)` | `#DCF5ED` / `#D4EDE8` |
+| `lime` | `#C8E59B` | `#51731E` | `#51731E` | `#FFFFFF` | `#CEE8A6` | 35% | `#E5EFDB` | `rgba(200,229,155,0.35)` | `#ECF6DC` / `#E3EDD7` |
+| `gold` | `#F2D58C` | `#84630F` | `#84630F` | `#FFFFFF` | `#F4DA9A` | 35% | `#F3EAD6` | `rgba(242,213,140,0.35)` | `#FAF0D7` / `#F2E8D2` |
+| `peach` | `#F7C2A2` | `#A5470E` | `#A5470E` | `#FFFFFF` | `#F6BB98` | 35% | `#F3DFD6` | `rgba(247,194,162,0.35)` | `#FCEADE` / `#F4E1D9` |
+| `coral` | `#F5A3A8` | `#C11520` | `#C11520` | `#FFFFFF` | `#F49A9F` | 28% | `#F3D9DE` | `rgba(245,163,168,0.35)` | `#FCDFE1` / `#F3D6DB` |
 
 ความหมายของแต่ละ key ใน `Palette`:
 
@@ -198,7 +198,7 @@
 | `accent` | `text` | ข้อความ/ไอคอนสีหลัก, หัวข้อ hero, ปุ่ม `plain`, ไอคอน `IconButton`, ขอบ chip ที่เลือก |
 | `accentFill` | `fill` | พื้นปุ่ม `primary`, `CircleButton`, รางสวิตช์ตอนเปิด, ติ๊กเซ็ต, แถบความคืบหน้า, เส้น/แท่งกราฟ |
 | `onAccent` | `onFill` | ข้อความ/ไอคอนบนพื้น `accentFill` |
-| `glow`, `glowOpacity` | `glow`, `glowOpacity` | `GlowBackground` เท่านั้น |
+| `glow`, `glowOpacity` | `glow`, `glowOpacity` | `GlowBackground` เท่านั้น (`glowOpacity` เป็นค่าที่ผ่านการลดจนข้อความรองบนแสงผ่าน 4.5:1 แล้ว ไม่ใช่ค่าคงที่ 0.30/0.35) |
 | `accentSoft` | `soft` | พื้นแท็บ/chip/segment/แผนราคาที่เลือก |
 | `accentSoftSurfaces` | `softSurfaces` | สีทึบจริงของ `accentSoft` บนการ์ดและพื้น (ใช้ตรวจ contrast เท่านั้น) |
 | `chart` | `chartColors()` | สีชุดของกราฟสัดส่วน |
@@ -213,8 +213,8 @@
 
 **โหมดมืด**
 
-1. `glow` = HSL(H ของ base, S จำกัด 0.35–0.75, L 0.55), `glowOpacity` = 0.30
-2. `peak` = `composite(glow, 0.30, #000000)` (จุดสว่างสุดของแสง = พื้นที่หัวข้อทับอยู่)
+1. `glow` = HSL(H ของ base, S จำกัด 0.35–0.75, L 0.55), `glowOpacity` = `glowOpacityFor(glow, 0.30)` (ดูกฎด้านล่าง)
+2. `peak` = `composite(glow, glowOpacity, #000000)` (จุดสว่างสุดของแสง = พื้นที่หัวข้อทับอยู่)
 3. `softBase` = HSL(H, S จำกัด 0.25–0.60, L 0.40) → `soft` = `softBase` ที่ alpha 0.45, `softSurfaces` = soft วางบน `card` และ `background`
 4. `text` = `ensureContrast(base, [background, card, elevated, peak, ...softSurfaces], 4.5)`
 5. `fill` = `ensureContrast(base, [card], 3)`
@@ -222,23 +222,26 @@
 
 **โหมดสว่าง**
 
-1. `glow` = HSL(H, S จำกัด 0.40–0.85, L 0.78), `glowOpacity` = 0.35
-2. `peak` = `composite(glow, 0.35, #F2F2F7)`
+1. `glow` = HSL(H, S จำกัด 0.40–0.85, L 0.78), `glowOpacity` = `glowOpacityFor(glow, 0.35)` (ดูกฎด้านล่าง)
+2. `peak` = `composite(glow, glowOpacity, #F2F2F7)`
 3. `soft` = base ที่ alpha 0.35, `softSurfaces` = soft วางบน `card` และ `background`
 4. `text` = `ensureContrast(base, [background, card, elevated, peak, ...softSurfaces], 4.5)` (ทำให้เข้มลง)
 5. `fill` = `ensureContrast(text, [card, background], 3)` (ในทางปฏิบัติ = `text`)
 6. `onFill` = `onColor(fill)`
 
-**พื้นผิวที่รับประกัน** (`contrastReport()` + `passesAA()` ทุกข้อต้องผ่าน):
+**กฎความทึบของแสงเรือง `glowOpacityFor(glow, start, mode)`** (ใหม่, D58) — เริ่มที่ `start` (30% มืด / 35% สว่าง ตาม SPEC "~20–30%") แล้วลดทีละ 1% (`GLOW_OPACITY_STEP` = 0.01) ตราบที่ contrast ของ `textSecondary` เทียบกับ `composite(glow, opacity, background)` ยัง < 4.5 (และยังไม่ถึงเพดานล่าง `GLOW_OPACITY_MIN` = 0.12) เหตุผล: บรรทัดย่อยของ `HeroTitle` เป็นสีเทาและวางบนจุดสว่างสุดของแสง ถ้าแสงสว่างเกินไป (เช่นเขียวมินต์/ไลม์/ทองโหมดมืด) สีเทาจะอ่านยาก; ค่า `glowOpacity` ที่ได้ถูกใช้ทั้งใน `peak` (ตรวจสีหลัก) และใน `GlowBackground` (วาดจริง) ผลที่พบจริง: พาเลต 8 สี 24–35% (ตารางข้อ 2.2), สีเองที่สุ่มทดสอบต่ำสุด 22%
+
+**พื้นผิวที่รับประกัน** (`contrastReport()` มี 9 ค่า และ `passesAA()` ต้องผ่านทั้ง 9):
 
 | เงื่อนไข | เกณฑ์ |
 |---|---|
-| `accent` บน `background`, บน `card` (และบน `elevated` ซึ่งอยู่ในรายการพื้นของขั้นที่ 4) | ≥ 4.5 |
-| `accent` บนจุดสว่างสุดของแสงเรือง (หัวข้อ hero) | ≥ 4.5 (เข้มกว่าเกณฑ์ข้อความใหญ่ 3:1) |
-| `accent` บน `accentSoft` ที่วางบนการ์ด/พื้น (chip/แท็บ/segment ที่เลือก) | ≥ 4.5 |
-| `onAccent` บน `accentFill` (ข้อความบนปุ่ม) | ≥ 4.5 |
-| `accentFill` บน `card` (ปุ่ม สวิตช์ กราฟ = องค์ประกอบกราฟิก) | ≥ 3 |
-| `textSecondary` บน `card` และบน `elevated`/`inputBg` | ≥ 4.5 |
+| `accent` บน `background`, บน `card` — `accentOnBackground` / `accentOnCard` (และบน `elevated` ซึ่งอยู่ในรายการพื้นของขั้นที่ 4) | ≥ 4.5 |
+| `accent` บนจุดสว่างสุดของแสงเรือง (หัวข้อ hero) — `heroOnGlow` | ≥ 4.5 (เข้มกว่าเกณฑ์ข้อความใหญ่ 3:1) |
+| `textSecondary` บนจุดสว่างสุดของแสงเรือง (บรรทัดย่อย hero) — `secondaryOnGlow` (ใหม่) | ≥ 4.5 (ได้จากการลด `glowOpacity` ไม่ใช่จากการเปลี่ยนสีเทา) |
+| `accent` บน `accentSoft` ที่วางบนการ์ด/พื้น (chip/แท็บ/segment ที่เลือก) — `accentOnSoft` | ≥ 4.5 |
+| `onAccent` บน `accentFill` (ข้อความบนปุ่ม) — `onAccentOnFill` | ≥ 4.5 |
+| `accentFill` บน `card` (ปุ่ม สวิตช์ กราฟ = องค์ประกอบกราฟิก) — `fillOnCard` | ≥ 3 (`AA_GRAPHIC`) |
+| `textSecondary` บน `card` — `secondaryOnCard` และบน `elevated`/`inputBg` — `secondaryOnElevated` | ≥ 4.5 |
 
 **ขั้นตอนเลือกสีเอง** (`src/features/appearance/AppearancePickers.tsx`)
 
@@ -253,11 +256,11 @@
 
 | ค่าที่กรอก | โหมด | `accent` | `accentFill` | `onAccent` | หมายเหตุ |
 |---|---|---|---|---|---|
-| `#FFFF00` | มืด / สว่าง | `#FFFF00` / `#707000` | `#FFFF00` / `#707000` | `#000000` / `#FFFFFF` | สีสว่างมากถูกทำให้เข้มในโหมดสว่าง |
-| `#0000FF` | มืด / สว่าง | `#8585FF` / `#0000CC` | `#4D4DFF` / `#0000CC` | `#FFFFFF` / `#FFFFFF` | สีเข้มมากในโหมดมืด: ข้อความกับปุ่มได้คนละระดับ (4.5 vs 3) |
+| `#FFFF00` | มืด / สว่าง | `#FFFF00` / `#707000` | `#FFFF00` / `#707000` | `#000000` / `#FFFFFF` | สีสว่างมากถูกทำให้เข้มในโหมดสว่าง; แสงเรืองโหมดมืดจางลงเหลือ 22% |
+| `#0000FF` | มืด / สว่าง | `#8585FF` / `#0000CC` | `#4D4DFF` / `#0000CC` | `#FFFFFF` / `#FFFFFF` | สีเข้มมากในโหมดมืด: ข้อความกับปุ่มได้คนละระดับ (4.5 vs 3); แสงเรืองโหมดสว่างจางลงเหลือ 22% |
 | `#123456` | มืด / สว่าง | `#75ACE2` / `#123456` | `#256AAF` / `#123456` | `#FFFFFF` / `#FFFFFF` | |
 
-> ข้อสังเกต: สีไม่มีโทน (เทา ขาว ดำ) มี H = 0 จึงได้แสงเรืองโทนแดงอมชมพู (`#B46464` มืด / `#DDB0B0` สว่าง) เพราะสูตรบังคับ S ขั้นต่ำของแสง — เป็นพฤติกรรมปัจจุบันของโค้ด
+> ข้อสังเกต: สีไม่มีโทน (เทา ขาว ดำ) มี H = 0 จึงได้แสงเรืองโทนแดงอมชมพู (`#B46464` มืด ทึบ 30% / `#DDB0B0` สว่าง ทึบ 34%) เพราะสูตรบังคับ S ขั้นต่ำของแสง — เป็นพฤติกรรมปัจจุบันของโค้ด
 
 ### 2.4 สีกราฟ (`chartColors(base, mode, 10)`)
 
@@ -290,19 +293,19 @@
 | dp | 2 | 4 | 8 | 12 | 16 | 24 | 32 | 48 |
 
 - `MIN_TOUCH` = **48** ทั้ง iOS/Android (SPEC A2, D07) — ใช้เป็นขนาดขั้นต่ำของทุกสิ่งที่แตะได้
-- `motion` = `{ fast: 150, normal: 250, slow: 400 }` ms — ประกาศไว้เป็นกรอบเวลา ปัจจุบันคอมโพเนนต์ยังใส่ค่าตรง (ดูข้อ 6.6)
+- `motion` = `{ fast: 150, normal: 250, slow: 400 }` ms — ประกาศไว้เป็นกรอบเวลา ปัจจุบันไม่มีโค้ดอ้าง `motion.*` คอมโพเนนต์ใส่ค่าตรง (ดูข้อ 6.6)
 
 ### 2.6 สีแบรนด์ของปุ่มล็อกอิน (`BRAND`)
 
-ห้ามเปลี่ยนตามสีหลัก (SPEC B10 "ใช้ปุ่มตามแนวทางแบรนด์", D32) ใช้ใน `src/features/auth/SignInButtons.tsx`
+ห้ามเปลี่ยนตามสีหลัก (SPEC B10 "ใช้ปุ่มตามแนวทางแบรนด์", D32) ใช้ใน `src/features/auth/SignInButtons.tsx` ปุ่ม Google ใช้ **ชุดสีตรงข้ามกับโหมดแอป** เพื่อให้เด่นเท่าปุ่ม Apple (D51, Guideline 4.8): พื้นมืดใช้ปุ่ม Google แบบสว่าง พื้นสว่างใช้แบบมืด (ทั้งสองเป็นสไตล์ทางการของ Google)
 
-| ปุ่ม | โหมดมืด | โหมดสว่าง |
+| ปุ่ม | โหมดมืดของแอป | โหมดสว่างของแอป |
 |---|---|---|
-| Continue with Google | พื้น `#131314` ขอบ `#8E918F` ตัวอักษร `#E3E3E3` | พื้น `#FFFFFF` ขอบ `#747775` ตัวอักษร `#1F1F1F` |
+| Continue with Google (`BRAND.google`) | ใช้ชุด `light`: พื้น `#FFFFFF` ขอบ `#747775` ตัวอักษร `#1F1F1F` | ใช้ชุด `dark`: พื้น `#131314` ขอบ `#8E918F` ตัวอักษร `#E3E3E3` |
 | โลโก้ G | น้ำเงิน `#4285F4` เขียว `#34A853` เหลือง `#FBBC05` แดง `#EA4335` | เหมือนกัน |
-| Sign in with Apple | พื้น `#FFFFFF` ตัวอักษร `#000000` | พื้น `#000000` ตัวอักษร `#FFFFFF` |
+| Sign in with Apple (`BRAND.apple`) | พื้น `#FFFFFF` ตัวอักษร `#000000` | พื้น `#000000` ตัวอักษร `#FFFFFF` |
 
-ทั้งสองปุ่มสูง 52 มุม `pill` กว้างเต็มแถว วางซ้อนแนวตั้ง Google ก่อน Apple (D32) บน iOS ปุ่ม Apple เป็น `AppleAuthenticationButton` ของระบบ (สไตล์ WHITE บนพื้นมืด / BLACK บนพื้นสว่าง) ส่วน Android วาดเองตามสีในตาราง
+ทั้งสองปุ่มสูง 52 (`HEIGHT`) มุม `pill` กว้างเต็มแถว วางซ้อนแนวตั้ง Google ก่อน Apple (D32) บน iOS ปุ่ม Apple เป็น `AppleAuthenticationButton` ชนิด `SIGN_IN` ของระบบ (สไตล์ WHITE บนพื้นมืด / BLACK บนพื้นสว่าง, `cornerRadius` = `radius.pill`) ส่วน Android (และตอนกำลังโหลด) วาดเองตามสีในตาราง สคริปต์ `npm run contrast` ตรวจทั้งสองชุดของ Google และสองชุดของ Apple ผ่าน ≥ 4.5 (Google ชุดมืด 14.47, ชุดสว่าง 16.48; Apple 21.00 ทั้งสองชุด)
 
 ### 2.7 ฟอนต์และขนาดตัวอักษร (`src/theme/typography.ts`)
 
@@ -359,7 +362,7 @@
 ### 3.2 `GlowBackground` — แสงเรือง
 
 - **หน้าที่:** พื้นหลังเต็มจอสี `background` + แสงเรืองวงรีสีหลักด้านบน (ข้อ 1.2) และ crossfade เมื่อสีหลัก/โหมดเปลี่ยน
-- **props:** ไม่มี (อ่าน `glow`, `glowOpacity`, `mode`, `background` จากพาเลต)
+- **props:** ไม่มี (อ่าน `glow`, `glowOpacity`, `mode`, `background` จากพาเลต — `glowOpacity` คือค่าที่ผ่านกฎลดความทึบแล้ว ข้อ 2.3)
 - **a11y:** ตกแต่งล้วน `pointerEvents="none"` ไม่มีเนื้อหาให้โปรแกรมอ่านหน้าจอ; `testID="glow-background"` (เทสต์ `__tests__/app/gate.test.tsx` ตรวจว่า Paywall มีแสง)
 - **รายละเอียด:** id ของ gradient สร้างจาก `useId()` เพื่อไม่ซ้ำกันบนเว็บ (ทุกหน้าอยู่ใน DOM เดียว)
 - **ใช้ที่:** ผ่าน `Screen` เท่านั้น (`glow` ค่าเริ่มต้น `true`) — ไม่ต้องวางเองในหน้าจอ
@@ -377,7 +380,7 @@
 - **หน้าที่:** หัวของหน้าที่ซ้อนเข้ามา: ปุ่มย้อนกลับ + ชื่อหน้าสีหลักตรงกลาง + ช่องขวา
 - **props:** `title?`, `right?` (เช่น `IconButton` ⋮), `onBack?` (ค่าเริ่มต้น `router.back()` หรือกลับ `/` ถ้าย้อนไม่ได้), `backIcon` = `chevron-back` | `close`
 - **a11y:** ปุ่มย้อนมี label `a11y.back` / `a11y.close`; ชื่อหน้า `accessibilityRole="header"`, ตัดบรรทัดเดียว; สูง ≥ 52; ช่องขวากว้าง ≥ 48
-- **ใช้ที่:** ทุกหน้าที่ซ้อนเข้ามา (`week`, `session/[id]`, `session/summary/[id]`, `routine/[id]`, `program/[id]`, `program/templates`, `history/*`, `exercises/*`, `stats/exercise/[id]`, `profile`, `account`, `legal/[doc]`, `references`, `delete-account`, onboarding ขั้น 2–3 ผ่าน `showBack` ของ `OnboardingFrame`); หน้า `login` ใช้ `backIcon="close"` — หน้าแท็บ 4 หน้า, onboarding ขั้น 1 และ Paywall ไม่มีปุ่มย้อน
+- **ใช้ที่:** ทุกหน้าที่ซ้อนเข้ามา (`week`, `session/[id]`, `session/summary/[id]`, `routine/[id]`, `program/[id]`, `program/templates`, `history/*`, `exercises/*`, `stats/exercise/[id]`, `profile`, `account`, `legal/[doc]`, `references`, `delete-account`, onboarding ขั้น 2–3 ผ่าน `showBack` ของ `OnboardingFrame`); หน้า `login` ใช้ `backIcon="close"` และ `paywall` ใช้ `backIcon="close"` เฉพาะตอนเข้ามาเพื่ออัปเกรดเป็น Lifetime (`model.upgrade`, เช่นจากปุ่ม "Get lifetime" ในตั้งค่า) — หน้าแท็บ 4 หน้า, onboarding ขั้น 1 และ Paywall ปกติไม่มีปุ่มย้อน (Paywall ปกติใช้ `ActionBar` ไอคอนตั้งค่าแทน)
 
 ### 3.4 `HeroTitle` — หัวข้อใหญ่
 
@@ -410,11 +413,12 @@
 
 `BigRow`
 
-- **หน้าที่:** แถวใหญ่สไตล์ภาพอ้างอิง: ข้อความใหญ่ตัวบางชิดซ้าย + `below` (เช่น `WeekdayDots`) + `right` (ตัวควบคุมชิดขวา)
-- **props:** `title`, `below?`, `right?`, `onPress?`, `accessibilityLabel?` (ค่าเริ่มต้น = `title`), `accessibilityHint?`, `dimmed?` (ข้อความเป็นสีเทา ใช้กับ routine ที่ปิดอยู่), `testID`
-- **a11y:** สูง ≥ 104; ข้อความตัด 2 บรรทัด; มี `onPress` = ปุ่มเดียวทั้งแถว
-- **กฎ:** ถ้า `right` เป็นตัวควบคุมที่แตะได้ (`Toggle`, `CircleButton`) หรือ `below` เป็น `WeekdayDots` แบบแตะได้ **ห้ามใส่ `onPress`** ที่ตัวแถว (ปุ่มซ้อนปุ่ม) — ใช้ `onPress` เฉพาะแถวที่เป็นลิงก์และ `right` เป็นไอคอน chevron
-- **ใช้ที่:** `(tabs)/index` (routine ของวันนี้ + `CircleButton`), `(tabs)/programs` (ตารางสัปดาห์ + โปรแกรม, กดได้), `week` (routine + `WeekdayDots` แตะได้ + `Toggle`), `program/[id]`, `AppearancePreview`
+- **หน้าที่:** แถวใหญ่สไตล์ภาพอ้างอิง: ข้อความใหญ่ตัวบางชิดซ้าย + `below` (เช่น `WeekdayDots` แบบอ่านอย่างเดียว) + `right` (ตัวควบคุมชิดขวา) + `footer` (เต็มความกว้างการ์ดใต้แถว)
+- **props:** `title`, `below?`, `footer?`, `right?`, `onPress?`, `accessibilityLabel?` (ค่าเริ่มต้น = `title`), `accessibilityHint?`, `dimmed?` (ข้อความเป็นสีเทา ใช้กับ routine ที่ปิดอยู่), `testID`
+- **`footer`:** เนื้อหาที่ต้องกว้างเต็มการ์ดใต้ข้อความ (padding ซ้ายขวา 12, ล่าง 12) — ใช้กับ `WeekdayDots` แบบแตะได้เพื่อให้ปุ่มวันกว้างเท่ากันและไม่มีช่องว่างที่กดไม่ติด; เมื่อมี `footer` ความสูงขั้นต่ำของส่วนข้อความลดเป็น 72 (padding ล่าง 4) เพราะ `footer` เติมความสูงต่อ
+- **a11y:** สูง ≥ 104 (≥ 72 + `footer` เมื่อมี `footer`); ข้อความตัด 2 บรรทัด; มี `onPress` = ปุ่มเดียวทั้งแถว
+- **กฎ:** ถ้า `right` เป็นตัวควบคุมที่แตะได้ (`Toggle`, `CircleButton`) หรือ `below`/`footer` เป็น `WeekdayDots` แบบแตะได้ **ห้ามใส่ `onPress`** ที่ตัวแถว (ปุ่มซ้อนปุ่ม) — ใช้ `onPress` เฉพาะแถวที่เป็นลิงก์และ `right` เป็นไอคอน chevron
+- **ใช้ที่:** `(tabs)/index` (routine ของวันนี้ + `CircleButton`), `(tabs)/programs` (ตารางสัปดาห์ + โปรแกรม, กดได้), `week` (routine + `WeekdayDots` แตะได้ใน `footer` + `Toggle`), `program/[id]`, `AppearancePreview`
 
 `SectionTitle`
 
@@ -424,11 +428,11 @@
 
 ### 3.6 `WeekdayDots` — แถวตัวอักษรวัน
 
-- **หน้าที่:** ตัวอักษรย่อ 7 วันใต้ข้อความของแถว วันที่เกี่ยวข้องเป็นสีหลักตัวหนาและมีจุดด้านบน (ข้อ 1.5)
-- **props:** `active` (เลขวัน 0 = อาทิตย์ … 6 = เสาร์), `weekStart` (ค่าเริ่มต้น 1 = จันทร์; ตามการตั้งค่าผู้ใช้), `dimmed?` (วันที่เปิดเป็นสีเทาแทนสีหลัก), `onToggleDay?` (ใส่แล้วแตะสลับวันได้), `label?` (ชื่อแถว ใช้ประกอบคำอ่าน), `highlightDay?` (ขีดเส้นใต้วันนี้ — ยังไม่มีหน้าที่ใช้)
+- **หน้าที่:** ตัวอักษรย่อ 7 วันใต้ข้อความของแถว วันที่เกี่ยวข้องเป็นสีหลักตัวหนาและมีจุดด้านบน (ข้อ 1.5) มี 2 โหมด: อ่านอย่างเดียว (กลุ่มชิดซ้าย ห่าง 8 dp) และแตะสลับวันได้ (เต็มความกว้าง ช่องละ 1/7)
+- **props:** `active` (เลขวัน 0 = อาทิตย์ … 6 = เสาร์), `weekStart` (ค่าเริ่มต้น 1 = จันทร์; ตามการตั้งค่าผู้ใช้), `dimmed?` (วันที่เปิดเป็นสีเทาแทนสีหลัก), `onToggleDay?` (ใส่แล้วแตะสลับวันได้), `label?` (ชื่อแถว ใช้ประกอบคำอ่าน), `highlightDay?` (ขีดเส้นใต้วันนี้ — ประกาศไว้ ยังไม่มีหน้าที่ใช้)
 - **a11y:**
   - แบบอ่านอย่างเดียว: ทั้งแถวเป็นองค์ประกอบเดียว อ่านสรุปเช่น "Weekly schedule. Monday: scheduled, Tuesday: not scheduled, …" (`a11y.weekdayOn` / `a11y.weekdayOff` + ชื่อวันเต็ม)
-  - แบบแตะได้: แต่ละวันเป็น `checkbox` มี `checked` และ label "ชื่อแถว, ชื่อวันเต็ม" พื้นที่แตะ 32 × 32 + `hitSlop` บนล่าง 12 ซ้ายขวา 4
+  - แบบแตะได้ (`onToggleDay`): แต่ละวันเป็น `checkbox` มี `checked` และ label "ชื่อแถว, ชื่อวันเต็ม"; **7 ช่องกว้างเท่ากันเต็มความกว้างแถว (`flex: 1`) สูง ≥ 48 (`MIN_TOUCH`)** จึงไม่มีช่องว่างที่กดไม่ติดและไม่ต้องใช้ `hitSlop`; ตัวอักษร/จุดอยู่กึ่งกลางช่อง ควรวางใน `footer` ของ `BigRow` (ไม่ใช่ `below`) เพื่อให้กว้างเต็มการ์ด
   - ไม่ใช้สีอย่างเดียวบอกสถานะ: วันที่เปิดมีจุด + ตัวหนา + สีหลัก
 - **ใช้ที่:** `(tabs)/programs` (อ่านอย่างเดียว), `week` (แตะได้ `testID="weekday-<n>"`), `AppearancePreview`
 
@@ -468,6 +472,7 @@
 
 - **หน้าที่:** ตัวเลือกแคปซูลแบบเลือกหนึ่ง (`radio`) หรือหลายตัว (`checkbox`)
 - **props:** `label`, `selected`, `onPress`, `role` (ค่าเริ่มต้น `radio`), `accessibilityLabel?`, `style`, `testID`
+- **ขนาด:** สูง ≥ 48 (`MIN_TOUCH`), padding ข้าง 16, ขอบ 1, มุม `pill`
 - **สี:** เลือก = พื้น `accentSoft` ขอบ+ตัวอักษร `accent`; ไม่เลือก = พื้น `card` ขอบ `separator` ตัวอักษร `text`
 - **a11y:** `radio` ใช้ state `selected`, `checkbox` ใช้ `checked`; ตัวที่ครอบกลุ่มต้องใส่ `accessibilityRole="radiogroup"` + label (เช่น `LanguagePicker`, ตัวกรองกรุ๊ปในสถิติ)
 - **ใช้ที่:** ภาษา, โปรแกรมทั้งสัปดาห์ (`week`), ตัวกรองกรุ๊ป (`stats`), ตัวกรองคลังท่า (`ExerciseFilters`), ประเภท routine, ความหนัก (session summary), ฟอร์มโปรไฟล์, ตั้งค่า, เซสชัน
@@ -476,6 +481,7 @@
 
 - **หน้าที่:** ตัวสลับแคปซูล 2–4 ตัวเลือกกว้างเท่ากัน
 - **props:** `options` (`{ value, label }[]`), `value`, `onChange`, `label` (ชื่อกลุ่มสำหรับโปรแกรมอ่านหน้าจอ), `style`
+- **ขนาด:** แต่ละตัวสูง ≥ 48 (`MIN_TOUCH`) กว้างเท่ากัน (`flex: 1`) ข้อความบรรทัดเดียว; กรอบนอก padding 4 จึงสูงรวม ≥ 56
 - **สี:** กรอบ `card` + ขอบ hairline; ตัวที่เลือกพื้น `accentSoft` ตัวอักษร `accent`; ตัวอื่นตัวอักษร `textSecondary`
 - **a11y:** `radiogroup` + แต่ละตัว `radio` state `selected`; `testID="segment-<value>"`
 - **ใช้ที่:** ธีม (`ThemePicker`), วันเริ่มสัปดาห์ (`week`), ช่วงเวลา/มุมมอง/ตัวชี้วัด (`stats`), หน่วย (`settings`), ฟอร์มโปรไฟล์
@@ -560,7 +566,7 @@
 
 | ไฟล์ | คอมโพเนนต์ | ภาษาภาพ |
 |---|---|---|
-| `src/features/session/SetTick.tsx` | `SetTick` | วงกลม 48 ขอบ 2: ยังไม่เสร็จ = ขอบ `textSecondary`; เสร็จ = พื้น+ขอบ `accentFill` และ ✓ สี `onAccent`; role `checkbox`; haptic success (ติ๊ก) / selection (ยกเลิก); เด้ง 1 → 1.25 (120 ms) → 1 (160 ms) ปิดเมื่อลดการเคลื่อนไหว |
+| `src/features/session/SetTick.tsx` | `SetTick` | วงกลม 48 ขอบ 2: ยังไม่เสร็จ = ขอบ `textSecondary`; เสร็จ = พื้น+ขอบ `accentFill` และ ✓ สี `onAccent`; role `checkbox`; haptic success (ติ๊ก) / selection (ยกเลิก); เด้ง 1 → 1.25 (120 ms) → 1 (160 ms) **เฉพาะตอนติ๊ก** (ตอนยกเลิกไม่เด้ง) และข้ามเมื่อผู้ใช้เปิดลดการเคลื่อนไหว; `hitSlop` 4 |
 | `src/features/session/RestTimerBar.tsx` | `RestTimerBar` | แถบลอยล่าง พื้น `elevated` มุม 28 ขอบ hairline: "พัก m:ss" headline สีหลัก + `ProgressBar` + ปุ่ม plain "+15 วิ" + ปุ่ม secondary "ข้าม/ตกลง"; live region `polite`; haptic warning เมื่อครบ |
 | `src/features/appearance/AppearancePickers.tsx` | `LanguagePicker`, `ThemePicker`, `AccentPicker`, `AppearancePreview` | Chip / SegmentedControl / วงสี 36 ในพื้นที่แตะ 48 (เลือก = วงแหวนสี `text`) / พรีวิวหัวข้อ + `BigRow` + `WeekdayDots` + `Toggle` |
 | `src/features/auth/SignInButtons.tsx` | `GoogleButton`, `AppleButton` | สี `BRAND` (ข้อ 2.6) |
@@ -589,11 +595,11 @@
 |---|---|---|---|
 | **วันนี้** `src/app/(app)/(tabs)/index.tsx` | หัวข้อสีหลักใหญ่ + แถวการ์ด routine (ปุ่มวงกลม "เริ่ม" แทนสวิตช์) | `HeroTitle` "วันนี้: …" + บรรทัดย่อย "วันที่ · n ท่า · ~นาที" + `Badge` วันสิ้นสุดทดลอง (B7) → `ActionBar` (+ เริ่มเซสชันเปล่า, ⋮ เมนู) → `CardGroup` ของ `BigRow` ต่อ routine + `CircleButton` "เริ่ม" → `SectionTitle` "วันนี้อยากทำอะไร" + `CardGroup` ของ `ListRow` (สลับ routine / เริ่มเซสชันเปล่า / วันนี้พัก) → `Card` กล้ามเนื้อวันนี้ (แคปซูลขอบสีหลักเมื่อทำแล้ว) → การ์ดแคลอรี่ 2 ใบ (แตะเปิด `NumberPad`) | [en มืด](screenshots/en-dark-07-today.jpg) · [th มืด](screenshots/th-dark-07-today.jpg) · [en สว่าง](screenshots/en-light-07-today.jpg) |
 | **โปรแกรม** `src/app/(app)/(tabs)/programs.tsx` | ภาษาภาพทั่วไปของ DS | `HeroTitle` + `ActionBar` (+ สร้างโปรแกรม, ⋮) → `BigRow` "ตารางประจำสัปดาห์" + `WeekdayDots` อ่านอย่างเดียว + chevron (กดไป `/week`) → `BigRow` ต่อโปรแกรม + `Badge` "Active" → ปุ่ม secondary "เริ่มจากเทมเพลต" + ปุ่ม plain "คลังท่า" | [en มืด](screenshots/en-dark-08-programs.jpg) |
-| **ตารางประจำสัปดาห์** `src/app/(app)/week.tsx` | แถว routine พร้อมแถวจุดวัน + สวิตช์เปิด/ปิด | `StackHeader` + `HeroTitle compact` → `Chip` เลือกโปรแกรมทั้งสัปดาห์ → `SegmentedControl` วันเริ่มสัปดาห์ → `CardGroup` ของ `BigRow` ต่อ routine: `WeekdayDots` แตะเปิด/ปิดวันได้ + `Toggle` ชิดขวา; routine ที่ปิด → `dimmed` ทั้งชื่อและจุดวัน | [en มืด](screenshots/en-dark-09-week.jpg) |
+| **ตารางประจำสัปดาห์** `src/app/(app)/week.tsx` | แถว routine พร้อมแถวจุดวัน + สวิตช์เปิด/ปิด | `StackHeader` + `HeroTitle compact` → `Chip` เลือกโปรแกรมทั้งสัปดาห์ → `SegmentedControl` วันเริ่มสัปดาห์ → `CardGroup` ของ `BigRow` ต่อ routine: `WeekdayDots` แตะเปิด/ปิดวันได้ (วางใน `footer` เต็มความกว้างการ์ด ช่องละ 1/7 สูง 48) + `Toggle` ชิดขวา; routine ที่ปิด → `dimmed` ทั้งชื่อและจุดวัน | [en มืด](screenshots/en-dark-09-week.jpg) |
 | **เซสชัน** `src/app/(app)/session/[id].tsx` | พื้นดำ ติ๊กเซ็ตสีหลัก | `Screen glow={false}` (ดำล้วน ไม่มีแสง) + `StackHeader` ชื่อ routine + ⋮ → เวลาที่ผ่านไป + "เสร็จ x จาก y เซ็ต" (headline สีหลัก) + `ProgressBar` → `Card` ต่อท่า: ตาราง เซ็ต / ครั้งก่อน / เป้าหมาย (สีหลัก แตะแก้) / ช่องน้ำหนัก×ครั้ง (`inputBg` มุม 14 แตะเปิด `NumberPad`) / `SetTick` → `RestTimerBar` ลอยล่าง | [th มืด](screenshots/th-dark-10-session.jpg) · [en มืด หลังติ๊ก](screenshots/en-dark-11-session-ticked.jpg) |
 | **สถิติ** `src/app/(app)/(tabs)/stats.tsx` | กราฟสีหลักบนการ์ดเทาเข้ม | `HeroTitle` (บรรทัดย่อย = กรุ๊ปที่กรอง) → `SegmentedControl` วัน/สัปดาห์/เดือน/ปี + `IconButton` ย้อน/ถัดไป → `Chip` กรองกรุ๊ป (เลื่อนแนวนอน) → `Card` สรุป → `SegmentedControl` มุมมอง + ตัวชี้วัด → `Card` โดนัท (`p.chart`) + แท่ง % → `CardGroup` ประวัติ/ความแข็งแรง/พลังงาน → `Card` กราฟแท่งแคลอรี่/เส้นน้ำหนักตัว (`accentFill`) → `Disclaimer` | [en มืด](screenshots/en-dark-13-stats.jpg) · [en สว่าง](screenshots/en-light-13-stats.jpg) |
-| **ตั้งค่า** `src/app/(app)/(tabs)/settings.tsx` | ภาษาภาพทั่วไปของ DS | `HeroTitle` แบบเต็ม → `SectionTitle` + `CardGroup` รวมตัวเลือกภาษา (`Chip`) ธีม (`SegmentedControl`) สีหลัก (`AccentPicker`) → หน่วยและการฝึก (`SegmentedControl`, `Toggle`, `Stepper`) → `Disclaimer` | [en มืด](screenshots/en-dark-14-settings.jpg) |
-| **Paywall** `src/app/paywall.tsx` | พื้นดำ + แสงเรืองด้านบน | `Screen` มีแสง + header `ActionBar` (ไอคอน `settings-outline` → `/account`) → `HeroTitle compact` (ข้อความตาม eligibility B6) → `CardGroup` รายการฟีเจอร์ (`ListRow` ไอคอนสีหลัก) → แผนราคา 2 ใบ (radio; เลือก = พื้น `accentSoft` ขอบ `accent`; มุม 20; `Badge` ทดลองฟรี; ราคาเต็มจากสโตร์บรรทัดหนึ่ง รอบการชำระอีกบรรทัด D45) → ปุ่ม primary → ข้อความเปิดเผยข้อมูล B5 (caption) → Restore (secondary) → จัดการสมาชิก/Terms/Privacy/แหล่งอ้างอิง (plain) | [en มืด](screenshots/en-dark-04-paywall.jpg) · [th มืด](screenshots/th-dark-04-paywall.jpg) |
+| **ตั้งค่า** `src/app/(app)/(tabs)/settings.tsx` | ภาษาภาพทั่วไปของ DS | `HeroTitle` แบบเต็ม → `SectionTitle` + `CardGroup` เรียงเป็นหมวด: รูปลักษณ์ (ภาษา `Chip`, ธีม `SegmentedControl`, สีหลัก `AccentPicker`) → การฝึก (`SegmentedControl`, `Toggle`, `Stepper`, `Chip`) → โปรไฟล์ → สมาชิกภาพ → ข้อมูล → บัญชี → เกี่ยวกับ (`ListRow`) → `Disclaimer` | [en มืด](screenshots/en-dark-14-settings.jpg) |
+| **Paywall** `src/app/paywall.tsx` | พื้นดำ + แสงเรืองด้านบน | `Screen` มีแสง + header: ปกติ `ActionBar` (ไอคอน `settings-outline` → `/account`), โหมดอัปเกรดเป็น Lifetime (`model.upgrade`) ใช้ `StackHeader backIcon="close"` → `HeroTitle compact` (headline นำด้วยประโยชน์ เช่น "Unlock your full training plan" ตาม eligibility B6: `subscribe` / `winback` / `billing` / `upgrade`) → (กรณีตัดเงินไม่ผ่าน) ปุ่ม primary "Fix payment" → `CardGroup` รายการฟีเจอร์ 5 ข้อ (`ListRow` ไอคอนสีหลัก ข้อความเน้นผลลัพธ์) → แผนราคา 2 ใบ (radio; เลือก = พื้น `accentSoft` ขอบ `accent`; มุม 20; ราคาเต็มจากสโตร์เป็นบรรทัด `title` แยกกับรอบการชำระ; `Badge` ทดลองฟรี; หมายเหตุ caption D45) → (โหมดอัปเกรด) `Card` เตือนว่าซื้อ Lifetime ไม่ยกเลิกรายเดือน/ทดลองอัตโนมัติ + ปุ่ม plain เปิดการจัดการสมาชิก (ไอคอนเตือนสี `warning`) → บรรทัด headline ยอดที่จะถูกเรียกเก็บ ("{{count}} days free, then {{price}}/month" / "{{price}}/month, renews automatically" / "{{price}} one-time payment") → ปุ่ม primary CTA ("Start free trial, then {{price}}/month" / "Subscribe for …" / "Buy lifetime for …") → caption ลงชื่อเข้าใช้ → ข้อความเปิดเผยข้อมูล B5 (caption) → Restore (secondary) → จัดการสมาชิก (plain, ไม่แสดงในโหมดอัปเกรด) → Terms/Privacy/แหล่งอ้างอิง (plain) | [en มืด](screenshots/en-dark-04-paywall.jpg) · [th มืด](screenshots/th-dark-04-paywall.jpg) (ภาพถ่ายก่อนปรับข้อความ — ถ่ายใหม่ก่อนส่งสโตร์) |
 | **ล็อกอิน** `src/app/login.tsx` | พื้นดำ + แสงเรืองด้านบน | `Screen` มีแสง + `StackHeader backIcon="close"` → `HeroTitle compact` + คำอธิบาย → `GoogleButton` + `AppleButton` (สีแบรนด์ ขนาดเท่ากัน ซ้อนแนวตั้ง D32) → caption ข้อตกลง + ปุ่ม plain Terms/Privacy | [en มืด](screenshots/en-dark-05-login.jpg) |
 | **ตั้งค่าเริ่มต้นขั้น 1** `src/app/onboarding/index.tsx` | C ขั้น 1 + พรีวิวสดของ DS | `OnboardingFrame` (`ProgressBar` 1/3 + `HeroTitle compact`) → `CardGroup` ภาษา/ธีม/สีหลัก → `AppearancePreview` (หัวข้อสีหลัก + `BigRow` + `WeekdayDots` + `Toggle`) → ปุ่ม primary "ถัดไป" | [en มืด](screenshots/en-dark-01-onboarding-1.jpg) |
 
@@ -635,26 +641,26 @@ node scripts/web-screenshots.js <โฟลเดอร์ภาพ> en light min
 
 ### 5.2 ผลจริง — `npm run contrast`
 
-รันด้วย `npm run contrast` (`scripts/contrast-report.ts`) สคริปต์จบด้วย exit code 1 ถ้ามีค่าใดไม่ผ่าน ผลล่าสุด (2026-10-09) วางตามที่พิมพ์ออกมาทุกตัวอักษร:
+รันด้วย `npm run contrast` (`scripts/contrast-report.ts`) สคริปต์จบด้วย exit code 1 ถ้ามีค่าใดไม่ผ่าน ผลล่าสุด (2026-10-11 — หลังเพิ่มกฎ `secondaryOnGlow`/ลด `glowOpacity`) วางตามที่พิมพ์ออกมาทุกตัวอักษร:
 
-| สีหลัก | โหมด | accent (ข้อความ) | บนพื้น | บนการ์ด | หัวข้อบนแสงเรือง | ข้อความบนปุ่ม | ปุ่ม/กราฟบนการ์ด | ข้อความรองบนการ์ด/sheet | สีหลักบน chip/แท็บที่เลือก | ผล |
+| สีหลัก | โหมด | accent (ข้อความ) | บนพื้น | บนการ์ด | หัวข้อ/ข้อความรองบนแสงเรือง | ข้อความบนปุ่ม | ปุ่ม/กราฟบนการ์ด | ข้อความรองบนการ์ด/sheet | สีหลักบน chip/แท็บที่เลือก | ผล |
 |---|---|---|---|---|---|---|---|---|---|---|
-| pink `#E5A9DC` | dark | `#E5A9DC` / ปุ่ม `#E5A9DC` | 11.04 | 8.95 | 7.98 | 11.04 | 8.95 | 5.94 / 4.86 | 6.22 | ผ่าน |
-| pink `#E5A9DC` | light | `#A53293` / ปุ่ม `#A53293` | 5.41 | 6.04 | 4.50 | 6.04 | 6.04 | 5.99 / 5.37 | 4.50 | ผ่าน |
-| lavender `#C3B4F7` | dark | `#C3B4F7` / ปุ่ม `#C3B4F7` | 11.19 | 9.07 | 9.27 | 11.19 | 9.07 | 5.94 / 4.86 | 7.50 | ผ่าน |
-| lavender `#C3B4F7` | light | `#5F38EA` / ปุ่ม `#5F38EA` | 5.81 | 6.48 | 4.51 | 6.48 | 6.48 | 5.99 / 5.37 | 4.88 | ผ่าน |
-| sky `#A9D2F7` | dark | `#A9D2F7` / ปุ่ม `#A9D2F7` | 13.25 | 10.73 | 9.04 | 13.25 | 10.73 | 5.94 / 4.86 | 6.88 | ผ่าน |
-| sky `#A9D2F7` | light | `#1064AF` / ปุ่ม `#1064AF` | 5.43 | 6.06 | 4.68 | 6.06 | 6.06 | 5.99 / 5.37 | 4.82 | ผ่าน |
-| mint `#9BE3CB` | dark | `#9BE3CB` / ปุ่ม `#9BE3CB` | 14.24 | 11.54 | 8.05 | 14.24 | 11.54 | 5.94 / 4.86 | 5.63 | ผ่าน |
-| mint `#9BE3CB` | light | `#207358` / ปุ่ม `#207358` | 5.15 | 5.75 | 4.74 | 5.75 | 5.75 | 5.99 / 5.37 | 4.67 | ผ่าน |
-| lime `#C8E59B` | dark | `#C8E59B` / ปุ่ม `#C8E59B` | 15.14 | 12.26 | 8.31 | 15.14 | 12.26 | 5.94 / 4.86 | 5.69 | ผ่าน |
-| lime `#C8E59B` | light | `#51731E` / ปุ่ม `#51731E` | 4.93 | 5.50 | 4.63 | 5.50 | 5.50 | 5.99 / 5.37 | 4.54 | ผ่าน |
-| gold `#F2D58C` | dark | `#F2D58C` / ปุ่ม `#F2D58C` | 14.67 | 11.89 | 8.32 | 14.67 | 11.89 | 5.94 / 4.86 | 6.11 | ผ่าน |
-| gold `#F2D58C` | light | `#84630F` / ปุ่ม `#84630F` | 4.99 | 5.57 | 4.65 | 5.57 | 5.57 | 5.99 / 5.37 | 4.57 | ผ่าน |
-| peach `#F7C2A2` | dark | `#F7C2A2` / ปุ่ม `#F7C2A2` | 13.19 | 10.69 | 8.76 | 13.19 | 10.69 | 5.94 / 4.86 | 6.61 | ผ่าน |
-| peach `#F7C2A2` | light | `#A5470E` / ปุ่ม `#A5470E` | 5.37 | 5.99 | 4.66 | 5.99 | 5.99 | 5.99 / 5.37 | 4.74 | ผ่าน |
-| coral `#F5A3A8` | dark | `#F5A3A8` / ปุ่ม `#F5A3A8` | 10.69 | 8.66 | 8.04 | 10.69 | 8.66 | 5.94 / 4.86 | 6.36 | ผ่าน |
-| coral `#F5A3A8` | light | `#BD141F` / ปุ่ม `#BD141F` | 5.73 | 6.40 | 4.60 | 6.40 | 6.40 | 5.99 / 5.37 | 4.71 | ผ่าน |
+| pink `#E5A9DC` | dark | `#E5A9DC` / ปุ่ม `#E5A9DC` | 11.04 | 8.95 | 7.98 / 5.29 | 11.04 | 8.95 | 5.94 / 4.86 | 6.22 | ผ่าน |
+| pink `#E5A9DC` | light | `#A53293` / ปุ่ม `#A53293` | 5.41 | 6.04 | 4.54 / 4.50 | 6.04 | 6.04 | 5.99 / 5.37 | 4.50 | ผ่าน |
+| lavender `#C3B4F7` | dark | `#C3B4F7` / ปุ่ม `#C3B4F7` | 11.19 | 9.07 | 9.27 / 6.07 | 11.19 | 9.07 | 5.94 / 4.86 | 7.50 | ผ่าน |
+| lavender `#C3B4F7` | light | `#633CEA` / ปุ่ม `#633CEA` | 5.59 | 6.24 | 4.73 / 4.54 | 6.24 | 6.24 | 5.99 / 5.37 | 4.70 | ผ่าน |
+| sky `#A9D2F7` | dark | `#A9D2F7` / ปุ่ม `#A9D2F7` | 13.25 | 10.73 | 9.04 / 5.00 | 13.25 | 10.73 | 5.94 / 4.86 | 6.88 | ผ่าน |
+| sky `#A9D2F7` | light | `#1064AF` / ปุ่ม `#1064AF` | 5.43 | 6.06 | 4.68 / 4.62 | 6.06 | 6.06 | 5.99 / 5.37 | 4.82 | ผ่าน |
+| mint `#9BE3CB` | dark | `#9BE3CB` / ปุ่ม `#9BE3CB` | 14.24 | 11.54 | 8.82 / 4.54 | 14.24 | 11.54 | 5.94 / 4.86 | 5.63 | ผ่าน |
+| mint `#9BE3CB` | light | `#207358` / ปุ่ม `#207358` | 5.15 | 5.75 | 4.74 / 4.94 | 5.75 | 5.75 | 5.99 / 5.37 | 4.67 | ผ่าน |
+| lime `#C8E59B` | dark | `#C8E59B` / ปุ่ม `#C8E59B` | 15.14 | 12.26 | 9.30 / 4.50 | 15.14 | 12.26 | 5.94 / 4.86 | 5.69 | ผ่าน |
+| lime `#C8E59B` | light | `#51731E` / ปุ่ม `#51731E` | 4.93 | 5.50 | 4.63 / 5.05 | 5.50 | 5.50 | 5.99 / 5.37 | 4.54 | ผ่าน |
+| gold `#F2D58C` | dark | `#F2D58C` / ปุ่ม `#F2D58C` | 14.67 | 11.89 | 9.01 / 4.50 | 14.67 | 11.89 | 5.94 / 4.86 | 6.11 | ผ่าน |
+| gold `#F2D58C` | light | `#84630F` / ปุ่ม `#84630F` | 4.99 | 5.57 | 4.65 / 5.00 | 5.57 | 5.57 | 5.99 / 5.37 | 4.57 | ผ่าน |
+| peach `#F7C2A2` | dark | `#F7C2A2` / ปุ่ม `#F7C2A2` | 13.19 | 10.69 | 8.76 / 4.87 | 13.19 | 10.69 | 5.94 / 4.86 | 6.61 | ผ่าน |
+| peach `#F7C2A2` | light | `#A5470E` / ปุ่ม `#A5470E` | 5.37 | 5.99 | 4.66 / 4.66 | 5.99 | 5.99 | 5.99 / 5.37 | 4.74 | ผ่าน |
+| coral `#F5A3A8` | dark | `#F5A3A8` / ปุ่ม `#F5A3A8` | 10.69 | 8.66 | 8.04 / 5.51 | 10.69 | 8.66 | 5.94 / 4.86 | 6.36 | ผ่าน |
+| coral `#F5A3A8` | light | `#C11520` / ปุ่ม `#C11520` | 5.54 | 6.18 | 4.65 / 4.50 | 6.18 | 6.18 | 5.99 / 5.37 | 4.55 | ผ่าน |
 
 ```text
 google button (dark): text 14.47:1
@@ -669,9 +675,9 @@ apple button (light): text 21.00:1
 ALL CONTRAST CHECKS PASSED
 ```
 
-**อ่านตาราง:** คอลัมน์ตรงกับฟิลด์ของ `contrastReport()` — บนพื้น = `accentOnBackground`, บนการ์ด = `accentOnCard`, หัวข้อบนแสงเรือง = `heroOnGlow`, ข้อความบนปุ่ม = `onAccentOnFill`, ปุ่ม/กราฟบนการ์ด = `fillOnCard` (เกณฑ์ 3), ข้อความรองบนการ์ด/sheet = `secondaryOnCard` / `secondaryOnElevated`, สีหลักบน chip/แท็บที่เลือก = `accentOnSoft` (ค่าต่ำสุดของทุกพื้น) นอกจากนี้สคริปต์ตรวจสีกราฟทุกสี ≥ 3:1 บนการ์ด (พิมพ์เฉพาะเมื่อไม่ผ่าน) และปุ่มแบรนด์ล็อกอิน
+**อ่านตาราง:** คอลัมน์ตรงกับฟิลด์ของ `contrastReport()` — บนพื้น = `accentOnBackground`, บนการ์ด = `accentOnCard`, หัวข้อ/ข้อความรองบนแสงเรือง = `heroOnGlow` / `secondaryOnGlow` (ค่าแรก = สีหลัก ค่าหลัง = สีเทาของบรรทัดย่อย), ข้อความบนปุ่ม = `onAccentOnFill`, ปุ่ม/กราฟบนการ์ด = `fillOnCard` (เกณฑ์ 3), ข้อความรองบนการ์ด/sheet = `secondaryOnCard` / `secondaryOnElevated`, สีหลักบน chip/แท็บที่เลือก = `accentOnSoft` (ค่าต่ำสุดของทุกพื้น) นอกจากนี้สคริปต์ตรวจสีกราฟทุกสี ≥ 3:1 บนการ์ด (พิมพ์เฉพาะเมื่อไม่ผ่าน) และปุ่มแบรนด์ล็อกอิน
 
-**ข้อสังเกตจากตาราง:** โหมดมืดไม่มีสีไหนต้องปรับ (สีพาสเทลบนดำผ่านสบาย) ส่วนโหมดสว่างทุกสีถูกทำให้เข้มลง และค่าที่ "ตึง" ที่สุดคือหัวข้อบนแสงเรืองกับสีหลักบน chip ที่เลือก (4.50–4.88) เพราะทั้งสองพื้นเป็นสีโทนเดียวกับสีหลัก
+**ข้อสังเกตจากตาราง:** โหมดมืดไม่มีสีไหนต้องปรับสีหลัก (สีพาสเทลบนดำผ่านสบาย) ส่วนโหมดสว่างทุกสีถูกทำให้เข้มลง ค่าที่ "ตึง" ที่สุดคือหัวข้อบนแสงเรือง (4.54–4.74) และสีหลักบน chip ที่เลือก (4.50–4.88) เพราะทั้งสองพื้นเป็นสีโทนเดียวกับสีหลัก และข้อความรองบนแสงเรือง (4.50–5.51) ซึ่งหลายสีวิ่งอยู่ที่ขอบ 4.50 พอดีเพราะ `glowOpacity` ถูกลดลงจนเพิ่งผ่าน (ดูข้อ 2.3)
 
 ### 5.3 การปรับตาม D44
 
@@ -690,7 +696,7 @@ D44 ([DECISIONS.md](DECISIONS.md)) ปรับสีกลางและสี
 ### 5.4 เทสต์ที่ป้องกัน contrast ถอยหลัง (`__tests__/theme/contrast.test.ts`, รันใน `npm test`)
 
 - พาเลตมี 8 สีพอดี สีแรกคือ `pink` `#E5A9DC` และโหมดมืดคงค่า `#E5A9DC` ไว้
-- 8 สี × 2 โหมด ผ่าน `passesAA()` ทุกข้อ
+- 8 สี × 2 โหมด ผ่าน `passesAA()` ทุกข้อ (รวม `secondaryOnGlow` ≥ 4.5)
 - สีเองแบบตารางครบวงสี (H ทุก 20°, S 0.1/0.6/1, L 0.05/0.3/0.5/0.7/0.95) × 2 โหมด ผ่าน `passesAA()` ทั้งหมด
 - `onColor()` ได้ ≥ 4.5 กับ fill ทุกโทน/ความสว่าง; `ensureContrast()` ทำให้ผ่านจริง
 - สีกราฟ ≥ 3:1 บนการ์ด
@@ -708,6 +714,8 @@ D44 ([DECISIONS.md](DECISIONS.md)) ปรับสีกลางและสี
 | คอมโพเนนต์ | พื้นที่แตะ |
 |---|---|
 | `Button` | สูง ≥ 52, กว้าง ≥ 48 |
+| `Chip` / ตัวเลือกใน `SegmentedControl` | สูง ≥ 48 |
+| ช่องวันใน `WeekdayDots` (แตะได้) | กว้าง 1/7 ของแถว × สูง ≥ 48 |
 | `IconButton` | ≥ 48 × 48 + `hitSlop` 4 |
 | `CircleButton` | 64 × 64 (ค่าเริ่มต้น) |
 | `SetTick` | 48 × 48 + `hitSlop` 4 |
@@ -716,14 +724,14 @@ D44 ([DECISIONS.md](DECISIONS.md)) ปรับสีกลางและสี
 | ช่องน้ำหนัก/ครั้ง/เป้าหมายในเซสชัน | สูง ≥ 48 (แถวเซ็ตสูง ≥ 56) |
 | `ListRow` / `BigRow` | สูง ≥ 56 / ≥ 104 เต็มความกว้าง |
 | แท็บใน `PillTabBar` | 72 × 56 |
-| วงสีใน `AccentPicker` | 48 × 48 (วงสี 36 อยู่ข้างใน) |
+| วงสีใน `AccentPicker` / ตารางสีเอง | 48 × 48 (วงสี 36 อยู่ข้างใน สำหรับ `AccentPicker`) |
 | ปุ่มล็อกอิน | สูง 52 เต็มความกว้าง |
 
-ข้อยกเว้นที่มีอยู่ในโค้ดตอนนี้ (ต่ำกว่า 48 ในบางมิติ — ดูข้อ 8.2): `Chip` สูงขั้นต่ำ 44, ตัวเลือกใน `SegmentedControl` สูง 44 (อยู่ในกรอบ 52), วันใน `WeekdayDots` แบบแตะได้ 32 × 32 + `hitSlop` (≈ 40 × 56), ตารางสีตัวอย่างในแผ่นเลือกสีเอง 40 × 40, `Toggle` ใช้ขนาดของ `Switch` ระบบ
+ข้อยกเว้นที่เหลือในโค้ดตอนนี้ (ดูข้อ 8.2): `Toggle` ใช้ขนาดของ `Switch` ระบบ (ราว 51 × 31 บน iOS) — ส่วนที่เคยต่ำกว่า 48 ถูกแก้แล้ว: `Chip` และตัวเลือกใน `SegmentedControl` สูง ≥ 48, ช่องวันใน `WeekdayDots` แบบแตะได้กว้าง 1/7 ของแถว (ราว 43 dp บนจอ 360 dp, ≥ 44 บนจอ ≥ 390 — D57) สูง ≥ 48, ตารางสีตัวอย่างในแผ่นเลือกสีเอง 48 × 48
 
 ### 6.2 Label, role และ state
 
-- ข้อความทุกตัวรวม `accessibilityLabel`/`accessibilityHint`/`placeholder`/`title`/`label` มาจาก i18n — eslint (`i18next/no-literal-string` ใน `eslint.config.js`) บังคับใน `src/app`, `src/components`, `src/features`
+- ข้อความทุกตัวรวม `accessibilityLabel`/`accessibilityHint`/`placeholder`/`title`/`label` มาจาก i18n — eslint (`i18next/no-literal-string` โหมด `jsx-only` ใน `eslint.config.js`; prop ที่ตรวจ: `accessibilityLabel`, `accessibilityHint`, `placeholder`, `title`, `label`, `subtitle`, `message`, `hint`, `caption`) บังคับใน `src/app`, `src/components`, `src/features`
 - ปุ่มที่เป็นไอคอนล้วนต้องมี label เสมอ: `IconButton.label`, `CircleButton.label`, `Toggle.label` เป็น prop บังคับ ใช้ key กลางใน `a11y.*` (`a11y.menu`, `a11y.close`, `a11y.back`, `a11y.add`) หรือ key ที่บอกการกระทำจริง (เช่น `today.startA11y` "เริ่ม {ชื่อ}")
 - เมนูต่อรายการต้องบอกว่าเป็นของอะไร: เช่น ⋯ ของท่าในเซสชันใช้ "`a11y.menu`: ชื่อท่า"
 - role ที่ใช้: `button`, `header` (`HeroTitle`, `SectionTitle`, `StackHeader`, หัวข้อ `Sheet`), `tab`/`tablist`, `radio`/`radiogroup` (`Chip`, `SegmentedControl`, วงสี, แผนราคา), `checkbox` (`Chip role="checkbox"`, `WeekdayDots` แบบแตะได้, `SetTick`), `adjustable` (`Stepper`), `progressbar` (`ProgressBar`, `LoadingState`), `alert` (`ErrorState`), `image` (กราฟ), `text` (`Disclaimer`)
@@ -767,16 +775,16 @@ SPEC: "Animation เรียบ: ติ๊กเซ็ต (haptic), สลั�
 
 | จุด | animation | haptic | เคารพ "ลดการเคลื่อนไหว" |
 |---|---|---|---|
-| ติ๊กเซ็ต (`SetTick`) | เด้ง scale 1 → 1.25 (120 ms) → 1 (160 ms) ด้วย reanimated | ติ๊ก = `notificationAsync(Success)`, ยกเลิก = `selectionAsync` | ✅ ข้ามการเด้งเมื่อ `useReduceMotion()` เป็นจริง (haptic ยังทำงาน) |
+| ติ๊กเซ็ต (`SetTick`) | เด้ง scale 1 → 1.25 (120 ms) → 1 (160 ms) ด้วย reanimated เฉพาะตอนติ๊ก (ยกเลิกไม่เด้ง) | ติ๊ก = `notificationAsync(Success)`, ยกเลิก = `selectionAsync` | ✅ ข้ามการเด้งเมื่อ `useReduceMotion()` เป็นจริง (haptic ยังทำงาน) |
 | สลับแท็บ | `animation: 'shift'` ของ `Tabs` (`src/app/(app)/(tabs)/_layout.tsx`) | `selectionAsync` | ใช้พฤติกรรมของ navigator |
-| เปลี่ยนสีหลัก/โหมด | แสงเรือง crossfade 350 ms (`Animated.timing`, native driver) ส่วนอื่นเปลี่ยนทันที | — | เป็นการเปลี่ยนความทึบ ไม่ใช่การเคลื่อนที่ |
+| เปลี่ยนสีหลัก/โหมด | แสงเรือง crossfade 350 ms (`Animated.timing`, native driver; `GlowBackground`) ส่วนอื่นเปลี่ยนทันที | — | เป็นการเปลี่ยนความทึบ ไม่ใช่การเคลื่อนที่ |
 | Sheet / NumberPad | `Modal animationType="slide"` ของระบบ | ปุ่มแป้นตัวเลข = `selectionAsync` | ใช้พฤติกรรมของระบบ |
 | เข้า onboarding / Paywall | `animation: 'fade'` (`src/app/_layout.tsx`); login/delete-account เปิดแบบ `modal` | — | ใช้พฤติกรรมของ navigator |
 | ตัวจับเวลาพักครบ | — | `notificationAsync(Warning)` ครั้งเดียว | — |
 
 กฎ animation:
 
-1. เรียบและสั้น: ใช้ช่วง `motion.fast` 150 – `motion.slow` 400 ms ไม่มี animation วนซ้ำ/ตกแต่งล้วน
+1. เรียบและสั้น: ช่วงเวลาอยู่ในกรอบ `motion` 150–400 ms (ปัจจุบันคอมโพเนนต์ใส่ตัวเลข 120/160/350 ms ตรงๆ ยังไม่อ้าง `motion.*`) ไม่มี animation วนซ้ำ/ตกแต่งล้วน
 2. animation ที่ **เคลื่อนที่หรือขยาย** ต้องเช็ก `useReduceMotion()` (`src/hooks/useReduceMotion.ts`) แล้วข้ามเมื่อผู้ใช้เปิดลดการเคลื่อนไหว
 3. ใช้ native driver / reanimated ไม่ animate layout บน JS thread
 4. haptic ใช้กับการกระทำที่ยืนยันผล (ติ๊ก เปลี่ยนแท็บ แป้นตัวเลข เวลาพักครบ) และต้อง `.catch(() => undefined)` เสมอ (บางเครื่อง/เว็บไม่มี haptic)
@@ -833,10 +841,10 @@ SPEC: "Animation เรียบ: ติ๊กเซ็ต (haptic), สลั�
 
 | # | เรื่อง | ค่าปัจจุบัน | ผลกระทบ |
 |---|---|---|---|
-| 1 | ตัวอักษรวันที่ "ปิด" ใน `WeekdayDots` (`textSecondary` ทึบ 0.6) | 2.98:1 (มืด) / 2.58:1 (สว่าง) บนการ์ด | ต่ำกว่า 4.5 ของข้อความ (ภาพอ้างอิงเองก็ใช้เทาจาง `#747474` ≈ 3.69:1) — โปรแกรมอ่านหน้าจอได้ข้อมูลครบจากคำอ่านสรุป/state |
+| 1 | ตัวอักษรวันที่ "ปิด" ใน `WeekdayDots` (`textSecondary` ทึบ 0.6) | 2.98:1 (มืด) / 2.58:1 (สว่าง) บนการ์ด | ต่ำกว่า 4.5 ของข้อความ (ภาพอ้างอิงเองก็ใช้เทาจาง `#747474` ≈ 3.6:1 บน `#1C1C1E`) — โปรแกรมอ่านหน้าจอได้ข้อมูลครบจากคำอ่านสรุป/state |
 | 2 | รางสวิตช์ตอนปิด และราง `ProgressBar` (`switchOff`) | 1.48:1 (มืด) / 1.52:1 (สว่าง) เทียบการ์ด | ต่ำกว่า 3:1 ของ 1.4.11 — สถานะยังดูได้จากตำแหน่งปุ่มกลมขาว/ความยาวแถบ และ state ของระบบ |
-| 3 | พื้นที่แตะต่ำกว่า 48 | `Chip` 44, segment 44, วันใน `WeekdayDots` ≈ 40 × 56, ตารางสีเอง 40 × 40, `Switch` ตามระบบ | ยังกดได้แต่ไม่ถึงกฎ 48 ของ SPEC A2 |
-| 4 | token ที่ประกาศแต่ยังไม่ถูกใช้ | `radius.row`, `motion.*`, `LockedState`, `WeekdayDots.highlightDay` | ไม่มีผลต่อการทำงาน |
+| 3 | พื้นที่แตะต่ำกว่า 48 | เหลือเฉพาะ `Switch` ตามระบบ (`Toggle`) — `Chip`, segment, วันใน `WeekdayDots` (โหมดแตะได้) และตารางสีเอง ถูกแก้เป็น ≥ 48 แล้ว | `Switch` ใหญ่เท่าที่ระบบกำหนด (iOS ~51 × 31) แต่แถวที่ครอบมักสูง ≥ 56 |
+| 4 | token/คอมโพเนนต์ที่ประกาศแต่ยังไม่ถูกใช้ | `radius.row`, `motion.*`, `success`, `LockedState`, `WeekdayDots.highlightDay` | ไม่มีผลต่อการทำงาน (ตรวจด้วย grep ใน `src/` 2026-10-11) |
 | 5 | animation ที่ไม่ได้เช็ก `useReduceMotion()` | crossfade แสงเรือง, `Tabs` `shift`, `Modal` slide | crossfade เป็นการเปลี่ยนความทึบ (โดยทั่วไปยอมรับได้); ส่วนการเลื่อนเป็นของระบบ/navigator |
 | 6 | สีเองที่ไม่มีโทน (เทา/ขาว/ดำ) | แสงเรืองออกโทนแดงอมชมพู | แค่ภาพ ไม่กระทบ contrast |
 | 7 | ป้ายแกนกราฟ (`react-native-gifted-charts`) | ฟอนต์ 11 ไม่ผ่าน `AppText` | ไม่ขยายตามการตั้งค่าฟอนต์ของระบบ — ข้อมูลเดียวกันมีเป็นข้อความ/label สรุปแล้ว (ข้อ 6.4) |
