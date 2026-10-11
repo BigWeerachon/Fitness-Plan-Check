@@ -7,6 +7,8 @@ import { sessionRepo } from '@/db/repos/sessionRepo';
 import { dayOverrideRepo, weekPlanRepo } from '@/db/repos/weekPlanRepo';
 import { dailyLogRepo } from '@/db/repos/dailyLogRepo';
 import { instantiateTemplate } from '@/features/programs/instantiate';
+import { startSession } from '@/features/session/sessionFlow';
+import { loadToday } from '@/features/today/useToday';
 import { setClockForTests } from '@/utils/clock';
 import { entitledApp, flush } from '../helpers/app';
 
@@ -22,6 +24,13 @@ describe('Today (SPEC D)', () => {
     // PPL 3 วัน: ศุกร์ = Legs
     expect(await screen.findByText('Today: Legs')).toBeTruthy();
     expect(screen.getByText(/5 exercises · ~\d+ min/)).toBeTruthy();
+    const legs = routineRepo.listByProgram(program.id).find((r) => r.type === 'legs')!;
+    // การ์ด: ชื่อกรุ๊ปและกลุ่มกล้ามเนื้อคนละบรรทัด (ไม่ถูกตัดทิ้ง) + ครั้งล่าสุด (D-2)
+    expect(screen.getByTestId(`today-card-group-${legs.id}`)).toHaveTextContent(
+      'Push / Pull / Legs (3 days)',
+    );
+    expect(screen.getByTestId(`today-card-muscles-${legs.id}`)).toHaveTextContent(/Quads/);
+    expect(screen.getAllByText('Not done yet').length).toBeGreaterThan(0);
     const pull = routineRepo.listByProgram(program.id).find((r) => r.type === 'pull')!;
     // 1 แตะ: เปลี่ยนเป็น Pull เฉพาะวันนี้
     fireEvent.press(screen.getByTestId(`choose-${pull.id}`));
@@ -34,6 +43,39 @@ describe('Today (SPEC D)', () => {
     fireEvent.press(screen.getByTestId('today-back-to-plan'));
     expect(await screen.findByText('Today: Legs')).toBeTruthy();
     expect(dayOverrideRepo.getForDate('2026-10-09')).toBeUndefined();
+  });
+
+  it('falls back to the weekly plan when today’s override points to a deleted routine', async () => {
+    await entitledApp();
+    const program = instantiateTemplate('ppl3', 'en')!;
+    const push = routineRepo.listByProgram(program.id).find((r) => r.type === 'push')!;
+    dayOverrideRepo.set('2026-10-09', 'routine', push.id);
+    routineRepo.remove(push.id);
+    renderRouter('./src/app', { initialUrl: '/' });
+    expect(await screen.findByText('Today: Legs')).toBeTruthy();
+  });
+
+  it('pluralizes the exercise count in the subtitle', async () => {
+    await entitledApp();
+    const p = programRepo.create('Solo');
+    const r = routineRepo.create(p.id, 'Quick', 'other');
+    routineExerciseRepo.add(r.id, 'barbell_bench_press', { sets: 3 });
+    weekPlanRepo.ensureEntry(p.id, r.id, [5]);
+    weekPlanRepo.setActiveProgram(p.id);
+    renderRouter('./src/app', { initialUrl: '/' });
+    expect(await screen.findByText(/· 1 exercise · ~\d+ min$/)).toBeTruthy();
+  });
+
+  it('checks off muscles trained today', async () => {
+    await entitledApp();
+    const program = instantiateTemplate('ppl3', 'en')!;
+    const legs = routineRepo.listByProgram(program.id).find((r) => r.type === 'legs')!;
+    const { session } = startSession({ routineId: legs.id });
+    const [first] = sessionRepo.sets(session.id);
+    sessionRepo.updateSet(first.id, { weightKg: 60, reps: 8 });
+    sessionRepo.setDone(first.id, true);
+    expect(loadToday().doneMuscles).toEqual([first.muscleGroup]);
+    expect(loadToday().plannedMuscles).toContain(first.muscleGroup);
   });
 
   it('starts the session from the round Start button', async () => {
@@ -100,6 +142,30 @@ describe('Programs, routines and the weekly plan (SPEC E, F)', () => {
     fireEvent(screen.getByTestId(`week-toggle-${push.id}`), 'valueChange', false);
     await flush();
     expect(entry().enabled).toBe(false);
+  });
+
+  it('weekly plan: copies a day and switches the whole week to another program', async () => {
+    await entitledApp(); // ศุกร์
+    jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+    const ppl = instantiateTemplate('ppl3', 'en')!;
+    const fb = instantiateTemplate('full_body3', 'en')!;
+    weekPlanRepo.setActiveProgram(ppl.id);
+    const push = routineRepo.listByProgram(ppl.id).find((r) => r.type === 'push')!;
+    renderRouter('./src/app', { initialUrl: '/week' });
+    fireEvent.press(await screen.findByTestId('week-copy'));
+    fireEvent.press(await screen.findByTestId('copy-from-1'));
+    fireEvent.press(screen.getByTestId('copy-to-2'));
+    fireEvent.press(screen.getByTestId('copy-confirm'));
+    await flush();
+    // อังคารได้ Push เหมือนวันจันทร์ และ routine อื่นไม่มีวันอังคาร
+    const entries = weekPlanRepo.listForProgram(ppl.id);
+    expect(entries.find((e) => e.routineId === push.id)?.days).toEqual([1, 2]);
+    expect(entries.filter((e) => e.days.includes(2)).map((e) => e.routineId)).toEqual([push.id]);
+
+    fireEvent.press(screen.getByTestId(`week-program-${fb.id}`));
+    await flush();
+    expect(weekPlanRepo.activeProgramId()).toBe(fb.id);
+    expect(loadToday().program?.id).toBe(fb.id);
   });
 
   it('routine editor: adds exercises from the library and edits progression settings', async () => {

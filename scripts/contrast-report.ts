@@ -19,7 +19,7 @@ const f = (n: number) => n.toFixed(2);
 let failed = false;
 
 console.log(
-  '| สีหลัก | โหมด | accent (ข้อความ) | บนพื้น | บนการ์ด | หัวข้อบนแสงเรือง | ข้อความบนปุ่ม | ปุ่ม/กราฟบนการ์ด | ข้อความรองบนการ์ด/sheet | สีหลักบน chip/แท็บที่เลือก | ผล |',
+  '| สีหลัก | โหมด | accent (ข้อความ) | บนพื้น | บนการ์ด | หัวข้อ/ข้อความรองบนแสงเรือง | ข้อความบนปุ่ม | ปุ่ม/กราฟบนการ์ด | ข้อความรองบนการ์ด/sheet | สีหลักบน chip/แท็บที่เลือก | ผล |',
 );
 console.log('|---|---|---|---|---|---|---|---|---|---|---|');
 for (const a of ACCENT_PRESETS) {
@@ -29,7 +29,7 @@ for (const a of ACCENT_PRESETS) {
     const ok = passesAA(r);
     failed ||= !ok;
     console.log(
-      `| ${a.id} \`${a.base}\` | ${mode} | \`${p.accent}\` / ปุ่ม \`${p.accentFill}\` | ${f(r.accentOnBackground)} | ${f(r.accentOnCard)} | ${f(r.heroOnGlow)} | ${f(r.onAccentOnFill)} | ${f(r.fillOnCard)} | ${f(r.secondaryOnCard)} / ${f(r.secondaryOnElevated)} | ${f(r.accentOnSoft)} | ${ok ? 'ผ่าน' : '**ไม่ผ่าน**'} |`,
+      `| ${a.id} \`${a.base}\` | ${mode} | \`${p.accent}\` / ปุ่ม \`${p.accentFill}\` | ${f(r.accentOnBackground)} | ${f(r.accentOnCard)} | ${f(r.heroOnGlow)} / ${f(r.secondaryOnGlow)} | ${f(r.onAccentOnFill)} | ${f(r.fillOnCard)} | ${f(r.secondaryOnCard)} / ${f(r.secondaryOnElevated)} | ${f(r.accentOnSoft)} | ${ok ? 'ผ่าน' : '**ไม่ผ่าน**'} |`,
     );
   }
 }

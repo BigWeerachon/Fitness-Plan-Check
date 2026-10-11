@@ -7,7 +7,7 @@ const today: LocaleShape<typeof en> = {
   heroRest: 'วันนี้พัก',
   heroEmpty: 'วันนี้: เซสชันอิสระ',
   heroNoProgram: 'มาตั้งแผนการฝึกกัน',
-  subtitle: '{{date}} · {{count}} ท่า · ~{{minutes}} นาที',
+  subtitle: '{{date}} · {{exercises}} · ~{{minutes}} นาที',
   subtitleRest: '{{date}} · การพักก็สำคัญ',
   exercisesCount_one: '{{count}} ท่า',
   exercisesCount_other: '{{count}} ท่า',

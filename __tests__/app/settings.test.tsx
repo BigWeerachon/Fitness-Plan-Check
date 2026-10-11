@@ -13,6 +13,7 @@ import { instantiateTemplate } from '@/features/programs/instantiate';
 import { finishSession } from '@/features/session/finish';
 import { startSession } from '@/features/session/sessionFlow';
 import { useAuth } from '@/stores/auth';
+import { useSettings } from '@/stores/settings';
 import { useSync } from '@/stores/sync';
 import { setClockForTests } from '@/utils/clock';
 import { entitledApp, flush } from '../helpers/app';
@@ -75,6 +76,24 @@ describe('settings tab (SPEC K)', () => {
     fireEvent.press(screen.getByTestId('segment-0'));
     await flush();
     expect(profileRepo.get()).toMatchObject({ lengthUnit: 'ftin', weekStart: 0 });
+  });
+
+  it('labels the appearance pickers and applies a custom accent color (SPEC DS)', async () => {
+    await entitledApp();
+    renderRouter('./src/app', { initialUrl: '/settings' });
+    expect(await screen.findByTestId('settings')).toBeTruthy();
+    expect(screen.getByText('Language')).toBeTruthy();
+    expect(screen.getByText('Theme')).toBeTruthy();
+    expect(screen.getByText('Accent color')).toBeTruthy();
+
+    fireEvent.press(screen.getByTestId('accent-custom'));
+    expect(await screen.findByTestId('custom-color-sheet')).toBeTruthy();
+    // สีน้ำเงินเข้มอ่านไม่ออกบนพื้นดำ → ระบบปรับให้อ่านง่ายและบอกผู้ใช้
+    fireEvent.changeText(screen.getByTestId('custom-hex'), '#202060');
+    expect(await screen.findByText('Adjusted slightly so text stays easy to read.')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('custom-apply'));
+    await flush();
+    expect(useSettings.getState().accent).toBe('#202060');
   });
 
   it('exports CSV through the share sheet', async () => {

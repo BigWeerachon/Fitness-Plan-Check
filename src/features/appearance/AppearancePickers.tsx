@@ -206,6 +206,7 @@ function CustomColorBody({ initial, onApply }: { initial: string; onApply: (hex:
         title={t('appearance.apply')}
         onPress={() => valid && onApply(normalizeHex(hex))}
         disabled={!valid}
+        testID="custom-apply"
       />
     </>
   );
@@ -252,8 +253,8 @@ const styles = StyleSheet.create({
   customSwatch: { borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, justifyContent: 'center' },
   gridCell: {
-    width: 40,
-    height: 40,
+    width: MIN_TOUCH,
+    height: MIN_TOUCH,
     borderRadius: radius.button / 2,
     borderWidth: 2,
     borderColor: 'transparent',

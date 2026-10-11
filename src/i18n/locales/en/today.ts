@@ -4,7 +4,7 @@ const today = {
   heroRest: 'Rest day today',
   heroEmpty: 'Today: free session',
   heroNoProgram: 'Let’s set up your plan',
-  subtitle: '{{date}} · {{count}} exercises · ~{{minutes}} min',
+  subtitle: '{{date}} · {{exercises}} · ~{{minutes}} min',
   subtitleRest: '{{date}} · recovery matters too',
   exercisesCount_one: '{{count}} exercise',
   exercisesCount_other: '{{count}} exercises',

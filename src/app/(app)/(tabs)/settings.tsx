@@ -109,12 +109,21 @@ export default function SettingsScreen() {
       <SectionTitle>{t('settings.sections.appearance')}</SectionTitle>
       <CardGroup>
         <View style={styles.pad}>
+          <AppText variant="caption" secondary>
+            {t('appearance.language')}
+          </AppText>
           <LanguagePicker />
         </View>
         <View style={styles.pad}>
+          <AppText variant="caption" secondary>
+            {t('appearance.theme')}
+          </AppText>
           <ThemePicker />
         </View>
         <View style={styles.pad}>
+          <AppText variant="caption" secondary>
+            {t('appearance.accent')}
+          </AppText>
           <AccentPicker />
         </View>
       </CardGroup>

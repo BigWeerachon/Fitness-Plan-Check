@@ -11,6 +11,7 @@ import {
   type Routine,
 } from '../schema';
 import { live, stripManaged } from './query';
+import { dayOverrideRepo } from './weekPlanRepo';
 
 /** กรุ๊ปโปรแกรม (SPEC F1–F3) */
 export const programRepo = {
@@ -99,6 +100,7 @@ export const routineRepo = {
         .all()) {
         softDeleteRow('week_plan', w.id);
       }
+      dayOverrideRepo.removeForRoutine(id);
       softDeleteRow('routine', id);
     });
   },

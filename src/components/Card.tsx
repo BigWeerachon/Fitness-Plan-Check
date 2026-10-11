@@ -108,6 +108,7 @@ export function ListRow({
 export function BigRow({
   title,
   below,
+  footer,
   right,
   onPress,
   accessibilityLabel,
@@ -117,6 +118,8 @@ export function BigRow({
 }: {
   title: string;
   below?: React.ReactNode;
+  /** เนื้อหาเต็มความกว้างการ์ดใต้แถว (เช่น ปุ่มวันในสัปดาห์ที่ต้องกว้างพอให้กดง่าย) */
+  footer?: React.ReactNode;
   right?: React.ReactNode;
   onPress?: () => void;
   accessibilityLabel?: string;
@@ -125,8 +128,8 @@ export function BigRow({
   testID?: string;
 }) {
   const p = usePalette();
-  const body = (
-    <View style={styles.bigRow}>
+  const main = (
+    <View style={[styles.bigRow, footer ? styles.bigRowWithFooter : null]}>
       <View style={styles.rowText}>
         <AppText
           variant="rowTitle"
@@ -140,6 +143,14 @@ export function BigRow({
       </View>
       {right ? <View style={styles.right}>{right}</View> : null}
     </View>
+  );
+  const body = footer ? (
+    <View>
+      {main}
+      <View style={styles.footer}>{footer}</View>
+    </View>
+  ) : (
+    main
   );
   if (!onPress) return <View testID={testID}>{body}</View>;
   return (
@@ -187,6 +198,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  bigRowWithFooter: { minHeight: MIN_TOUCH + 24, paddingBottom: spacing.xs },
+  footer: { paddingHorizontal: spacing.md, paddingBottom: spacing.md },
   below: { marginTop: spacing.xs },
   right: { marginLeft: spacing.md },
   sectionTitle: { marginTop: spacing.xl, marginBottom: spacing.sm, marginHorizontal: spacing.xl },

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from '@jest/globals';
+import { createRow } from '@/db/mutations';
 import { setOwner } from '@/db/owner';
 import { customExerciseRepo } from '@/db/repos/customExerciseRepo';
 import { dailyLogRepo } from '@/db/repos/dailyLogRepo';
@@ -116,6 +117,48 @@ describe('repositories (T06)', () => {
     expect(dayOverrideRepo.getForDate('2026-10-10')).toBeUndefined();
     dayOverrideRepo.clear('2026-10-09');
     expect(dayOverrideRepo.getForDate('2026-10-09')).toBeUndefined();
+  });
+
+  it('two overrides for one date (made offline on two devices) resolve to the newest and clear together', () => {
+    const a = dayOverrideRepo.set('2026-10-09', 'rest');
+    t += 1000;
+    // จำลองแถวที่สองจากอีกเครื่อง (ซิงก์ลงมาโดยไม่ผ่าน set)
+    const b = createRow('day_override', { date: '2026-10-09', kind: 'routine', routineId: 'r2' });
+    expect(dayOverrideRepo.listForDate('2026-10-09').map((o) => o.id)).toEqual([b.id, a.id]);
+    expect(dayOverrideRepo.getForDate('2026-10-09')).toMatchObject({ kind: 'routine', routineId: 'r2' });
+    // ตั้งใหม่ → รวมเหลือแถวเดียว
+    t += 1000;
+    dayOverrideRepo.set('2026-10-09', 'empty');
+    expect(dayOverrideRepo.listForDate('2026-10-09')).toHaveLength(1);
+    dayOverrideRepo.clear('2026-10-09');
+    expect(dayOverrideRepo.listForDate('2026-10-09')).toHaveLength(0);
+  });
+
+  it('deleting a routine removes the date overrides that point to it', () => {
+    const p = programRepo.create('PPL');
+    const r = routineRepo.create(p.id, 'Push', 'push');
+    dayOverrideRepo.set('2026-10-12', 'routine', r.id);
+    dayOverrideRepo.set('2026-10-13', 'rest');
+    routineRepo.remove(r.id);
+    expect(dayOverrideRepo.getForDate('2026-10-12')).toBeUndefined();
+    expect(dayOverrideRepo.getForDate('2026-10-13')).toMatchObject({ kind: 'rest' });
+  });
+
+  it('copyDay/toggleDay use the tested domain rules and only write changed rows', () => {
+    const p = programRepo.create('Mine');
+    const r1 = routineRepo.create(p.id, 'A', 'upper');
+    const r2 = routineRepo.create(p.id, 'B', 'lower');
+    const e1 = weekPlanRepo.ensureEntry(p.id, r1.id, [1]);
+    const e2 = weekPlanRepo.ensureEntry(p.id, r2.id, [3]);
+    weekPlanRepo.toggleDay(e1.id, 5);
+    weekPlanRepo.toggleDay(e1.id, 5);
+    weekPlanRepo.toggleDay(e1.id, 3);
+    expect(weekPlanRepo.get(e1.id)?.days).toEqual([1, 3]);
+    const before = weekPlanRepo.get(e2.id)!.updatedAt;
+    t += 1000;
+    weekPlanRepo.copyDay(p.id, 1, 4); // วันพฤหัสได้ A เหมือนวันจันทร์
+    expect(weekPlanRepo.get(e1.id)?.days).toEqual([1, 3, 4]);
+    expect(weekPlanRepo.get(e2.id)?.updatedAt).toBe(before);
   });
 
   it('sessions snapshot names and carry previous performance into the next session (G1)', () => {

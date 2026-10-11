@@ -109,7 +109,7 @@ export function Badge({
 
 const styles = StyleSheet.create({
   chip: {
-    minHeight: 44,
+    minHeight: MIN_TOUCH,
     paddingHorizontal: spacing.lg,
     borderRadius: radius.pill,
     borderWidth: 1,
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
   },
   segmentItem: {
     flex: 1,
-    minHeight: MIN_TOUCH - 4,
+    minHeight: MIN_TOUCH,
     borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',

@@ -77,18 +77,25 @@ export default function TodayScreen() {
     title = t('today.heroRoutine', { name: model.routines.map((r) => r.routine.name).join(' + ') });
     subtitle = t('today.subtitle', {
       date: formatDateShort(today),
-      count: model.routines.reduce((n, r) => n + r.exerciseCount, 0),
+      exercises: t('today.exercisesCount', {
+        count: model.routines.reduce((n, r) => n + r.exerciseCount, 0),
+      }),
       minutes: model.routines.reduce((n, r) => n + r.estMinutes, 0),
     });
   }
 
   const routineBelow = (r: TodayRoutine) => (
     <View style={styles.below}>
-      <AppText variant="callout" secondary numberOfLines={1}>
-        {[r.programName, r.muscles.map((m) => t(`exercises.muscles.${m}`)).join(', ')]
-          .filter(Boolean)
-          .join(' · ')}
-      </AppText>
+      {r.programName ? (
+        <AppText variant="callout" secondary numberOfLines={1} testID={`today-card-group-${r.routine.id}`}>
+          {r.programName}
+        </AppText>
+      ) : null}
+      {r.muscles.length > 0 ? (
+        <AppText variant="callout" secondary numberOfLines={2} testID={`today-card-muscles-${r.routine.id}`}>
+          {r.muscles.map((m) => t(`exercises.muscles.${m}`)).join(', ')}
+        </AppText>
+      ) : null}
       <AppText variant="caption" secondary>
         {r.lastDone
           ? t('today.lastDone', { when: formatRelativeDay(parseLocalDate(r.lastDone), today) })

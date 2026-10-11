@@ -135,7 +135,7 @@ export default function WeekScreen() {
                   key={r.id}
                   title={r.name}
                   dimmed={!enabled}
-                  below={
+                  footer={
                     <WeekdayDots
                       active={entry?.days ?? []}
                       weekStart={weekStart}

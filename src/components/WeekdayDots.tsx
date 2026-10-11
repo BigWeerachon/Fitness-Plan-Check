@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { weekOrder, weekdayLong, weekdayShort } from '../i18n/format';
+import { MIN_TOUCH } from '../theme/tokens';
 import { usePalette } from '../theme/useTheme';
 import { AppText } from './AppText';
 
@@ -58,7 +59,6 @@ export function WeekdayDots({
         accessibilityRole="checkbox"
         accessibilityState={{ checked: on }}
         accessibilityLabel={label ? `${label}, ${weekdayLong(d)}` : weekdayLong(d)}
-        hitSlop={{ top: 12, bottom: 12, left: 4, right: 4 }}
         style={styles.touch}
         testID={`weekday-${d}`}
       >
@@ -67,7 +67,8 @@ export function WeekdayDots({
     );
   });
 
-  if (onToggleDay) return <View style={styles.row}>{cells}</View>;
+  // โหมดกดได้: แต่ละวันกว้างเท่ากันเต็มแถว ไม่มีช่องว่างที่กดไม่ติด สูง 48 (A2)
+  if (onToggleDay) return <View style={styles.toggleRow}>{cells}</View>;
   return (
     <View style={styles.row} accessible accessibilityLabel={label ? `${label}. ${summary}` : summary}>
       {cells}
@@ -78,7 +79,8 @@ export function WeekdayDots({
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 8, alignItems: 'flex-end' },
   cell: { alignItems: 'center', minWidth: 18 },
-  touch: { minWidth: 32, minHeight: 32, alignItems: 'center', justifyContent: 'flex-end' },
+  toggleRow: { flexDirection: 'row', alignSelf: 'stretch' },
+  touch: { flex: 1, minHeight: MIN_TOUCH, alignItems: 'center', justifyContent: 'center' },
   dot: { width: 4, height: 4, borderRadius: 2, marginBottom: 2 },
   off: { opacity: 0.6 },
 });

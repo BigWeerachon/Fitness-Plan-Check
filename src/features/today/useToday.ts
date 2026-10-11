@@ -72,14 +72,18 @@ export function loadToday(date: LocalDate = toLocalDate(now())): TodayModel {
   const activeId = profile?.activeProgramId ?? null;
   const program = (activeId && programs.get(activeId)) || null;
   const defaultRest = profile?.restTimerEnabled === false ? 0 : (profile?.restTimerSec ?? 90);
-  const override = dayOverrideRepo.getForDate(date);
-  const plan = resolveDayPlan({
-    entries: program ? weekPlanRepo.listForProgram(program.id) : [],
-    overrides: override ? [override] : [],
-    date,
-  });
   const allRoutines = routineRepo.listAll().filter((r) => programs.has(r.programId));
   const byId = new Map(allRoutines.map((r) => [r.id, r]));
+  // override ที่ชี้ไป routine ที่ถูกลบแล้ว (เช่น ลบจากอีกเครื่อง) ไม่มีผล → ใช้ตารางหลักแทน
+  const overrides = dayOverrideRepo
+    .listForDate(date)
+    .filter((o) => o.kind !== 'routine' || (o.routineId !== null && byId.has(o.routineId)));
+  const plan = resolveDayPlan({
+    entries: program ? weekPlanRepo.listForProgram(program.id) : [],
+    overrides: overrides.slice(0, 1),
+    date,
+  });
+  const override = plan.source === 'override' ? overrides[0] : undefined;
   const routines = plan.routineIds
     .map((id) => byId.get(id))
     .filter((r): r is Routine => !!r)

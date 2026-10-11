@@ -107,13 +107,32 @@ export function resolveAccentBase(setting: AccentSetting | string | null | undef
   return ACCENT_PRESETS[0].base;
 }
 
+const GLOW_OPACITY_STEP = 0.01;
+const GLOW_OPACITY_MIN = 0.12;
+
+/**
+ * ความทึบของแสงเรือง: เริ่มจากค่าตาม SPEC (~30%) แล้วลดทีละน้อยจนข้อความรอง (สีเทา) ที่วางบน
+ * จุดสว่างสุดของแสงผ่าน AA 4.5:1 — สีหลักที่สว่างมาก (เหลือง/เขียวอ่อน) จึงได้แสงจางกว่าเล็กน้อย
+ */
+function glowOpacityFor(glow: string, start: number, mode: ThemeMode): number {
+  const n = NEUTRALS[mode];
+  let opacity = start;
+  while (
+    opacity > GLOW_OPACITY_MIN &&
+    contrastRatio(n.textSecondary, composite(glow, opacity, n.background)) < AA_TEXT
+  ) {
+    opacity = Math.round((opacity - GLOW_OPACITY_STEP) * 100) / 100;
+  }
+  return opacity;
+}
+
 export function deriveAccent(baseHex: string, mode: ThemeMode): AccentSet {
   const base = normalizeHex(baseHex);
   const hsl = hexToHsl(base);
   const n = NEUTRALS[mode];
   if (mode === 'dark') {
     const glow = hslToHex({ h: hsl.h, s: Math.min(0.75, Math.max(0.35, hsl.s)), l: 0.55 });
-    const glowOpacity = 0.3;
+    const glowOpacity = glowOpacityFor(glow, 0.3, mode);
     // หัวข้อใหญ่วางบนแสงเรือง จึงให้ข้อความสีหลักผ่าน 4.5:1 กับจุดที่สว่างที่สุดของแสงด้วย
     const peak = composite(glow, glowOpacity, n.background);
     const softBase = hslToHex({ h: hsl.h, s: Math.min(0.6, Math.max(0.25, hsl.s)), l: 0.4 });
@@ -131,7 +150,7 @@ export function deriveAccent(baseHex: string, mode: ThemeMode): AccentSet {
     };
   }
   const glow = hslToHex({ h: hsl.h, s: Math.min(0.85, Math.max(0.4, hsl.s)), l: 0.78 });
-  const glowOpacity = 0.35;
+  const glowOpacity = glowOpacityFor(glow, 0.35, mode);
   const peak = composite(glow, glowOpacity, n.background);
   const softSurfaces = [n.card, n.background].map((bg) => composite(base, LIGHT_SOFT_ALPHA, bg));
   const text = ensureContrast(base, [...TEXT_SURFACES.light, peak, ...softSurfaces], AA_TEXT);
@@ -219,6 +238,8 @@ export interface ContrastReport {
   onAccentOnFill: number;
   fillOnCard: number;
   heroOnGlow: number;
+  /** ข้อความรอง (subtitle ของ hero) บนจุดสว่างสุดของแสงเรือง */
+  secondaryOnGlow: number;
   secondaryOnCard: number;
   /** ข้อความสีหลักบน chip/แท็บที่เลือก (ค่าต่ำสุดของทุกพื้น) */
   accentOnSoft: number;
@@ -233,6 +254,7 @@ export function contrastReport(p: Palette): ContrastReport {
     onAccentOnFill: contrastRatio(p.onAccent, p.accentFill),
     fillOnCard: contrastRatio(p.accentFill, p.card),
     heroOnGlow: contrastRatio(p.accent, glowPeakColor(p)),
+    secondaryOnGlow: contrastRatio(p.textSecondary, glowPeakColor(p)),
     secondaryOnCard: contrastRatio(p.textSecondary, p.card),
     accentOnSoft: Math.min(...p.accentSoftSurfaces.map((bg) => contrastRatio(p.accent, bg))),
     secondaryOnElevated: Math.min(
@@ -249,6 +271,7 @@ export function passesAA(r: ContrastReport): boolean {
     r.onAccentOnFill >= AA_TEXT &&
     r.fillOnCard >= AA_GRAPHIC &&
     r.heroOnGlow >= AA_TEXT &&
+    r.secondaryOnGlow >= AA_TEXT &&
     r.secondaryOnCard >= AA_TEXT &&
     r.accentOnSoft >= AA_TEXT &&
     r.secondaryOnElevated >= AA_TEXT
