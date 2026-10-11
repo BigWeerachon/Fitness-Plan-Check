@@ -39,7 +39,7 @@ Values calculated by the app are estimates and general guidance, not medical adv
 
 ## Retention and deletion
 
-We keep your data while your account exists. You can delete your account and all data in the app (Account → Delete account and data). This removes your cloud data, revokes Sign in with Apple when deleted from an iPhone or iPad (if you used Apple sign-in on Android, you can also remove the app at appleid.apple.com → Sign in with Apple) and clears data on the device. Deleting your account does not cancel a store subscription — cancel it in your store account settings.
+We keep your data while your account exists. You can delete your account and all data in the app (Account → Delete account and data). This removes your cloud data, revokes Sign in with Apple when deleted from an iPhone or iPad (if you used Apple sign-in on Android, you can also remove the app at appleid.apple.com → Sign in with Apple) and clears data on the device. Deleting your account does not cancel a store subscription — cancel it in your store account settings. Subscription event records used to ignore duplicate notifications (no payment details) are deleted automatically once they are older than 90 days.
 
 ## Your rights
 

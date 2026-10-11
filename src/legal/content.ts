@@ -62,7 +62,7 @@ export const LEGAL: Record<LegalKey, Record<Language, LegalDoc>> = {
         },
         {
           heading: 'การเก็บรักษาและการลบข้อมูล',
-          body: 'เราเก็บข้อมูลไว้ตราบที่คุณยังมีบัญชี คุณลบบัญชีและข้อมูลทั้งหมดได้เองในแอป (บัญชี → ลบบัญชีและข้อมูล) ซึ่งจะลบข้อมูลบนคลาวด์ เพิกถอนการเชื่อมต่อกับ Apple เมื่อลบจาก iPhone/iPad (ถ้าล็อกอินด้วย Apple บน Android ให้เอาแอปออกเองได้ที่ appleid.apple.com → ลงชื่อเข้าใช้ด้วย Apple) และลบข้อมูลในเครื่อง การลบบัญชีไม่ยกเลิกการสมัครสมาชิกในสโตร์ — ยกเลิกได้ในการตั้งค่าบัญชีสโตร์',
+          body: 'เราเก็บข้อมูลไว้ตราบที่คุณยังมีบัญชี คุณลบบัญชีและข้อมูลทั้งหมดได้เองในแอป (บัญชี → ลบบัญชีและข้อมูล) ซึ่งจะลบข้อมูลบนคลาวด์ เพิกถอนการเชื่อมต่อกับ Apple เมื่อลบจาก iPhone/iPad (ถ้าล็อกอินด้วย Apple บน Android ให้เอาแอปออกเองได้ที่ appleid.apple.com → ลงชื่อเข้าใช้ด้วย Apple) และลบข้อมูลในเครื่อง การลบบัญชีไม่ยกเลิกการสมัครสมาชิกในสโตร์ — ยกเลิกได้ในการตั้งค่าบัญชีสโตร์ บันทึกเหตุการณ์การสมัครสมาชิกที่ใช้กันซ้ำ (ไม่มีรายละเอียดการชำระเงิน) ถูกลบอัตโนมัติเมื่อเก่ากว่า 90 วัน',
         },
         {
           heading: 'สิทธิ์ของคุณ',
@@ -109,7 +109,7 @@ export const LEGAL: Record<LegalKey, Record<Language, LegalDoc>> = {
         },
         {
           heading: 'Retention and deletion',
-          body: 'We keep your data while your account exists. You can delete your account and all data in the app (Account → Delete account and data). This removes your cloud data, revokes Sign in with Apple when deleted from an iPhone or iPad (if you used Apple sign-in on Android, you can also remove the app at appleid.apple.com → Sign in with Apple) and clears data on the device. Deleting your account does not cancel a store subscription — cancel it in your store account settings.',
+          body: 'We keep your data while your account exists. You can delete your account and all data in the app (Account → Delete account and data). This removes your cloud data, revokes Sign in with Apple when deleted from an iPhone or iPad (if you used Apple sign-in on Android, you can also remove the app at appleid.apple.com → Sign in with Apple) and clears data on the device. Deleting your account does not cancel a store subscription — cancel it in your store account settings. Subscription event records used to ignore duplicate notifications (no payment details) are deleted automatically once they are older than 90 days.',
         },
         {
           heading: 'Your rights',
