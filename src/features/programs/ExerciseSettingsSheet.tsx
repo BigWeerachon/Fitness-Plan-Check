@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { AppText, Button, Chip, IconButton, Sheet, Stepper, TextField } from '../../components';
 import type { CustomWeek, ProgressionMode, RoutineExercise, WeightUnit } from '../../db/schema';
+import { parseEffort } from '../../domain/effort';
 import { changeProgressionMode, WEIGHT_STEP_OPTIONS } from '../../domain/progression';
 import { displayWeight, lbToKg, roundTo, weightToKg } from '../../domain/units';
 import { now } from '../../utils/clock';
@@ -29,6 +30,7 @@ export interface ExerciseSettingsPatch {
 /**
  * ตั้งค่าท่าใน routine (SPEC G2): จำนวนเซ็ต, ช่วงครั้ง, โหมด progression, ก้าวน้ำหนัก (2.5 kg / 5 lb ปรับเป็น 1.25 ได้),
  * RIR/RPE (ไม่บังคับ), ตัวจับเวลาพักต่อท่า และสัปดาห์แบบกำหนดเอง
+ * ตัวเลือกขั้นสูง (ก้าวน้ำหนัก, RIR, RPE, พัก) ซ่อนอยู่หลังปุ่ม "เพิ่มเติม" (SPEC A3)
  */
 export function ExerciseSettingsSheet({
   visible,
@@ -96,7 +98,19 @@ function SettingsBody({
     value.baseWeightKg != null ? String(displayWeight(value.baseWeightKg, unit)) : '',
   );
 
+  const rirParsed = parseEffort(rir, 'rir');
+  const rpeParsed = parseEffort(rpe, 'rpe');
+  const invalid = !rirParsed.ok || !rpeParsed.ok;
+  // เปิดส่วนเพิ่มเติมไว้เลยถ้าท่านี้เคยตั้งค่าขั้นสูงไว้แล้ว เพื่อไม่ให้ค่าที่ตั้งไว้ถูกซ่อน
+  const [showMore, setShowMore] = useState(
+    value.rir != null ||
+      value.rpe != null ||
+      value.restSec !== null ||
+      Math.abs(step - stepOptions[0]) > 0.05,
+  );
+
   const save = () => {
+    if (!rirParsed.ok || !rpeParsed.ok) return;
     const modeFields = changeProgressionMode(value, mode, now());
     const baseNum = Number(base.replace(',', '.'));
     onSave({
@@ -105,8 +119,8 @@ function SettingsBody({
       repMax: Math.max(repMin, repMax),
       ...modeFields,
       weightStepKg: unit === 'lb' ? lbToKg(step) : step,
-      rir: rir.trim() === '' || Number.isNaN(Number(rir)) ? null : Math.round(Number(rir)),
-      rpe: rpe.trim() === '' || Number.isNaN(Number(rpe)) ? null : Number(rpe),
+      rir: rirParsed.value,
+      rpe: rpeParsed.value,
       restSec: rest === 'default' ? null : rest === 'off' ? 0 : Math.max(5, restSec),
       customWeeks: mode === 'custom' ? weeks : value.customWeeks,
       baseWeightKg:
@@ -213,58 +227,84 @@ function SettingsBody({
         </View>
       ) : null}
 
-      <AppText variant="caption" secondary>
-        {t('programs.weightStep')}
-      </AppText>
-      <View style={styles.chips} accessibilityRole="radiogroup">
-        {stepOptions.map((s) => (
-          <Chip
-            key={s}
-            label={`${s} ${t(`common.units.${unit}`)}`}
-            selected={step === s}
-            onPress={() => setStep(s)}
-          />
-        ))}
-      </View>
+      <Button
+        title={t('common.more')}
+        kind="plain"
+        icon={showMore ? 'chevron-up' : 'chevron-down'}
+        expanded={showMore}
+        onPress={() => setShowMore(!showMore)}
+        testID="setting-more"
+      />
+      {showMore ? (
+        <View style={styles.gap}>
+          <AppText variant="caption" secondary>
+            {t('programs.weightStep')}
+          </AppText>
+          <View style={styles.chips} accessibilityRole="radiogroup">
+            {stepOptions.map((s) => (
+              <Chip
+                key={s}
+                label={`${s} ${t(`common.units.${unit}`)}`}
+                selected={step === s}
+                onPress={() => setStep(s)}
+              />
+            ))}
+          </View>
 
-      <View style={styles.row}>
-        <View style={styles.flex}>
-          <TextField label={t('programs.rir')} value={rir} onChangeText={setRir} keyboardType="number-pad" />
-        </View>
-        <View style={styles.flex}>
-          <TextField label={t('programs.rpe')} value={rpe} onChangeText={setRpe} keyboardType="decimal-pad" />
-        </View>
-      </View>
+          <View style={styles.row}>
+            <View style={styles.flex}>
+              <TextField
+                label={t('programs.rir')}
+                value={rir}
+                onChangeText={setRir}
+                keyboardType="number-pad"
+                error={rirParsed.ok ? null : t('programs.rirInvalid')}
+                testID="setting-rir"
+              />
+            </View>
+            <View style={styles.flex}>
+              <TextField
+                label={t('programs.rpe')}
+                value={rpe}
+                onChangeText={setRpe}
+                keyboardType="decimal-pad"
+                error={rpeParsed.ok ? null : t('programs.rpeInvalid')}
+                testID="setting-rpe"
+              />
+            </View>
+          </View>
 
-      <AppText variant="caption" secondary>
-        {t('programs.rest')}
-      </AppText>
-      <View style={styles.chips} accessibilityRole="radiogroup">
-        <Chip
-          label={t('programs.restDefault', { sec: defaultRestSec })}
-          selected={rest === 'default'}
-          onPress={() => setRest('default')}
-        />
-        <Chip label={t('programs.restOff')} selected={rest === 'off'} onPress={() => setRest('off')} />
-        <Chip
-          label={t('programs.restCustom')}
-          selected={rest === 'custom'}
-          onPress={() => setRest('custom')}
-        />
-      </View>
-      {rest === 'custom' ? (
-        <Stepper
-          label={t('programs.restSeconds')}
-          value={restSec}
-          onChange={setRestSec}
-          min={10}
-          max={600}
-          step={15}
-          format={(v) => t('common.secondsShort', { count: v })}
-        />
+          <AppText variant="caption" secondary>
+            {t('programs.rest')}
+          </AppText>
+          <View style={styles.chips} accessibilityRole="radiogroup">
+            <Chip
+              label={t('programs.restDefault', { sec: defaultRestSec })}
+              selected={rest === 'default'}
+              onPress={() => setRest('default')}
+            />
+            <Chip label={t('programs.restOff')} selected={rest === 'off'} onPress={() => setRest('off')} />
+            <Chip
+              label={t('programs.restCustom')}
+              selected={rest === 'custom'}
+              onPress={() => setRest('custom')}
+            />
+          </View>
+          {rest === 'custom' ? (
+            <Stepper
+              label={t('programs.restSeconds')}
+              value={restSec}
+              onChange={setRestSec}
+              min={10}
+              max={600}
+              step={15}
+              format={(v) => t('common.secondsShort', { count: v })}
+            />
+          ) : null}
+        </View>
       ) : null}
 
-      <Button title={t('common.save')} onPress={save} testID="exercise-settings-save" />
+      <Button title={t('common.save')} onPress={save} disabled={invalid} testID="exercise-settings-save" />
     </View>
   );
 }

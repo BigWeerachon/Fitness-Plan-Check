@@ -277,6 +277,10 @@ describe('repositories (T06)', () => {
     customExerciseRepo.remove(c.id);
     expect(customExerciseRepo.list()).toHaveLength(0);
     expect(customExerciseRepo.getAny(c.id)?.name).toBe('Sled push');
+    // getAny เห็นแถวที่ถูกลบ แต่ต้องไม่ข้ามเจ้าของ
+    setOwner('someone-else');
+    expect(customExerciseRepo.getAny(c.id)).toBeUndefined();
+    setOwner(USER);
   });
 
   it('every write is queued for sync', () => {

@@ -12,6 +12,7 @@ import {
   ErrorState,
   IconButton,
   ListRow,
+  MuscleIcon,
   NumberPad,
   ProgressBar,
   Screen,
@@ -204,6 +205,9 @@ export default function SessionScreen() {
             return (
               <Card key={view.exercise.id}>
                 <View style={styles.exHeader}>
+                  <View style={styles.exIcon}>
+                    <MuscleIcon muscle={view.exercise.muscleGroup} />
+                  </View>
                   <View style={styles.flex}>
                     <AppText variant="headline">{view.exercise.exerciseName}</AppText>
                     <AppText variant="caption" color={complete ? p.accent : p.textSecondary}>
@@ -488,6 +492,7 @@ const styles = StyleSheet.create({
   list: { gap: spacing.md },
   flex: { flex: 1 },
   exHeader: { flexDirection: 'row', alignItems: 'center' },
+  exIcon: { marginRight: spacing.md },
   headRow: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm, gap: spacing.xs },
   setRow: { flexDirection: 'row', alignItems: 'center', minHeight: MIN_TOUCH + 8, gap: spacing.xs },
   cSet: { width: 28, textAlign: 'center' },

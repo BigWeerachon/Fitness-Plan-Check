@@ -9,6 +9,7 @@ import {
   Icon,
   IconButton,
   ListRow,
+  MuscleIcon,
   Screen,
   StackHeader,
   TextField,
@@ -117,7 +118,12 @@ export default function ExercisesScreen() {
           icon="search-outline"
           body={t('exercises.noResults')}
           actionLabel={t('exercises.createCustom')}
-          onAction={() => router.push('/exercises/new')}
+          onAction={() =>
+            router.push({
+              pathname: '/exercises/new',
+              params: params.routineId ? { routineId: params.routineId } : {},
+            })
+          }
         />
       ) : (
         <CardGroup>
@@ -127,6 +133,7 @@ export default function ExercisesScreen() {
               <ListRow
                 key={ex.id}
                 title={exerciseName(ex, lang)}
+                leading={<MuscleIcon muscle={ex.primary} />}
                 value={[
                   t(`exercises.muscles.${ex.primary}`),
                   t(`exercises.equipment.${ex.equipment}`),

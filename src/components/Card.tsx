@@ -50,6 +50,7 @@ export function ListRow({
   value,
   onPress,
   icon,
+  leading,
   right,
   danger,
   disabled,
@@ -60,6 +61,8 @@ export function ListRow({
   value?: string | null;
   onPress?: () => void;
   icon?: IconName;
+  /** องค์ประกอบตกแต่งหน้าแถว (เช่น ไอคอนกล้ามเนื้อ) ใช้เมื่อไม่มี icon */
+  leading?: React.ReactNode;
   right?: React.ReactNode;
   danger?: boolean;
   disabled?: boolean;
@@ -73,6 +76,8 @@ export function ListRow({
         <View style={styles.rowIcon}>
           <Icon name={icon} size={20} color={danger ? p.danger : p.accent} />
         </View>
+      ) : leading ? (
+        <View style={styles.rowIcon}>{leading}</View>
       ) : null}
       <View style={styles.rowText}>
         <AppText color={danger ? p.danger : undefined}>{title}</AppText>

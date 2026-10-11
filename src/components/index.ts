@@ -7,6 +7,7 @@ export { GlowBackground } from './GlowBackground';
 export { HeroTitle } from './HeroTitle';
 export { Icon, type IconName } from './Icon';
 export { ActionBar, IconButton } from './IconButton';
+export { MuscleIcon } from './MuscleIcon';
 export { NumberPad } from './NumberPad';
 export { PillTabBar, TAB_BAR_SPACE } from './PillTabBar';
 export { ProgressBar } from './ProgressBar';

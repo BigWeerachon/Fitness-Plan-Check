@@ -38,6 +38,8 @@ const exercises = {
   namePlaceholder: 'e.g. Sled push',
   notes: 'Short note (optional)',
   saveExercise: 'Save exercise',
+  editTitle: 'Edit exercise',
+  editExercise: 'Edit exercise',
   deleteExercise: 'Delete exercise',
   deleteConfirm: 'Delete this exercise? Past workouts keep their records.',
   noResults: 'No exercises match. Try another word or create your own.',
