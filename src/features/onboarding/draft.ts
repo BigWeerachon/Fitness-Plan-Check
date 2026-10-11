@@ -23,6 +23,21 @@ export interface DraftData {
   quickStart?: QuickStart;
 }
 
+/** ค่าที่เก็บเมื่อกด "ข้ามไปก่อน" ขั้น 2: ล้างข้อมูลร่างกายที่เคยกรอก (กรอก → ถัดไป → ย้อนกลับ → ข้าม) เหลือแค่หน่วย */
+export function skippedProfileDraft(units: Pick<DraftData, 'weightUnit' | 'lengthUnit'>): DraftData {
+  return {
+    sex: null,
+    age: null,
+    heightCm: null,
+    weightKg: null,
+    activityLevel: null,
+    goal: null,
+    weightUnit: units.weightUnit,
+    lengthUnit: units.lengthUnit,
+    profileSkipped: true,
+  };
+}
+
 const ID = 'draft';
 
 export interface DraftRow {

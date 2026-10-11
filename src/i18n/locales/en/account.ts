@@ -48,6 +48,8 @@ const account = {
   restore: 'Restore purchases',
   manage: 'Manage subscription',
   seePlans: 'See plans',
+  editSetup: 'Edit setup',
+  editSetupSub: 'Your profile and starting program',
   getLifetime: 'Get lifetime',
   privacy: 'Privacy Policy',
   terms: 'Terms of Use',

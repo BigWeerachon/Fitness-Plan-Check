@@ -52,6 +52,8 @@ const account: LocaleShape<typeof en> = {
   manage: 'จัดการสมาชิก',
   getLifetime: 'อัปเกรดเป็นแบบซื้อขาด',
   seePlans: 'ดูแพ็กเกจ',
+  editSetup: 'แก้ไขการตั้งค่าเริ่มต้น',
+  editSetupSub: 'โปรไฟล์และโปรแกรมเริ่มต้นของคุณ',
   privacy: 'นโยบายความเป็นส่วนตัว',
   terms: 'ข้อกำหนดการใช้งาน',
   references: 'แหล่งอ้างอิง',

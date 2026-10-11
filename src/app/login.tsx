@@ -5,6 +5,7 @@ import { Alert, StyleSheet, View } from 'react-native';
 import { AppText, Button, HeroTitle, Screen, StackHeader } from '../components';
 import { restorePurchases, signIn } from '../features/access/accountFlow';
 import { getAccess } from '../features/access/useAccess';
+import { migrateDraftWhenReady } from '../features/onboarding/resume';
 import { useSettings } from '../stores/settings';
 import { AppleButton, GoogleButton } from '../features/auth/SignInButtons';
 import type { AuthProvider } from '../services/auth/types';
@@ -35,8 +36,13 @@ export default function LoginScreen() {
 
   const goNext = () => {
     // บัญชีมีสิทธิ์อยู่แล้ว (เช่น ติดตั้งใหม่ B11) → เข้าแอปเลย ไม่ต้องซื้อซ้ำ และข้ามขั้นตั้งค่าเริ่มต้น (SPEC C)
-    if (getAccess().allowed) {
-      if (!useSettings.getState().onboardingDone) useSettings.getState().set('onboardingDone', true);
+    const access = getAccess();
+    if (access.allowed) {
+      if (!useSettings.getState().onboardingDone) {
+        useSettings.getState().set('onboardingDone', true);
+        // ร่างที่กรอกไว้ก่อนกด "มีบัญชีแล้ว" ย้ายเข้าบัญชีตอนนี้ (hook ตอนได้สิทธิ์ข้ามไปเพราะยังไม่เสร็จขั้นตั้งค่า)
+        if (access.userId) void migrateDraftWhenReady(access.userId);
+      }
       router.replace('/');
     } else if (router.canGoBack()) router.back();
     else router.replace({ pathname: '/paywall', params: params.plan ? { plan: params.plan } : {} });

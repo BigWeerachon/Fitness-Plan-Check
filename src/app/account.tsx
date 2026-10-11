@@ -101,6 +101,15 @@ export default function AccountScreen() {
             onPress={() => router.replace('/paywall')}
           />
         ) : null}
+        {!access.allowed ? (
+          <ListRow
+            title={t('account.editSetup')}
+            value={t('account.editSetupSub')}
+            icon="options-outline"
+            onPress={() => router.push('/onboarding/profile')}
+            testID="account-edit-setup"
+          />
+        ) : null}
         <ListRow
           title={t('account.restore')}
           icon="refresh-outline"
