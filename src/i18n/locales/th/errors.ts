@@ -7,6 +7,7 @@ const errors: LocaleShape<typeof en> = {
   signInFailed: 'ล็อกอินไม่สำเร็จ ลองอีกครั้งนะ',
   signInCancelled: 'ยกเลิกการล็อกอินแล้ว',
   purchaseFailed: 'การซื้อไม่สำเร็จ คุณยังไม่ถูกเรียกเก็บเงิน',
+  purchaseOffline: 'ไม่มีอินเทอร์เน็ต คุณยังไม่ถูกเรียกเก็บเงิน ลองใหม่เมื่อออนไลน์',
   purchaseNotAllowed: 'เครื่องนี้ไม่อนุญาตให้ซื้อ',
   storeUnavailable: 'ตอนนี้เชื่อมต่อสโตร์ไม่ได้ ลองใหม่ภายหลัง',
   restoreFailed: 'กู้คืนการซื้อไม่สำเร็จ ลองอีกครั้งนะ',

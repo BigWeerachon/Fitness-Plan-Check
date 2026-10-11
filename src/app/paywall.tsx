@@ -1,12 +1,13 @@
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 import {
   ActionBar,
   AppText,
   Badge,
   Button,
+  Card,
   CardGroup,
   ErrorState,
   HeroTitle,
@@ -15,18 +16,17 @@ import {
   ListRow,
   LoadingState,
   Screen,
+  StackHeader,
 } from '../components';
-import {
-  manageSubscriptionsUrl,
-  purchasePlan,
-  refreshEntitlement,
-  restorePurchases,
-} from '../features/access/accountFlow';
+import { purchasePlan, refreshEntitlement, restorePurchases } from '../features/access/accountFlow';
 import { usePaywallData } from '../features/access/usePaywallData';
-import { useAccess } from '../features/access/useAccess';
+import { getAccess, useAccess } from '../features/access/useAccess';
+import { useManageSubscriptions } from '../features/access/useManageSubscriptions';
 import {
+  billedTerms,
   buildPaywallModel,
   nextStepOnSelect,
+  purchaseStillNeeded,
   type PlanKind,
   type StorePlan,
 } from '../domain/entitlement/paywall';
@@ -39,18 +39,21 @@ import { usePalette } from '../theme/useTheme';
 const PLAN_KINDS: PlanKind[] = ['monthly', 'lifetime'];
 
 /**
- * Paywall (SPEC B4–B6, J2, J4) — ไม่มี dark pattern: ราคาจากสโตร์, เงื่อนไขต่ออายุ/ยกเลิกครบ,
+ * Paywall (SPEC B4–B6, J2, J4, J5) — ไม่มี dark pattern: ราคาจากสโตร์, เงื่อนไขต่ออายุ/ยกเลิกครบ,
  * ปุ่มกู้คืนการซื้อ, ลิงก์ Terms/Privacy และไม่โฆษณาทดลองฟรีกับผู้ที่ไม่มีสิทธิ์
  * ผู้ใช้ที่ไม่มีสิทธิ์ถูกพามาที่นี่จาก AccessGate จึงไม่มีปุ่ม "ข้าม" เข้าแอป (ล็อกทุกฟีเจอร์ B3)
+ * ?upgrade=lifetime (จากการตั้งค่า) → ผู้ที่มีรายเดือน/ทดลองอยู่ซื้อขาดได้ พร้อมแจ้งว่ารายเดือนไม่ถูกยกเลิกให้
  */
 export default function PaywallScreen() {
   const { t } = useTranslation();
   const p = usePalette();
-  const params = useLocalSearchParams<{ plan?: PlanKind }>();
+  const params = useLocalSearchParams<{ plan?: PlanKind; upgrade?: string }>();
   const access = useAccess();
   const user = useAuth((s) => s.user);
   const eligibility = useEntitlement((s) => s.trialEligibility);
+  const billingIssue = useEntitlement((s) => s.cached?.billingIssueAt != null);
   const { plans, loading, error, reload } = usePaywallData();
+  const openManage = useManageSubscriptions();
   const [selected, setSelected] = useState<PlanKind | null>(params.plan ?? null);
   const [busy, setBusy] = useState(false);
   const store = Platform.OS === 'ios' ? t('paywall.store.ios') : t('paywall.store.android');
@@ -62,27 +65,30 @@ export default function PaywallScreen() {
         monthly: plans?.monthly ?? null,
         lifetime: plans?.lifetime ?? null,
         trialEligibility: eligibility,
+        billingIssue,
+        upgrade: params.upgrade === 'lifetime',
       }),
-    [access.state, plans, eligibility],
+    [access.state, plans, eligibility, billingIssue, params.upgrade],
   );
-  const plan: PlanKind | null = selected ?? model.defaultPlan;
-  const chosen: StorePlan | null = plan ? (plan === 'monthly' ? model.monthly : model.lifetime) : null;
+  const planOf = (kind: PlanKind): StorePlan | null => (kind === 'monthly' ? model.monthly : model.lifetime);
+  // แพ็กเกจที่ส่งมากับลิงก์อาจไม่มีในโหมดนี้ (เช่น อัปเกรดมีแค่ซื้อขาด) → ใช้ค่าตั้งต้นของโมเดล
+  const plan: PlanKind | null = selected && planOf(selected) ? selected : model.defaultPlan;
+  const chosen: StorePlan | null = plan ? planOf(plan) : null;
+  const billed = billedTerms(model, plan);
 
-  if (access.allowed && !access.pending) return <Redirect href="/" />;
-
-  const priceOf = (kind: PlanKind) =>
-    (kind === 'monthly' ? model.monthly?.priceString : model.lifetime?.priceString) ?? '';
+  if (access.allowed && !access.pending && !model.upgrade) return <Redirect href="/" />;
 
   const ctaTitle = (): string => {
     if (!chosen) return t('paywall.unavailable');
     if (chosen.kind === 'lifetime') return t('paywall.cta.lifetime', { price: chosen.priceString });
     return model.offerTrial
-      ? t('paywall.cta.trial', { count: model.trialDays })
+      ? t('paywall.cta.trial', { price: chosen.priceString })
       : t('paywall.cta.monthly', { price: chosen.priceString });
   };
 
   const onBuy = async () => {
     if (!chosen) return;
+    const upgrade = model.upgrade;
     const step = nextStepOnSelect(chosen.kind, {
       authUserId: user?.id ?? null,
       purchasesUserId: getServices().purchases.currentAppUserId(),
@@ -94,7 +100,14 @@ export default function PaywallScreen() {
     }
     setBusy(true);
     try {
-      if (step.step === 'linkingAccount') await refreshEntitlement();
+      if (step.step === 'linkingAccount') {
+        await refreshEntitlement();
+        // ผูกบัญชีแล้วพบว่ามีสิทธิ์อยู่แล้ว → ไม่เปิดหน้าซื้อซ้ำ (SPEC B11, J3)
+        if (!purchaseStillNeeded(getAccess(), chosen.kind, upgrade)) {
+          router.replace('/');
+          return;
+        }
+      }
       const result = await purchasePlan(chosen);
       if (result.status === 'success') {
         Alert.alert(t('paywall.success'));
@@ -103,7 +116,7 @@ export default function PaywallScreen() {
         Alert.alert(
           t('common.errorTitle'),
           result.code === 'network'
-            ? t('errors.network')
+            ? t('errors.purchaseOffline')
             : result.code === 'not_allowed'
               ? t('errors.purchaseNotAllowed')
               : t('errors.purchaseFailed'),
@@ -126,10 +139,6 @@ export default function PaywallScreen() {
     else Alert.alert(t('common.errorTitle'), t('errors.restoreFailed'));
   };
 
-  const onManage = async () => {
-    await Linking.openURL(await manageSubscriptionsUrl());
-  };
-
   const features: { icon: React.ComponentProps<typeof Icon>['name']; text: string }[] = [
     { icon: 'today-outline', text: t('paywall.features.today') },
     { icon: 'calendar-outline', text: t('paywall.features.programs') },
@@ -138,29 +147,45 @@ export default function PaywallScreen() {
     { icon: 'cloud-done-outline', text: t('paywall.features.sync') },
   ];
 
-  const headline =
-    model.headline === 'trial'
-      ? t('paywall.headline.trial', { count: model.trialDays })
-      : t(`paywall.headline.${model.headline}`);
-  const sub =
-    model.headline === 'trial'
-      ? t('paywall.sub.trial', { price: priceOf('monthly') })
-      : t(`paywall.sub.${model.headline}`);
+  const fixPayment = model.primaryAction === 'fixPayment';
+  const billedText = billed
+    ? t(billed.key, { price: billed.price, count: billed.key === 'paywall.billed.trial' ? billed.count : 0 })
+    : null;
 
   return (
     <Screen
       testID="paywall"
       header={
-        <ActionBar>
-          <IconButton
-            icon="settings-outline"
-            label={t('paywall.account')}
-            onPress={() => router.push('/account')}
-          />
-        </ActionBar>
+        model.upgrade ? (
+          <StackHeader backIcon="close" />
+        ) : (
+          <ActionBar>
+            <IconButton
+              icon="settings-outline"
+              label={t('paywall.account')}
+              onPress={() => router.push('/account')}
+            />
+          </ActionBar>
+        )
       }
     >
-      <HeroTitle title={headline} subtitle={sub} compact />
+      <HeroTitle
+        title={t(`paywall.headline.${model.headline}`)}
+        subtitle={t(`paywall.sub.${model.headline}`, { store })}
+        compact
+      />
+
+      {/* สิทธิ์หมดเพราะตัดเงินไม่ผ่าน → ทางแก้หลักคืออัปเดตวิธีชำระเงินในสโตร์ ไม่ใช่สมัครใหม่ (SPEC J5) */}
+      {fixPayment ? (
+        <View style={styles.fix}>
+          <Button
+            title={t('paywall.cta.fixPayment')}
+            icon="card-outline"
+            onPress={() => void openManage()}
+            testID="paywall-fix-payment"
+          />
+        </View>
+      ) : null}
 
       <CardGroup>
         {features.map((f) => (
@@ -177,7 +202,7 @@ export default function PaywallScreen() {
       ) : (
         <View style={styles.plans} accessibilityRole="radiogroup">
           {PLAN_KINDS.map((kind) => {
-            const sp = kind === 'monthly' ? model.monthly : model.lifetime;
+            const sp = planOf(kind);
             if (!sp) return null;
             const on = plan === kind;
             const title = kind === 'monthly' ? t('paywall.plans.monthly') : t('paywall.plans.lifetime');
@@ -197,7 +222,7 @@ export default function PaywallScreen() {
                 onPress={() => setSelected(kind)}
                 accessibilityRole="radio"
                 accessibilityState={{ selected: on }}
-                accessibilityLabel={[title, trial, price, note].filter(Boolean).join(', ')}
+                accessibilityLabel={[title, price, trial, note].filter(Boolean).join(', ')}
                 testID={`plan-${kind}`}
                 style={[
                   styles.plan,
@@ -212,7 +237,6 @@ export default function PaywallScreen() {
                     color={on ? p.accent : p.textSecondary}
                   />
                 </View>
-                {trial ? <Badge label={trial} /> : null}
                 {/* ราคาเต็มจากสโตร์ห้ามถูกตัดทอน (B5) — ราคาและรอบการชำระแยกบรรทัด ตัดคำได้ */}
                 <AppText variant="title" color={on ? p.accent : p.text}>
                   {sp.priceString}
@@ -220,6 +244,7 @@ export default function PaywallScreen() {
                 <AppText variant="callout" color={on ? p.accent : p.text}>
                   {kind === 'monthly' ? t('paywall.plans.perMonthLabel') : t('paywall.plans.oneTimeLabel')}
                 </AppText>
+                {trial ? <Badge label={trial} /> : null}
                 <AppText variant="caption" secondary>
                   {note}
                 </AppText>
@@ -230,8 +255,34 @@ export default function PaywallScreen() {
       )}
 
       <View style={styles.actions}>
+        {/* ซื้อขาดไม่ยกเลิกรายเดือน/ทดลองที่มีอยู่ — ต้องแจ้งก่อนซื้อพร้อมทางลัดไปยกเลิก (SPEC J5) */}
+        {model.upgrade ? (
+          <Card>
+            <View style={styles.noticeRow}>
+              <Icon name="warning-outline" size={20} color={p.warning} />
+              <AppText style={styles.flex} testID="paywall-upgrade-notice">
+                {t('paywall.upgrade.notice', { store })}
+              </AppText>
+            </View>
+            <Button
+              title={t('paywall.upgrade.manage')}
+              kind="plain"
+              icon="open-outline"
+              onPress={() => void openManage()}
+              testID="paywall-upgrade-manage"
+            />
+          </Card>
+        ) : null}
+
+        {/* ยอดที่ถูกเรียกเก็บจริงติดปุ่มซื้อ เด่นไม่น้อยกว่าคำว่า "ฟรี" (App Review 3.1.2, SPEC B5) */}
+        {billedText && !loading && !error ? (
+          <AppText variant="headline" align="center" testID="paywall-billed">
+            {billedText}
+          </AppText>
+        ) : null}
         <Button
           title={ctaTitle()}
+          kind={fixPayment ? 'secondary' : 'primary'}
           onPress={onBuy}
           disabled={!chosen || loading}
           loading={busy}
@@ -245,7 +296,7 @@ export default function PaywallScreen() {
         <View style={styles.disclosures} testID="paywall-disclosures">
           {model.disclosures.map((key) => (
             <AppText key={key} variant="caption" secondary align="center">
-              {t(key, { count: model.trialDays ?? 0, price: priceOf('monthly'), store })}
+              {t(key, { count: model.trialDays ?? 0, price: model.monthly?.priceString ?? '', store })}
             </AppText>
           ))}
         </View>
@@ -257,7 +308,14 @@ export default function PaywallScreen() {
           disabled={busy}
           testID="paywall-restore"
         />
-        <Button title={t('paywall.manageSubscription')} kind="plain" onPress={onManage} />
+        {model.upgrade ? null : (
+          <Button
+            title={t('paywall.manageSubscription')}
+            kind="plain"
+            onPress={() => void openManage()}
+            testID="paywall-manage"
+          />
+        )}
       </View>
 
       <View style={styles.links}>
@@ -279,6 +337,7 @@ export default function PaywallScreen() {
 
 const styles = StyleSheet.create({
   block: { minHeight: 160 },
+  fix: { marginBottom: spacing.xl },
   plans: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.xl },
   plan: {
     flex: 1,
@@ -290,6 +349,8 @@ const styles = StyleSheet.create({
   },
   planHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   actions: { marginTop: spacing.xl, gap: spacing.md },
+  noticeRow: { flexDirection: 'row', gap: spacing.sm },
+  flex: { flex: 1 },
   disclosures: { gap: spacing.xs },
   links: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', marginTop: spacing.lg },
 });

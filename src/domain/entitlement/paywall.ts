@@ -26,9 +26,16 @@ export interface PaywallInput {
   monthly: StorePlan | null;
   lifetime: StorePlan | null;
   trialEligibility: TrialEligibility;
+  /** สโตร์แจ้งปัญหาการชำระเงินไว้ (billingIssueAt ในแคช) — แยกสิทธิ์หมดเพราะตัดเงินไม่ผ่านออกจากหมดอายุปกติ */
+  billingIssue?: boolean;
+  /** เปิดจากการตั้งค่าเพื่อเปลี่ยนรายเดือน/ทดลองเป็นซื้อขาด (SPEC J5) */
+  upgrade?: boolean;
 }
 
-export type PaywallHeadline = 'trial' | 'subscribe' | 'winback' | 'billing';
+export type PaywallHeadline = 'subscribe' | 'winback' | 'billing' | 'upgrade';
+
+/** ปุ่มหลักของ Paywall: ซื้อ หรือไปแก้วิธีชำระเงินในสโตร์ */
+export type PaywallPrimaryAction = 'purchase' | 'fixPayment';
 
 export interface PaywallModel {
   headline: PaywallHeadline;
@@ -43,22 +50,38 @@ export interface PaywallModel {
   disclosures: string[];
   /** ไม่มีสินค้าให้ซื้อ (โหลดจากสโตร์ไม่ได้) */
   unavailable: boolean;
+  /** โหมดอัปเกรดเป็นซื้อขาด: ผู้มีสิทธิ์อยู่แล้วเปิด Paywall ได้ แสดงเฉพาะแพ็กเกจซื้อขาด */
+  upgrade: boolean;
+  primaryAction: PaywallPrimaryAction;
+}
+
+/** สถานะที่อัปเกรดเป็นซื้อขาดได้: มีสิทธิ์อยู่แต่ยังไม่ใช่ซื้อขาด (SPEC J5) */
+export function offersLifetimeUpgrade(state: EntitlementState): boolean {
+  return state === 'TRIALING' || state === 'SUBSCRIBED_MONTHLY' || state === 'BILLING_GRACE';
 }
 
 /**
  * สร้างโมเดลของ Paywall
  * - ไม่รู้ผล eligibility (unknown) → ถือว่าไม่มีสิทธิ์ ไม่โฆษณาทดลองฟรี (ปลอดภัยตาม B6 และคำแนะนำของ RevenueCat)
  * - สโตร์ไม่มี free trial offer สำหรับแพ็กเกจรายเดือน → ไม่แสดงทดลองฟรี
- * - เคยมีสิทธิ์แล้วหมด (EXPIRED) → ข้อความต้อนรับกลับ
+ * - หัวข้อเน้นฟีเจอร์เสมอ ไม่ใช้คำว่า "ฟรี" เป็นหัวข้อ — ราคาที่ถูกเรียกเก็บต้องเด่นไม่น้อยกว่าข้อเสนอฟรี (App Review 3.1.2)
+ * - เคยมีสิทธิ์แล้วหมด (EXPIRED) → ข้อความต้อนรับกลับ; ถ้าหมดเพราะตัดเงินไม่ผ่าน (billing retry / account hold)
+ *   → ปุ่มหลักคือไปแก้วิธีชำระเงินในสโตร์ แทนการชวนสมัครใหม่
+ * - upgrade → เฉพาะผู้ที่มีสิทธิ์แบบรายเดือน/ทดลอง/grace: แสดงแค่ซื้อขาด
  */
 export function buildPaywallModel(input: PaywallInput): PaywallModel {
-  const { state, monthly, lifetime, trialEligibility } = input;
+  const { state, lifetime, trialEligibility } = input;
+  const upgrade = !!input.upgrade && offersLifetimeUpgrade(state);
+  const monthly = upgrade ? null : input.monthly;
   const offerTrial =
     !!monthly && monthly.trialDays !== null && monthly.trialDays > 0 && trialEligibility === 'eligible';
+  const billingProblem =
+    !upgrade && (state === 'BILLING_GRACE' || (state === 'EXPIRED' && !!input.billingIssue));
   let headline: PaywallHeadline;
-  if (state === 'BILLING_GRACE') headline = 'billing';
+  if (upgrade) headline = 'upgrade';
+  else if (billingProblem) headline = 'billing';
   else if (state === 'EXPIRED') headline = 'winback';
-  else headline = offerTrial ? 'trial' : 'subscribe';
+  else headline = 'subscribe';
 
   const disclosures: string[] = [];
   if (monthly) {
@@ -79,7 +102,28 @@ export function buildPaywallModel(input: PaywallInput): PaywallModel {
     defaultPlan: monthly ? 'monthly' : lifetime ? 'lifetime' : null,
     disclosures,
     unavailable: !monthly && !lifetime,
+    upgrade,
+    primaryAction: billingProblem ? 'fixPayment' : 'purchase',
   };
+}
+
+export type BilledTerms =
+  | { key: 'paywall.billed.trial'; count: number; price: string }
+  | { key: 'paywall.billed.monthly'; price: string }
+  | { key: 'paywall.billed.lifetime'; price: string };
+
+/**
+ * ยอดที่จะถูกเรียกเก็บจริงของแพ็กเกจที่เลือก (ราคาจากสโตร์) — แสดงติดปุ่มซื้อ ตัวใหญ่เท่าหรือมากกว่าคำว่า "ฟรี"
+ * ข้อเสนอทดลองอยู่ในประโยคเดียวกับราคาเสมอ (SPEC B5, App Review 3.1.2)
+ */
+export function billedTerms(model: PaywallModel, plan: PlanKind | null): BilledTerms | null {
+  const sp = plan === 'monthly' ? model.monthly : plan === 'lifetime' ? model.lifetime : null;
+  if (!sp) return null;
+  if (sp.kind === 'lifetime') return { key: 'paywall.billed.lifetime', price: sp.priceString };
+  if (model.offerTrial && model.trialDays) {
+    return { key: 'paywall.billed.trial', count: model.trialDays, price: sp.priceString };
+  }
+  return { key: 'paywall.billed.monthly', price: sp.priceString };
 }
 
 // ───────────── ลำดับการซื้อ (SPEC B4) ─────────────
@@ -111,6 +155,19 @@ export function nextStepOnSelect(plan: PlanKind, ctx: PurchaseContext): Purchase
   if (!ctx.authUserId) return { step: 'needLogin', plan };
   if (ctx.purchasesUserId !== ctx.authUserId) return { step: 'linkingAccount', plan };
   return { step: 'purchasing', plan };
+}
+
+/**
+ * หลังผูกบัญชีกับ RevenueCat (ขั้น linkingAccount) สิทธิ์ของบัญชีอาจกลับมาแล้ว (เช่น เคยสมัครไว้บนเครื่องอื่น SPEC B11)
+ * → ไม่ซื้อซ้ำ ยกเว้นตั้งใจอัปเกรดเป็นซื้อขาดจากหน้าอัปเกรดและยังไม่ได้ซื้อขาด
+ */
+export function purchaseStillNeeded(
+  access: { allowed: boolean; state: EntitlementState },
+  plan: PlanKind,
+  upgrade: boolean,
+): boolean {
+  if (!access.allowed) return true;
+  return upgrade && plan === 'lifetime' && offersLifetimeUpgrade(access.state);
 }
 
 export class PurchaseRequiresLoginError extends Error {

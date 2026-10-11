@@ -4,7 +4,15 @@ import { now } from '../../utils/clock';
 import type { PurchaseResult, PurchasesService, StorePlans } from './types';
 
 export type MockScenario =
-  'new' | 'trial_used' | 'trialing' | 'monthly' | 'lifetime' | 'expired' | 'billing_grace';
+  | 'new'
+  | 'trial_used'
+  | 'trialing'
+  | 'monthly'
+  | 'lifetime'
+  | 'expired'
+  | 'billing_grace'
+  /** ตัดเงินไม่ผ่านจนหมด grace (billing retry / account hold) — สโตร์ถอนสิทธิ์แต่ยังมี billing issue */
+  | 'billing_retry';
 
 interface MockAccount {
   trialUsed: boolean;
@@ -85,6 +93,13 @@ export class MockPurchasesService implements PurchasesService {
         return {
           trialUsed: true,
           entitlement: sub('NORMAL', t + 3 * DAY, t - DAY),
+          everHad: null,
+          lifetime: false,
+        };
+      case 'billing_retry':
+        return {
+          trialUsed: true,
+          entitlement: sub('NORMAL', t - DAY, t - 4 * DAY),
           everHad: null,
           lifetime: false,
         };

@@ -4,6 +4,7 @@ const errors = {
   signInFailed: 'Sign-in didn’t finish. Please try again.',
   signInCancelled: 'Sign-in was cancelled.',
   purchaseFailed: 'The purchase didn’t go through. You were not charged.',
+  purchaseOffline: 'No internet connection. You were not charged — please try again when you’re online.',
   purchaseNotAllowed: 'This purchase isn’t allowed on this device.',
   storeUnavailable: 'The store is not available right now. Please try again later.',
   restoreFailed: 'Couldn’t restore purchases. Please try again.',

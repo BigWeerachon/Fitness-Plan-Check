@@ -1,10 +1,11 @@
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { AppText, Button, Card, HeroTitle, Icon, Screen, StackHeader } from '../components';
 import { AuthCancelledError } from '../services/auth/types';
-import { deleteAccount, manageSubscriptionsUrl } from '../features/access/accountFlow';
+import { deleteAccount } from '../features/access/accountFlow';
+import { useManageSubscriptions } from '../features/access/useManageSubscriptions';
 import { useAuth } from '../stores/auth';
 import { spacing } from '../theme/tokens';
 import { usePalette } from '../theme/useTheme';
@@ -17,6 +18,7 @@ export default function DeleteAccountScreen() {
   const { t } = useTranslation();
   const p = usePalette();
   const user = useAuth((s) => s.user);
+  const openManage = useManageSubscriptions();
   const [understood, setUnderstood] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -67,7 +69,7 @@ export default function DeleteAccountScreen() {
               title={t('account.delete.manage')}
               kind="plain"
               icon="open-outline"
-              onPress={async () => Linking.openURL(await manageSubscriptionsUrl())}
+              onPress={() => void openManage()}
             />
           </Card>
           {user.provider === 'apple' ? (

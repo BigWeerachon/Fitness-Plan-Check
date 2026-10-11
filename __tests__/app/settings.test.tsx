@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, jest } from '@jest/globals';
 import { fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
 import * as Sharing from 'expo-sharing';
-import { Alert } from 'react-native';
+import { Alert, Linking } from 'react-native';
 import { dailyLogRepo } from '@/db/repos/dailyLogRepo';
 import { profileRepo } from '@/db/repos/profileRepo';
 import { routineRepo } from '@/db/repos/programRepo';
@@ -124,6 +124,25 @@ describe('settings tab (SPEC K)', () => {
     fireEvent.press(await screen.findByTestId('export-daily'));
     await waitFor(() =>
       expect(files.get('file:///cache/fitnese-daily-2026-10-09.csv')).toContain('2026-10-09,70,2200,'),
+    );
+  });
+
+  it('opens the store subscription page and reports when it cannot be opened (K)', async () => {
+    await entitledApp();
+    renderRouter('./src/app', { initialUrl: '/settings' });
+    const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    fireEvent.press(await screen.findByTestId('settings-manage'));
+    await flush();
+    expect(openURL).toHaveBeenCalledWith('https://apps.apple.com/account/subscriptions');
+
+    // เปิดลิงก์ไม่ได้ → แจ้งผู้ใช้ ไม่ปล่อย promise ที่ reject ทิ้งไว้
+    openURL.mockRejectedValueOnce(new Error('no handler'));
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+    fireEvent.press(screen.getByTestId('settings-manage'));
+    await flush();
+    expect(alert).toHaveBeenCalledWith(
+      'Something went wrong',
+      'The store is not available right now. Please try again later.',
     );
   });
 

@@ -45,6 +45,7 @@ const account: LocaleShape<typeof en> = {
   },
   restore: 'กู้คืนการซื้อ',
   manage: 'จัดการสมาชิก',
+  getLifetime: 'อัปเกรดเป็นแบบซื้อขาด',
   seePlans: 'ดูแพ็กเกจ',
   privacy: 'นโยบายความเป็นส่วนตัว',
   terms: 'ข้อกำหนดการใช้งาน',
