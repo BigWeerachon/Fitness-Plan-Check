@@ -9,6 +9,7 @@ import {
   CardGroup,
   Disclaimer,
   HeroTitle,
+  Icon,
   ListRow,
   NumberPad,
   Screen,
@@ -22,6 +23,7 @@ import type { Intensity } from '../../db/schema';
 import { toLocalDate } from '../../domain/dates';
 import {
   ACTIVITY_MULTIPLIERS,
+  ADULT_AGE,
   DEFICIT_PCT,
   PROTEIN_PER_KG_DEFAULT,
   PROTEIN_PER_KG_RANGE,
@@ -34,6 +36,7 @@ import { ProfileFormView } from '../../features/profile/ProfileFormView';
 import { logBodyWeight } from '../../features/stats/bodyWeight';
 import { formatNumber } from '../../i18n/format';
 import { spacing } from '../../theme/tokens';
+import { usePalette } from '../../theme/useTheme';
 import { now } from '../../utils/clock';
 
 const INTENSITIES: Intensity[] = ['light', 'moderate', 'hard'];
@@ -52,12 +55,15 @@ const MET_RANGE = { min: 1, max: 15 } as const;
  */
 export default function ProfileScreen() {
   const { t } = useTranslation();
+  const p = usePalette();
   const profile = useRepoQuery(() => profileRepo.ensure());
   const today = toLocalDate(now());
   const intake = useRepoQuery(() => dailyLogRepo.get(today)?.kcalIntake ?? null, today);
   const [form, setForm] = useState<ProfileForm>(() => formFromValues(profile));
   const [saved, setSaved] = useState(false);
   const [enteringIntake, setEnteringIntake] = useState(false);
+  // ส่วนปรับเป้าหมาย/MET เก็บไว้หลัง "เพิ่มเติม" (SPEC A3 — โปรไฟล์ไม่ควรรกด้วยตัวปรับทุกตัว)
+  const [showMore, setShowMore] = useState(false);
   const { values, errors } = parseProfileForm(form);
   const hasErrors = Object.keys(errors).length > 0;
   // แสดงผลลัพธ์ตามค่าที่กำลังแก้ทันที (ยังไม่บันทึกก็เห็น) ถ้าค่าที่กรอกถูกต้อง
@@ -80,6 +86,8 @@ export default function ProfileScreen() {
     setSaved(true);
   };
 
+  // ผู้ใช้ < 18 ปีไม่มีเป้าลดน้ำหนัก (H2) — ตัดสินจากอายุตรง ๆ เพราะโปรไฟล์ที่ยังไม่ครบจะไม่มี summary
+  const isMinor = preview.age != null && preview.age < ADULT_AGE;
   const goal = summary?.target.goal ?? preview.goal;
   const proteinDefault = goal ? PROTEIN_PER_KG_DEFAULT[goal] : PROTEIN_PER_KG_DEFAULT.maintain;
 
@@ -166,87 +174,102 @@ export default function ProfileScreen() {
         </>
       )}
 
-      <SectionTitle>{t('nutrition.adjust')}</SectionTitle>
       <CardGroup>
-        {preview.goal === 'lose' && !summary?.target.minorNoDeficit ? (
-          <View style={styles.pad}>
-            <Stepper
-              label={t('nutrition.deficit')}
-              value={profile.deficitPct}
-              onChange={(v) => profileRepo.update({ deficitPct: v })}
-              min={DEFICIT_PCT.min}
-              max={DEFICIT_PCT.max}
-              format={(v) => t('nutrition.percent', { value: v })}
-              testID="profile-deficit"
-            />
-          </View>
-        ) : null}
-        {preview.goal === 'gain' ? (
-          <View style={styles.pad}>
-            <Stepper
-              label={t('nutrition.surplus')}
-              value={profile.surplusPct}
-              onChange={(v) => profileRepo.update({ surplusPct: v })}
-              min={SURPLUS_PCT.min}
-              max={SURPLUS_PCT.max}
-              format={(v) => t('nutrition.percent', { value: v })}
-              testID="profile-surplus"
-            />
-          </View>
-        ) : null}
-        <View style={styles.pad}>
-          <Stepper
-            label={t('nutrition.proteinPerKg')}
-            value={profile.proteinPerKg ?? proteinDefault}
-            onChange={(v) => profileRepo.update({ proteinPerKg: v })}
-            min={PROTEIN_PER_KG_RANGE.min}
-            max={PROTEIN_PER_KG_RANGE.max}
-            step={0.1}
-            format={(v) => t('nutrition.gPerKg', { value: formatNumber(v, 1) })}
-            testID="profile-protein"
-          />
-          {profile.proteinPerKg != null ? (
-            <Button
-              title={t('nutrition.proteinAuto', { value: formatNumber(proteinDefault, 1) })}
-              kind="plain"
-              onPress={() => profileRepo.update({ proteinPerKg: null })}
-              testID="profile-protein-auto"
-            />
-          ) : null}
-        </View>
-        <View style={styles.pad}>
-          <Stepper
-            label={t('nutrition.fatPct')}
-            value={profile.fatPct}
-            onChange={(v) => profileRepo.update({ fatPct: v })}
-            min={FAT_PCT.min}
-            max={FAT_PCT.max}
-            format={(v) => t('nutrition.percent', { value: v })}
-            testID="profile-fat"
-          />
-        </View>
+        <ListRow
+          title={t('common.more')}
+          value={t('nutrition.moreHint')}
+          icon="options-outline"
+          right={<Icon name={showMore ? 'chevron-up' : 'chevron-down'} size={18} color={p.textSecondary} />}
+          expanded={showMore}
+          onPress={() => setShowMore((v) => !v)}
+          testID="profile-more"
+        />
       </CardGroup>
+      {showMore ? (
+        <>
+          <SectionTitle>{t('nutrition.adjust')}</SectionTitle>
+          <CardGroup>
+            {preview.goal === 'lose' && !isMinor ? (
+              <View style={styles.pad}>
+                <Stepper
+                  label={t('nutrition.deficit')}
+                  value={profile.deficitPct}
+                  onChange={(v) => profileRepo.update({ deficitPct: v })}
+                  min={DEFICIT_PCT.min}
+                  max={DEFICIT_PCT.max}
+                  format={(v) => t('nutrition.percent', { value: v })}
+                  testID="profile-deficit"
+                />
+              </View>
+            ) : null}
+            {preview.goal === 'gain' ? (
+              <View style={styles.pad}>
+                <Stepper
+                  label={t('nutrition.surplus')}
+                  value={profile.surplusPct}
+                  onChange={(v) => profileRepo.update({ surplusPct: v })}
+                  min={SURPLUS_PCT.min}
+                  max={SURPLUS_PCT.max}
+                  format={(v) => t('nutrition.percent', { value: v })}
+                  testID="profile-surplus"
+                />
+              </View>
+            ) : null}
+            <View style={styles.pad}>
+              <Stepper
+                label={t('nutrition.proteinPerKg')}
+                value={profile.proteinPerKg ?? proteinDefault}
+                onChange={(v) => profileRepo.update({ proteinPerKg: v })}
+                min={PROTEIN_PER_KG_RANGE.min}
+                max={PROTEIN_PER_KG_RANGE.max}
+                step={0.1}
+                format={(v) => t('nutrition.gPerKg', { value: formatNumber(v, 1) })}
+                testID="profile-protein"
+              />
+              {profile.proteinPerKg != null ? (
+                <Button
+                  title={t('nutrition.proteinAuto', { value: formatNumber(proteinDefault, 1) })}
+                  kind="plain"
+                  onPress={() => profileRepo.update({ proteinPerKg: null })}
+                  testID="profile-protein-auto"
+                />
+              ) : null}
+            </View>
+            <View style={styles.pad}>
+              <Stepper
+                label={t('nutrition.fatPct')}
+                value={profile.fatPct}
+                onChange={(v) => profileRepo.update({ fatPct: v })}
+                min={FAT_PCT.min}
+                max={FAT_PCT.max}
+                format={(v) => t('nutrition.percent', { value: v })}
+                testID="profile-fat"
+              />
+            </View>
+          </CardGroup>
 
-      <SectionTitle>{t('nutrition.mets')}</SectionTitle>
-      <AppText variant="caption" secondary style={styles.note}>
-        {t('nutrition.metsHint')}
-      </AppText>
-      <CardGroup>
-        {INTENSITIES.map((i) => (
-          <View key={i} style={styles.pad}>
-            <Stepper
-              label={t(`nutrition.met.${i}`)}
-              value={profile[MET_FIELD[i]]}
-              onChange={(v) => profileRepo.update({ [MET_FIELD[i]]: v })}
-              min={MET_RANGE.min}
-              max={MET_RANGE.max}
-              step={0.5}
-              format={(v) => t('nutrition.metValue', { value: formatNumber(v, 1) })}
-              testID={`profile-met-${i}`}
-            />
-          </View>
-        ))}
-      </CardGroup>
+          <SectionTitle>{t('nutrition.mets')}</SectionTitle>
+          <AppText variant="caption" secondary style={styles.note}>
+            {t('nutrition.metsHint')}
+          </AppText>
+          <CardGroup>
+            {INTENSITIES.map((i) => (
+              <View key={i} style={styles.pad}>
+                <Stepper
+                  label={t(`nutrition.met.${i}`)}
+                  value={profile[MET_FIELD[i]]}
+                  onChange={(v) => profileRepo.update({ [MET_FIELD[i]]: v })}
+                  min={MET_RANGE.min}
+                  max={MET_RANGE.max}
+                  step={0.5}
+                  format={(v) => t('nutrition.metValue', { value: formatNumber(v, 1) })}
+                  testID={`profile-met-${i}`}
+                />
+              </View>
+            ))}
+          </CardGroup>
+        </>
+      ) : null}
 
       <SectionTitle>{t('nutrition.intakeToday')}</SectionTitle>
       <CardGroup>

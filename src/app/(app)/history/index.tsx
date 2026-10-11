@@ -12,22 +12,49 @@ import {
   StackHeader,
 } from '../../../components';
 import { parseLocalDate } from '../../../domain/dates';
+import { PERIODS, type DateRange, type Period } from '../../../domain/periods';
 import { groupFilterOf, programGroups, sessionSummaries, type SessionSummary } from '../../../domain/stats';
-import { displayWeight } from '../../../domain/units';
 import { useRepoQuery } from '../../../features/data/useRepoQuery';
+import { groupLabels, periodLabel, sessionLine } from '../../../features/stats/labels';
 import { loadStats } from '../../../features/stats/loadStats';
-import { formatDateShort, formatMonthYear, formatNumber } from '../../../i18n/format';
+import { formatDateShort, formatMonthYear } from '../../../i18n/format';
 import { spacing } from '../../../theme/tokens';
 
-/** ประวัติการฝึกทั้งหมด (SPEC I1) เรียงจากใหม่ไปเก่า แบ่งตามเดือน — กรองกรุ๊ปได้ (I5) และแสดงชื่อกรุ๊ปทุกแถว */
+const DATE_PARAM = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * ประวัติการฝึก (SPEC I1) เรียงจากใหม่ไปเก่า แบ่งตามเดือน — กรองกรุ๊ปได้ (I5) และแสดงชื่อกรุ๊ปทุกแถว
+ * เปิดจากแท็บสถิติจะรับช่วงเวลาที่กำลังดูมาด้วย (from/to) แล้วแสดงช่วงนั้นที่หัวข้อ; ไม่มี = ทั้งหมด
+ */
 export default function HistoryScreen() {
   const { t, i18n } = useTranslation();
-  const { group: groupKey } = useLocalSearchParams<{ group?: string }>();
+  const params = useLocalSearchParams<{
+    group?: string;
+    period?: string;
+    from?: string;
+    to?: string;
+  }>();
+  const groupKey = params.group;
+  const range: DateRange | null =
+    params.from && params.to && DATE_PARAM.test(params.from) && DATE_PARAM.test(params.to)
+      ? { start: params.from, end: params.to }
+      : null;
+  const period = PERIODS.find((x) => x === params.period) as Period | undefined;
   const model = useRepoQuery(loadStats, i18n.language);
   const group = groupKey ? programGroups(model.data).find((g) => g.key === groupKey) : undefined;
-  const sessions = sessionSummaries(model.data, { group: group ? groupFilterOf(group) : null });
-  const unitLabel = t(`common.units.${model.unit}`);
+  const sessions = sessionSummaries(model.data, { range, group: group ? groupFilterOf(group) : null });
   const today = parseLocalDate(model.today);
+  const labels = groupLabels(programGroups(model.data), t('stats.noProgram'), (d) =>
+    formatDateShort(parseLocalDate(d), today),
+  );
+  const rangeText = range
+    ? period
+      ? periodLabel(period, range, model.today)
+      : `${formatDateShort(parseLocalDate(range.start), today)} – ${formatDateShort(parseLocalDate(range.end), today)}`
+    : null;
+  const groupText = group
+    ? (labels.get(group.key) ?? group.programName ?? t('stats.noProgram'))
+    : t('stats.allGroups');
 
   const months: { key: string; label: string; items: SessionSummary[] }[] = [];
   for (const s of sessions) {
@@ -45,7 +72,7 @@ export default function HistoryScreen() {
     <Screen header={<StackHeader title={t('stats.title')} />} testID="history">
       <HeroTitle
         title={t('stats.historyTitle')}
-        subtitle={group ? (group.programName ?? t('stats.noProgram')) : t('stats.allGroups')}
+        subtitle={rangeText ? `${groupText} · ${rangeText}` : groupText}
         compact
       />
       {sessions.length === 0 ? (
@@ -62,12 +89,7 @@ export default function HistoryScreen() {
                   value={[
                     formatDateShort(parseLocalDate(s.date), today),
                     s.programName ?? t('stats.noProgram'),
-                    t('stats.sessionLine', {
-                      exercises: s.exercises,
-                      sets: s.sets,
-                      volume: formatNumber(displayWeight(s.volumeKg, model.unit)),
-                      unit: unitLabel,
-                    }),
+                    sessionLine(t, s, model.unit),
                   ].join(' · ')}
                   onPress={() => router.push({ pathname: '/history/[id]', params: { id: s.sessionId } })}
                   testID={`history-${s.sessionId}`}

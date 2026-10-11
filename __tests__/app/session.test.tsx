@@ -92,6 +92,7 @@ describe('workout session (SPEC G1, G2)', () => {
       durationSec: 3600,
     });
     expect(screen.getByTestId('summary-kcal').props.children).toBe('420 kcal');
+    expect(screen.getByTestId('health-disclaimer')).toBeTruthy();
 
     // เซ็ตแรก 8 ครั้ง เซ็ตที่เหลือ 6 ครั้ง (ช่วง 6–10) → double progression: น้ำหนักเดิม เป้า = ครั้งต่ำสุด + 1 = 7
     expect(screen.getByTestId('suggestion-back_squat').props.children).toBe(

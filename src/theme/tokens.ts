@@ -196,7 +196,10 @@ export interface Palette {
 
 const GOLDEN_ANGLE = 137.508;
 
-export function chartColors(baseHex: string, mode: ThemeMode, count = 10): string[] {
+/** จำนวนสีกราฟ ≥ จำนวนกลุ่มกล้ามเนื้อ (11) เพื่อไม่ให้ชิ้นสุดท้ายซ้ำสีชิ้นแรก (I2) */
+export const CHART_COLOR_COUNT = 12;
+
+export function chartColors(baseHex: string, mode: ThemeMode, count = CHART_COLOR_COUNT): string[] {
   const hsl = hexToHsl(baseHex);
   const n = NEUTRALS[mode];
   const colors: string[] = [];

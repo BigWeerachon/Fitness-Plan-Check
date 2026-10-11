@@ -54,6 +54,7 @@ export function ListRow({
   right,
   danger,
   disabled,
+  expanded,
   accessibilityHint,
   testID,
 }: {
@@ -66,6 +67,8 @@ export function ListRow({
   right?: React.ReactNode;
   danger?: boolean;
   disabled?: boolean;
+  /** แถวที่เปิด/ปิดเนื้อหาด้านล่าง — บอกสถานะให้โปรแกรมอ่านหน้าจอ */
+  expanded?: boolean;
   accessibilityHint?: string;
   testID?: string;
 }) {
@@ -98,7 +101,7 @@ export function ListRow({
       accessibilityRole="button"
       accessibilityLabel={value ? `${title}, ${value}` : title}
       accessibilityHint={accessibilityHint}
-      accessibilityState={{ disabled }}
+      accessibilityState={{ disabled, expanded }}
       testID={testID}
       style={({ pressed }) => ({ backgroundColor: pressed ? p.cardPressed : 'transparent' })}
     >

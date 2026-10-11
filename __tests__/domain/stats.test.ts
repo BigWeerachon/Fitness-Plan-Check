@@ -832,6 +832,8 @@ describe('estimated 1RM (Epley) and strength series (I4)', () => {
       // 60×15 = 90×1 = 90 → เสมอกัน เลือกน้ำหนักมากกว่า
       ['2026-10-03', 90, 1, d2.id],
     ]);
+    // ชื่อกรุ๊ปของเซสชันที่ให้ค่าดีที่สุดติดมาด้วย (I5)
+    expect(series.map((p) => p.programName)).toEqual(['PPL', 'PPL']);
     expect(series[0].e1rmKg).toBeCloseTo(93.5, 6);
     expect(series[1].e1rmKg).toBe(90);
     expect(strengthSeries(data, 'bench', { range: { start: '2026-10-02', end: '2026-10-31' } })).toHaveLength(

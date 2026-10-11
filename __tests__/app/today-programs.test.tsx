@@ -104,6 +104,36 @@ describe('Today (SPEC D)', () => {
     await flush();
     expect(await screen.findByText('Entered by you')).toBeTruthy();
     expect(dailyLogRepo.get('2026-10-09')?.kcalExpenditureOverride).toBe(2400);
+    expect(screen.queryByText('From workouts')).toBeNull();
+
+    // ยังไม่กรอกที่กิน → ป้ายอ่านออกเสียงบอกว่ายังไม่กรอก ไม่ใช่ขีดเปล่า (H4)
+    expect(screen.getByTestId('today-kcal-eaten').props.accessibilityLabel).toBe(
+      'Calories eaten today: Not entered',
+    );
+    fireEvent.press(screen.getByTestId('today-kcal-eaten'));
+    for (const k of ['1', '8', '0', '0']) fireEvent.press(screen.getByTestId(`key-${k}`));
+    fireEvent.press(screen.getByTestId('number-pad-done'));
+    await flush();
+    expect(dailyLogRepo.get('2026-10-09')?.kcalIntake).toBe(1800);
+    expect(screen.getByTestId('today-kcal-eaten').props.accessibilityLabel).toBe(
+      'Calories eaten today: 1,800 kcal',
+    );
+
+    // เมนู Today → "Use calculated value" ล้างค่าที่กรอกเอง กลับเป็นค่าที่คำนวณ
+    fireEvent.press(screen.getByTestId('today-menu'));
+    fireEvent.press(await screen.findByText('Use calculated value'));
+    await flush();
+    expect(dailyLogRepo.get('2026-10-09')?.kcalExpenditureOverride).toBeNull();
+    expect(await screen.findByText('From workouts')).toBeTruthy();
+    expect(dailyLogRepo.get('2026-10-09')?.kcalIntake).toBe(1800);
+  });
+
+  it('shows the health disclaimer under the calorie numbers (H5)', async () => {
+    await entitledApp();
+    instantiateTemplate('ppl3', 'en');
+    renderRouter('./src/app', { initialUrl: '/' });
+    expect(await screen.findByTestId('health-disclaimer')).toBeTruthy();
+    expect(screen.getByTestId('disclaimer-sources')).toBeTruthy();
   });
 
   it('guides users without any program to the programs tab', async () => {

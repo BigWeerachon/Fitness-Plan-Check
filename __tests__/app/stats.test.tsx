@@ -4,6 +4,7 @@ import { Alert } from 'react-native';
 import { dailyLogRepo } from '@/db/repos/dailyLogRepo';
 import { profileRepo } from '@/db/repos/profileRepo';
 import { programRepo, routineRepo } from '@/db/repos/programRepo';
+import { routineExerciseRepo } from '@/db/repos/routineExerciseRepo';
 import { sessionRepo } from '@/db/repos/sessionRepo';
 import { instantiateTemplate } from '@/features/programs/instantiate';
 import { finishSession } from '@/features/session/finish';
@@ -20,7 +21,13 @@ afterEach(() => {
 });
 
 /** ทำเซสชันให้จบ: ติ๊กเซ็ตแรก n เซ็ตของทุกท่าด้วยน้ำหนัก/ครั้งที่กำหนด */
-function completeRoutine(routineId: string, date: string, setsPerExercise: number, weightKg = 50, reps = 10) {
+function completeRoutine(
+  routineId: string,
+  date: string,
+  setsPerExercise: number,
+  weightKg: number | null = 50,
+  reps = 10,
+) {
   const { session } = startSession({ routineId, date });
   for (const e of sessionRepo.exercises(session.id)) {
     sessionRepo
@@ -196,5 +203,133 @@ describe('stats (SPEC I1–I5)', () => {
     expect(percents).toEqual([33, 33, 34]);
     expect(v.sessions).toHaveLength(3);
     expect(v.sessions.every((s) => s.programName === 'Push / Pull / Legs (3 days)')).toBe(true);
+  });
+});
+
+describe('stats audit fixes (SPEC I1, I2, I4, I5, H5)', () => {
+  it('shows the health disclaimer on the stats tab and on the strength drill-in', async () => {
+    await entitledApp();
+    const ppl = instantiateTemplate('ppl3', 'en')!;
+    const legs = routineRepo.listByProgram(ppl.id).find((r) => r.type === 'legs')!;
+    completeRoutine(legs.id, '2026-10-09', 1, 100, 5);
+    renderRouter('./src/app', { initialUrl: '/stats' });
+    expect(await screen.findByTestId('health-disclaimer')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('strength-back_squat'));
+    expect(await screen.findByTestId('exercise-strength')).toBeTruthy();
+    expect(screen.getByTestId('health-disclaimer')).toBeTruthy();
+    // 1 ครั้ง = น้ำหนักที่ยกเลย (ต่างจากสูตรตรง ๆ) บอกไว้ในหน้า (I4)
+    expect(screen.getByText(/1 rep = the weight lifted/)).toBeTruthy();
+  });
+
+  it('pluralises the exercise and set counts in session lines', async () => {
+    await entitledApp();
+    const p = programRepo.create('Solo');
+    const r = routineRepo.create(p.id, 'Quick', 'other');
+    routineExerciseRepo.add(r.id, 'barbell_bench_press', { sets: 1 });
+    completeRoutine(r.id, '2026-10-09', 1, 50, 10);
+    renderRouter('./src/app', { initialUrl: '/stats' });
+    expect(await screen.findByText(/· 1 exercise · 1 set · 500 kg$/)).toBeTruthy();
+  });
+
+  it('see all opens the history of the selected period and program only', async () => {
+    await entitledApp();
+    const ppl = instantiateTemplate('ppl3', 'en')!;
+    const [push, pull] = ['push', 'pull'].map((type) =>
+      routineRepo.listByProgram(ppl.id).find((r) => r.type === type)!,
+    );
+    const inWeek = completeRoutine(push.id, '2026-10-06', 1);
+    const older = completeRoutine(pull.id, '2026-09-20', 1);
+
+    renderRouter('./src/app', { initialUrl: '/stats' });
+    fireEvent.press(await screen.findByTestId('stats-see-all'));
+    expect(await screen.findByTestId('history')).toBeTruthy();
+    // ช่วงสัปดาห์ที่เลือกเท่านั้น และหัวข้อบอกช่วงเวลา
+    expect(screen.getByTestId(`history-${inWeek}`)).toBeTruthy();
+    expect(screen.queryByTestId(`history-${older}`)).toBeNull();
+    expect(screen.getByText('All programs · Mon, Oct 5 – Sun, Oct 11')).toBeTruthy();
+
+    // ย้อนกลับไปสัปดาห์ของเซสชันเก่า → เห็นเฉพาะเซสชันนั้น
+    fireEvent.press(screen.getByTestId('header-back'));
+    for (let i = 0; i < 3; i++) fireEvent.press(await screen.findByTestId('stats-prev'));
+    await flush();
+    fireEvent.press(screen.getByTestId('stats-see-all'));
+    expect(await screen.findByTestId(`history-${older}`)).toBeTruthy();
+    expect(screen.queryByTestId(`history-${inWeek}`)).toBeNull();
+  });
+
+  it('explains the volume breakdown when every set is bodyweight, instead of saying there are no workouts', async () => {
+    await entitledApp();
+    const ppl = instantiateTemplate('ppl3', 'en')!;
+    const push = routineRepo.listByProgram(ppl.id).find((r) => r.type === 'push')!;
+    completeRoutine(push.id, '2026-10-09', 1, null, 10);
+    renderRouter('./src/app', { initialUrl: '/stats' });
+    fireEvent.press(await screen.findByTestId('segment-volume'));
+    await flush();
+    expect(screen.getByTestId('stats-empty-metric')).toHaveTextContent(
+      'No weighted sets to measure by volume',
+    );
+    expect(screen.queryByText('No workouts in this period')).toBeNull();
+    fireEvent.press(screen.getByTestId('segment-sets'));
+    await flush();
+    expect(screen.queryByTestId('stats-empty-metric')).toBeNull();
+  });
+
+  describe('two programs with the same name', () => {
+    async function setup() {
+      await entitledApp();
+      const a = instantiateTemplate('ppl3', 'en')!;
+      const b = instantiateTemplate('ppl3', 'en', { activate: false })!;
+      const legsOf = (id: string) => routineRepo.listByProgram(id).find((r) => r.type === 'legs')!;
+      completeRoutine(legsOf(a.id).id, '2026-10-05', 1, 100, 5);
+      completeRoutine(legsOf(b.id).id, '2026-10-06', 1, 120, 5);
+      // เซสชันของ A ในสัปดาห์ก่อน หนักกว่า — ต้องไม่ปนเข้าช่วงสัปดาห์นี้
+      completeRoutine(legsOf(a.id).id, '2026-09-29', 1, 200, 5);
+      return { a, b };
+    }
+
+    it('tells the chips apart and carries group, period and program name into the strength page', async () => {
+      const { a, b } = await setup();
+      renderRouter('./src/app', { initialUrl: '/stats' });
+      const chipA = await screen.findByTestId(`group-${a.id}`);
+      const chipB = screen.getByTestId(`group-${b.id}`);
+      expect(chipA.props.accessibilityLabel).toBe('Push / Pull / Legs (3 days) · Mon, Oct 5');
+      expect(chipB.props.accessibilityLabel).toBe('Push / Pull / Legs (3 days) · Tue, Oct 6');
+
+      // ทุกกรุ๊ป → ไม่มีหมายเหตุ; เลือกกรุ๊ป → พลังงาน/น้ำหนักตัวบอกว่ารวมทุกโปรแกรม
+      expect(screen.queryByTestId('stats-energy-all-programs')).toBeNull();
+      fireEvent.press(chipA);
+      await flush();
+      expect(screen.getByTestId('stats-energy-all-programs')).toHaveTextContent(
+        'Energy and body weight include all programs.',
+      );
+      expect(screen.getByTestId('stats-weight-all-programs')).toBeTruthy();
+
+      // 100 × 5 → 116.7 (ไม่ใช่ของ B 140 หรือสัปดาห์ก่อน 233.3)
+      expect(
+        within(screen.getByTestId('strength-back_squat')).getByText('Best 116.7 kg (100 × 5)'),
+      ).toBeTruthy();
+      fireEvent.press(screen.getByTestId('strength-back_squat'));
+      expect(await screen.findByTestId('exercise-strength')).toBeTruthy();
+      expect(screen.getByTestId('strength-best').props.children).toBe('Best 116.7 kg (100 × 5)');
+      expect(screen.getByTestId('strength-point-2026-10-05')).toHaveTextContent(
+        /Push \/ Pull \/ Legs \(3 days\)/,
+      );
+      expect(screen.queryByTestId('strength-point-2026-10-06')).toBeNull();
+      expect(screen.queryByTestId('strength-point-2026-09-29')).toBeNull();
+      expect(
+        screen.getByText('Push / Pull / Legs (3 days) · Mon, Oct 5 · Mon, Oct 5 – Sun, Oct 11'),
+      ).toBeTruthy();
+    });
+
+    it('shows every program and period when opened without filters', async () => {
+      await setup();
+      renderRouter('./src/app', { initialUrl: '/stats/exercise/back_squat' });
+      expect(await screen.findByTestId('exercise-strength')).toBeTruthy();
+      expect(screen.getByTestId('strength-best').props.children).toBe('Best 233.3 kg (200 × 5)');
+      expect(screen.getByTestId('strength-point-2026-09-29')).toBeTruthy();
+      expect(screen.getByTestId('strength-point-2026-10-05')).toBeTruthy();
+      expect(screen.getByTestId('strength-point-2026-10-06')).toBeTruthy();
+      expect(screen.getByText('All programs')).toBeTruthy();
+    });
   });
 });

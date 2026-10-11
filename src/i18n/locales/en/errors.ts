@@ -7,6 +7,7 @@ const errors = {
   purchaseOffline: 'No internet connection. You were not charged — please try again when you’re online.',
   purchaseNotAllowed: 'This purchase isn’t allowed on this device.',
   storeUnavailable: 'The store is not available right now. Please try again later.',
+  linkFailed: 'Couldn’t open this link. Please try again later.',
   restoreFailed: 'Couldn’t restore purchases. Please try again.',
   syncFailed: 'Sync failed. We’ll keep trying — nothing on this device is lost.',
   notConfigured: 'This feature is not set up yet.',

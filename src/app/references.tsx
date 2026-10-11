@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Linking, StyleSheet, View } from 'react-native';
+import { Alert, Linking, StyleSheet, View } from 'react-native';
 import { AppText, Button, Card, Disclaimer, HeroTitle, Screen, StackHeader } from '../components';
 import { REFERENCES } from '../legal/content';
 import { spacing } from '../theme/tokens';
@@ -8,6 +8,14 @@ import { spacing } from '../theme/tokens';
 /** แหล่งอ้างอิงของสูตรคำนวณ พร้อมลิงก์ (SPEC H6 — บังคับ สโตร์ตรวจ, N1 Guideline 1.4.1) */
 export default function ReferencesScreen() {
   const { t } = useTranslation();
+  // เปิดลิงก์ไม่ได้ (ไม่มีแอปรองรับ/ออฟไลน์) → แจ้งผู้ใช้ ไม่ปล่อย promise ที่ reject ทิ้งไว้
+  const openSource = async (url: string) => {
+    try {
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert(t('common.errorTitle'), t('errors.linkFailed'));
+    }
+  };
   return (
     <Screen header={<StackHeader />} testID="references">
       <HeroTitle title={t('legal.referencesTitle')} subtitle={t('legal.referencesIntro')} compact />
@@ -22,12 +30,13 @@ export default function ReferencesScreen() {
               title={t('legal.openLink')}
               kind="plain"
               icon="open-outline"
-              onPress={() => Linking.openURL(r.url)}
+              onPress={() => void openSource(r.url)}
+              testID={`reference-${r.id}`}
             />
           </Card>
         ))}
       </View>
-      <Disclaimer />
+      <Disclaimer showSources={false} />
     </Screen>
   );
 }
