@@ -308,6 +308,8 @@ export const entitlementCache = sqliteTable('entitlement_cache', {
   willRenew: integer('will_renew', { mode: 'boolean' }).notNull().default(false),
   billingIssueAt: integer('billing_issue_at'),
   verifiedAt: integer('verified_at').notNull(),
+  /** ซื้อขาดแล้วแต่รายเดือนยังต่ออายุอยู่ (SPEC J5) ใช้เตือนให้ยกเลิกในสโตร์ */
+  alsoRenewingMonthly: integer('also_renewing_monthly', { mode: 'boolean' }).notNull().default(false),
 });
 
 /** คิวการเปลี่ยนแปลงที่รอส่งขึ้นคลาวด์ ลบออกเมื่อส่งสำเร็จเท่านั้น */

@@ -125,9 +125,16 @@ export class MockPurchasesService implements PurchasesService {
     } else if (acc.everHad) {
       all.pro = acc.everHad;
     }
+    // รายเดือนที่ซื้อไว้ยังอยู่ในรอบแม้ซื้อขาดแล้ว (สโตร์ไม่ยกเลิกให้อัตโนมัติ SPEC J5)
+    const sub = acc.entitlement;
+    const subActive = !!sub?.expirationDate && Date.parse(sub.expirationDate) > now();
     const info: CustomerInfoLike = {
       entitlements: { active, all },
       nonSubscriptionTransactions: acc.lifetime ? [{ productIdentifier: this.lifetimePlan.productId }] : [],
+      activeSubscriptions: sub && subActive ? [sub.productIdentifier] : [],
+      subscriptionsByProductIdentifier: sub
+        ? { [sub.productIdentifier]: { willRenew: sub.willRenew, isActive: subActive } }
+        : {},
       requestDate: new Date(now()).toISOString(),
     };
     this.lastInfo = info;

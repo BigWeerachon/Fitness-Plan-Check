@@ -18,6 +18,13 @@ function mapError(error: { code?: string; message?: string; status?: number } | 
   return new Error(error.message ?? 'Sync failed');
 }
 
+/** fetch ล้ม (TypeError) = ไม่มีเครือข่าย — error ที่แปลงแล้วส่งต่อตามเดิม */
+function rethrow(e: unknown): never {
+  if (e instanceof SyncAccessDeniedError || e instanceof SyncNetworkError) throw e;
+  if (e instanceof TypeError) throw new SyncNetworkError(e.message);
+  throw e;
+}
+
 /** ซิงก์กับ Supabase Postgres (ตารางชื่อเดียวกับในเครื่อง ดู supabase/migrations) */
 export class SupabaseSyncBackend implements SyncBackend {
   async push(table: SyncedTableName, _userId: string, rows: RemoteRow[]): Promise<void> {
@@ -27,9 +34,19 @@ export class SupabaseSyncBackend implements SyncBackend {
       const mapped = mapError(error);
       if (mapped) throw mapped;
     } catch (e) {
-      if (e instanceof SyncAccessDeniedError || e instanceof SyncNetworkError) throw e;
-      if (e instanceof TypeError) throw new SyncNetworkError(e.message);
-      throw e;
+      rethrow(e);
+    }
+  }
+
+  /** ใช้ฟังก์ชันเดียวกับที่ RLS ใช้ตัดสิน (public.has_sync_access) จึงตรงกับสิ่งที่เซิร์ฟเวอร์อนุญาตจริง */
+  async hasSyncAccess(userId: string): Promise<boolean> {
+    try {
+      const { data, error } = await getSupabase().rpc('has_sync_access', { uid: userId });
+      const mapped = mapError(error);
+      if (mapped) throw mapped;
+      return data === true;
+    } catch (e) {
+      return rethrow(e);
     }
   }
 
@@ -63,9 +80,7 @@ export class SupabaseSyncBackend implements SyncBackend {
         cursor: last ? encodeCursor({ ts: String(last.server_updated_at), id: last.id }) : since,
       };
     } catch (e) {
-      if (e instanceof SyncAccessDeniedError || e instanceof SyncNetworkError) throw e;
-      if (e instanceof TypeError) throw new SyncNetworkError(e.message);
-      throw e;
+      return rethrow(e);
     }
   }
 }

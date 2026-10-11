@@ -5,12 +5,14 @@
  * - กันเหตุการณ์ซ้ำด้วย event.id (RevenueCat ส่งซ้ำได้)
  * - ใช้ state machine ตัวเดียวกับแอป (สำเนาใน _shared) และข้ามเหตุการณ์ที่เก่ากว่าที่ประมวลผลไปแล้ว
  * - สนใจเฉพาะ app_user_id ที่เป็น id ผู้ใช้ Supabase (UUID) — ผู้ใช้นิรนามของ RevenueCat ไม่มีข้อมูลบนคลาวด์
+ * - TRANSFER: ย้ายสิทธิ์จากบัญชีต้นทางไปบัญชีปลายทาง (RevenueCat ไม่ส่งเหตุการณ์อื่นตามมา โดยเฉพาะซื้อขาด)
  */
 import {
   EMPTY_SNAPSHOT,
   ENTITLEMENT_ID,
   ENTITLEMENT_STATES,
   applyEvent,
+  bestSnapshot,
   type CancelReason,
   type EntitlementEvent,
   type EntitlementSnapshot,
@@ -154,7 +156,11 @@ export function targetsOf(ev: RcWebhookEvent): Target[] {
   return [...new Set(ids)].map((userId) => ({ userId }));
 }
 
-export function toEntitlementEvent(ev: RcWebhookEvent, direction?: 'to' | 'from'): EntitlementEvent {
+export function toEntitlementEvent(
+  ev: RcWebhookEvent,
+  direction?: 'to' | 'from',
+  transferred: EntitlementSnapshot | null = null,
+): EntitlementEvent {
   const reason = (CANCEL_REASONS as readonly string[]).includes(ev.cancel_reason ?? '')
     ? (ev.cancel_reason as CancelReason)
     : ev.cancel_reason
@@ -169,6 +175,7 @@ export function toEntitlementEvent(ev: RcWebhookEvent, direction?: 'to' | 'from'
     cancelReason: reason,
     gracePeriodExpirationAt: ev.grace_period_expiration_at_ms ?? null,
     transferDirection: direction,
+    transferred: direction === 'to' ? transferred : null,
   };
 }
 
@@ -185,6 +192,8 @@ export function snapshotFromRow(row: EntitlementRow | null): EntitlementSnapshot
     willRenew: row.will_renew,
     billingIssueAt: ms(row.billing_issue_at),
     verifiedAt: ms(row.last_event_at) ?? 0,
+    // เซิร์ฟเวอร์ไม่เก็บค่านี้ (ใช้แสดงคำเตือนในแอปเท่านั้น)
+    alsoRenewingMonthly: false,
   };
 }
 
@@ -231,11 +240,32 @@ export async function handleWebhook(
     return { status: 200, body: { ignored: true } };
   }
 
+  const targets = targetsOf(ev);
+  // อ่านทุกแถวก่อนเขียน: TRANSFER ต้องรู้สิทธิ์ของบัญชีต้นทางก่อนถูกตั้งเป็น EXPIRED
+  const rows = new Map<string, EntitlementRow | null>();
+  for (const target of targets) {
+    if (!rows.has(target.userId)) rows.set(target.userId, await deps.store.getEntitlement(target.userId));
+  }
+  const transferred =
+    ev.type === 'TRANSFER'
+      ? bestSnapshot(
+          targets
+            .filter((target) => target.direction === 'from')
+            .map((target) => snapshotFromRow(rows.get(target.userId) ?? null)),
+          ev.event_timestamp_ms ?? 0,
+        )
+      : null;
+
   const results: Record<string, string> = {};
-  for (const target of targetsOf(ev)) {
-    const row = await deps.store.getEntitlement(target.userId);
+  // เขียนบัญชีปลายทางก่อนต้นทาง: ถ้าล้มกลางทาง RevenueCat ส่งซ้ำแล้วยังอ่านสิทธิ์เดิมของต้นทางได้
+  const ordered = [
+    ...targets.filter((target) => target.direction !== 'from'),
+    ...targets.filter((target) => target.direction === 'from'),
+  ];
+  for (const target of ordered) {
+    const row = rows.get(target.userId) ?? null;
     const prev = snapshotFromRow(row);
-    const event = toEntitlementEvent(ev, target.direction);
+    const event = toEntitlementEvent(ev, target.direction, transferred);
     // เหตุการณ์ที่มาช้ากว่าเหตุการณ์ที่ประมวลผลไปแล้ว → ไม่ย้อนสถานะ
     if (row && event.eventAt < prev.verifiedAt) {
       results[target.userId] = 'stale';

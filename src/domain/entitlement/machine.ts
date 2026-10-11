@@ -46,6 +46,11 @@ export interface EntitlementSnapshot {
   billingIssueAt: number | null;
   /** เวลาที่ได้ข้อมูลนี้มา ใช้ตัดสินความสดของแคชออฟไลน์ */
   verifiedAt: number;
+  /**
+   * ซื้อขาดแล้วแต่รายเดือนยังต่ออายุอยู่ (SPEC J5) — สโตร์จะเก็บเงินรายเดือนต่อจนกว่าผู้ใช้ยกเลิกเอง
+   * มีความหมายเฉพาะเมื่อ state = LIFETIME (สถานะอื่นเป็น false เสมอ)
+   */
+  alsoRenewingMonthly: boolean;
 }
 
 export const EMPTY_SNAPSHOT: EntitlementSnapshot = {
@@ -56,6 +61,7 @@ export const EMPTY_SNAPSHOT: EntitlementSnapshot = {
   willRenew: false,
   billingIssueAt: null,
   verifiedAt: 0,
+  alsoRenewingMonthly: false,
 };
 
 /** รูปร่างข้อมูลขั้นต่ำจาก CustomerInfo ของ RevenueCat (react-native-purchases) */
@@ -76,6 +82,10 @@ export interface CustomerInfoLike {
     all: Record<string, EntitlementInfoLike | undefined>;
   };
   nonSubscriptionTransactions?: { productIdentifier: string }[];
+  /** product id ของ subscription ที่ยังอยู่ในรอบ (รวมที่ยกเลิกแล้วแต่ยังไม่หมดรอบ) */
+  activeSubscriptions?: string[];
+  /** รายละเอียดต่อ subscription — ใช้ดูว่ายังต่ออายุอยู่หรือไม่ */
+  subscriptionsByProductIdentifier?: Record<string, { willRenew: boolean; isActive?: boolean } | undefined>;
   /** เวลาที่ RevenueCat สร้างข้อมูลนี้ (ISO) — ข้อมูลที่ SDK อ่านจากแคชในเครื่องตอนออฟไลน์จะเก่า */
   requestDate?: string;
 }
@@ -97,6 +107,34 @@ function normalizePeriod(p: string | null | undefined): PeriodType {
 }
 
 /**
+ * มีรายเดือนที่ยังต่ออายุอยู่ข้างๆ ซื้อขาดหรือไม่ (SPEC J5)
+ * activeSubscriptions รวม subscription ที่ยกเลิกแล้วแต่ยังไม่หมดรอบ จึงดู willRenew ประกอบ
+ * ถ้าไม่รู้ว่ายังต่ออายุหรือไม่ ถือว่าต่ออายุ — เตือนเกินดีกว่าปล่อยให้ถูกเก็บเงินโดยไม่รู้
+ */
+function renewingSubscription(
+  info: CustomerInfoLike,
+  ent: EntitlementInfoLike | undefined,
+  now: number,
+): boolean {
+  const ids = new Set(info.activeSubscriptions ?? []);
+  if (ent && !isLifetimeProduct(ent.productIdentifier) && (toMs(ent.expirationDate) ?? 0) > now) {
+    ids.add(ent.productIdentifier);
+  }
+  for (const id of ids) {
+    if (isLifetimeProduct(id)) continue;
+    const sub = info.subscriptionsByProductIdentifier?.[id];
+    if (sub) {
+      if (sub.isActive !== false && sub.willRenew) return true;
+    } else if (ent && ent.productIdentifier === id) {
+      if (ent.willRenew) return true;
+    } else {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
  * แปลง CustomerInfo → สถานะ
  * - active + ไม่มีวันหมดอายุ หรือเป็นสินค้าซื้อขาด → LIFETIME (ถ้ามีทั้งรายเดือนและซื้อขาด ซื้อขาดชนะ SPEC J5)
  * - active + มี billing issue → BILLING_GRACE (สโตร์ยังให้สิทธิ์ระหว่าง grace period)
@@ -107,9 +145,7 @@ function normalizePeriod(p: string | null | undefined): PeriodType {
  */
 export function deriveSnapshot(info: CustomerInfoLike, now: number): EntitlementSnapshot {
   const ent = info.entitlements.active[ENTITLEMENT_ID];
-  const everHad =
-    !!info.entitlements.all[ENTITLEMENT_ID] ||
-    (info.nonSubscriptionTransactions ?? []).some((t) => isLifetimeProduct(t.productIdentifier));
+  const last = info.entitlements.all[ENTITLEMENT_ID];
   const ownsLifetime = (info.nonSubscriptionTransactions ?? []).some((t) =>
     isLifetimeProduct(t.productIdentifier),
   );
@@ -123,9 +159,17 @@ export function deriveSnapshot(info: CustomerInfoLike, now: number): Entitlement
       willRenew: ent.willRenew,
       billingIssueAt: toMs(ent.billingIssueDetectedAt),
       verifiedAt: now,
+      alsoRenewingMonthly: false,
     };
     if (expirationDate === null || isLifetimeProduct(ent.productIdentifier) || ownsLifetime) {
-      return { ...base, state: 'LIFETIME', expirationDate: null, willRenew: false, periodType: 'NORMAL' };
+      return {
+        ...base,
+        state: 'LIFETIME',
+        expirationDate: null,
+        willRenew: false,
+        periodType: 'NORMAL',
+        alsoRenewingMonthly: renewingSubscription(info, ent, now),
+      };
     }
     if (expirationDate > now) {
       if (base.billingIssueAt !== null) return { ...base, state: 'BILLING_GRACE' };
@@ -133,18 +177,24 @@ export function deriveSnapshot(info: CustomerInfoLike, now: number): Entitlement
       return { ...base, state: 'SUBSCRIBED_MONTHLY' };
     }
   }
-  if (ownsLifetime) {
-    // ซื้อขาดไว้แต่ entitlement ยังไม่อัปเดต (เช่น แคชเก่า) ให้สิทธิ์ตามธุรกรรมจริง
-    return { ...EMPTY_SNAPSHOT, state: 'LIFETIME', periodType: 'NORMAL', verifiedAt: now };
+  if (ownsLifetime && !last) {
+    // ซื้อขาดไว้แต่ยังไม่มี entitlement เลย (เช่น แคชเก่า) ให้สิทธิ์ตามธุรกรรมจริง
+    // ถ้ามี entitlement แต่ไม่ active (เช่น คืนเงินซื้อขาดแล้วแต่สโตร์ยังแสดงธุรกรรม) → ไม่ให้สิทธิ์
+    return {
+      ...EMPTY_SNAPSHOT,
+      state: 'LIFETIME',
+      periodType: 'NORMAL',
+      verifiedAt: now,
+      alsoRenewingMonthly: renewingSubscription(info, undefined, now),
+    };
   }
-  const last = info.entitlements.all[ENTITLEMENT_ID];
-  if (everHad) {
+  if (last) {
     return {
       ...EMPTY_SNAPSHOT,
       state: 'EXPIRED',
-      productId: last?.productIdentifier ?? null,
-      expirationDate: toMs(last?.expirationDate),
-      billingIssueAt: toMs(last?.billingIssueDetectedAt),
+      productId: last.productIdentifier ?? null,
+      expirationDate: toMs(last.expirationDate),
+      billingIssueAt: toMs(last.billingIssueDetectedAt),
       verifiedAt: now,
     };
   }
@@ -182,10 +232,33 @@ export interface EntitlementEvent {
   gracePeriodExpirationAt?: number | null;
   /** สำหรับ TRANSFER: บัญชีนี้เป็นฝ่ายที่ได้สิทธิ์ ('to') หรือเสียสิทธิ์ ('from') */
   transferDirection?: 'to' | 'from';
+  /** สำหรับ TRANSFER ฝั่ง 'to': สิทธิ์ของบัญชีต้นทางก่อนถูกย้าย (เซิร์ฟเวอร์อ่านมาก่อนเขียน) */
+  transferred?: EntitlementSnapshot | null;
 }
 
 function subscriptionStateFor(periodType: PeriodType): EntitlementState {
   return periodType === 'TRIAL' ? 'TRIALING' : 'SUBSCRIBED_MONTHLY';
+}
+
+/** ระดับของสิทธิ์ ณ เวลา at: ซื้อขาด > ยังใช้ได้ > เคยมีแต่หมดแล้ว > ไม่เคยมี */
+function tier(s: EntitlementSnapshot, at: number): number {
+  if (s.state === 'LIFETIME') return 3;
+  if (hasAccess(s.state) && (s.expirationDate === null || s.expirationDate > at)) return 2;
+  return s.state === 'NO_ENTITLEMENT' ? 0 : 1;
+}
+
+function isBetter(a: EntitlementSnapshot, b: EntitlementSnapshot, at: number): boolean {
+  const ta = tier(a, at);
+  const tb = tier(b, at);
+  if (ta !== tb) return ta > tb;
+  return (a.expirationDate ?? 0) > (b.expirationDate ?? 0);
+}
+
+/** เลือกสิทธิ์ที่ดีที่สุด (ใช้ตอนย้ายสิทธิ์จากหลายบัญชีต้นทาง) — null ถ้าไม่มีให้เลือก */
+export function bestSnapshot(snapshots: EntitlementSnapshot[], at: number): EntitlementSnapshot | null {
+  let best: EntitlementSnapshot | null = null;
+  for (const s of snapshots) if (!best || isBetter(s, best, at)) best = s;
+  return best;
 }
 
 /**
@@ -199,11 +272,13 @@ function subscriptionStateFor(periodType: PeriodType): EntitlementState {
 export function applyEvent(prev: EntitlementSnapshot, ev: EntitlementEvent): EntitlementSnapshot {
   const period = normalizePeriod(ev.periodType);
   const lifetimeEvent = isLifetimeProduct(ev.productId);
-  const next = (patch: Partial<EntitlementSnapshot>): EntitlementSnapshot => ({
-    ...prev,
-    ...patch,
-    verifiedAt: Math.max(prev.verifiedAt, ev.eventAt),
-  });
+  const next = (patch: Partial<EntitlementSnapshot>): EntitlementSnapshot => {
+    const s = { ...prev, ...patch, verifiedAt: Math.max(prev.verifiedAt, ev.eventAt) };
+    return s.state === 'LIFETIME' ? s : { ...s, alsoRenewingMonthly: false };
+  };
+  // ย้ายไปซื้อขาดจากรายเดือนที่ยังต่ออายุ → สโตร์ยังเก็บเงินรายเดือนต่อ (SPEC J5)
+  const monthlyStillRenewing =
+    prev.state === 'LIFETIME' ? prev.alsoRenewingMonthly : hasAccess(prev.state) && prev.willRenew;
 
   switch (ev.type) {
     case 'TEST':
@@ -218,6 +293,7 @@ export function applyEvent(prev: EntitlementSnapshot, ev: EntitlementEvent): Ent
         expirationDate: null,
         willRenew: false,
         billingIssueAt: null,
+        alsoRenewingMonthly: monthlyStillRenewing,
       });
 
     case 'INITIAL_PURCHASE':
@@ -226,13 +302,20 @@ export function applyEvent(prev: EntitlementSnapshot, ev: EntitlementEvent): Ent
     case 'SUBSCRIPTION_EXTENDED':
     case 'TEMPORARY_ENTITLEMENT_GRANT':
     case 'REFUND_REVERSED': {
-      if (prev.state === 'LIFETIME') return next({});
+      if (prev.state === 'LIFETIME') {
+        // รายเดือนที่ซื้อซ้อนไว้เริ่ม/ต่ออายุ/กลับมาต่ออายุ → ต้องเตือนผู้ซื้อขาด
+        const renewing =
+          !lifetimeEvent &&
+          (ev.type === 'INITIAL_PURCHASE' || ev.type === 'RENEWAL' || ev.type === 'UNCANCELLATION');
+        return next(renewing ? { alsoRenewingMonthly: true } : {});
+      }
       if (lifetimeEvent) {
         return next({
           state: 'LIFETIME',
           productId: ev.productId ?? null,
           expirationDate: null,
           willRenew: false,
+          alsoRenewingMonthly: monthlyStillRenewing,
         });
       }
       const state =
@@ -250,10 +333,10 @@ export function applyEvent(prev: EntitlementSnapshot, ev: EntitlementEvent): Ent
     case 'CANCELLATION': {
       if (ev.cancelReason === 'CUSTOMER_SUPPORT') {
         // คืนเงิน: ถ้าคืนเงินสินค้าซื้อขาด หรือสถานะไม่ใช่ซื้อขาด → หมดสิทธิ์ทันที
-        if (prev.state === 'LIFETIME' && !lifetimeEvent) return next({});
+        if (prev.state === 'LIFETIME' && !lifetimeEvent) return next({ alsoRenewingMonthly: false });
         return next({ state: 'EXPIRED', willRenew: false, expirationDate: ev.eventAt });
       }
-      if (prev.state === 'LIFETIME') return next({});
+      if (prev.state === 'LIFETIME') return next(lifetimeEvent ? {} : { alsoRenewingMonthly: false });
       // ยกเลิกต่ออายุ: ยังใช้ได้จนถึงวันหมดอายุเดิม
       return next({ willRenew: false, expirationDate: ev.expirationAt ?? prev.expirationDate });
     }
@@ -268,12 +351,12 @@ export function applyEvent(prev: EntitlementSnapshot, ev: EntitlementEvent): Ent
     }
 
     case 'EXPIRATION':
-      if (prev.state === 'LIFETIME') return next({});
+      if (prev.state === 'LIFETIME') return next({ alsoRenewingMonthly: false });
       return next({ state: 'EXPIRED', willRenew: false, expirationDate: ev.expirationAt ?? ev.eventAt });
 
     case 'SUBSCRIPTION_PAUSED':
       // Google Play: หยุดชั่วคราวมีผลเมื่อสิ้นรอบ → ระหว่างนี้ยังใช้ได้ แล้ว EXPIRATION จะตามมา
-      if (prev.state === 'LIFETIME') return next({});
+      if (prev.state === 'LIFETIME') return next({ alsoRenewingMonthly: false });
       return next({ willRenew: false });
 
     case 'PRODUCT_CHANGE':
@@ -287,6 +370,10 @@ export function applyEvent(prev: EntitlementSnapshot, ev: EntitlementEvent): Ent
           state: 'EXPIRED',
           verifiedAt: Math.max(prev.verifiedAt, ev.eventAt),
         });
+      }
+      // บัญชีปลายทางได้สิทธิ์ของบัญชีต้นทาง เว้นแต่สิทธิ์ที่มีอยู่เดิมดีกว่า (เช่น ซื้อขาดไว้เอง)
+      if (ev.transferDirection === 'to' && ev.transferred && isBetter(ev.transferred, prev, ev.eventAt)) {
+        return next({ ...ev.transferred });
       }
       return next({});
 

@@ -1,0 +1,1 @@
+ALTER TABLE `entitlement_cache` ADD `also_renewing_monthly` integer DEFAULT false NOT NULL;

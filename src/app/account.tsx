@@ -23,6 +23,10 @@ export default function AccountScreen() {
   const access = useAccess();
   const sub = describeSubscription(user ? cached : null, t);
 
+  const openManage = async () => {
+    await Linking.openURL(await manageSubscriptionsUrl());
+  };
+
   const onRestore = async () => {
     const r = await restorePurchases();
     if (r === 'needLogin') router.push({ pathname: '/login', params: { then: 'restore' } });
@@ -83,6 +87,15 @@ export default function AccountScreen() {
       <SectionTitle>{t('account.sections.membership')}</SectionTitle>
       <CardGroup>
         <ListRow title={sub.status} value={sub.detail} icon="ribbon-outline" />
+        {sub.notice ? (
+          <ListRow
+            title={sub.notice}
+            icon="warning-outline"
+            onPress={openManage}
+            accessibilityHint={t('account.notice.openStore')}
+            testID="account-monthly-notice"
+          />
+        ) : null}
         {!access.allowed ? (
           <ListRow
             title={t('account.seePlans')}
@@ -96,11 +109,7 @@ export default function AccountScreen() {
           onPress={onRestore}
           testID="account-restore"
         />
-        <ListRow
-          title={t('account.manage')}
-          icon="card-outline"
-          onPress={async () => Linking.openURL(await manageSubscriptionsUrl())}
-        />
+        <ListRow title={t('account.manage')} icon="card-outline" onPress={openManage} />
       </CardGroup>
 
       <SectionTitle>{t('account.sections.info')}</SectionTitle>

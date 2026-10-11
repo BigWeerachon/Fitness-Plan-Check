@@ -61,6 +61,10 @@ export default function SettingsScreen() {
     profileRepo.update({ weightUnit: u, weightStepKg: preferredWeightStepKg(u, profile.weightStepKg) });
   };
 
+  const openManage = async () => {
+    await Linking.openURL(await manageSubscriptionsUrl());
+  };
+
   const onRestore = async () => {
     const r = await restorePurchases();
     if (r === 'needLogin') router.push({ pathname: '/login', params: { then: 'restore' } });
@@ -230,10 +234,19 @@ export default function SettingsScreen() {
       <SectionTitle>{t('settings.sections.membership')}</SectionTitle>
       <CardGroup>
         <ListRow title={sub.status} value={sub.detail} icon="ribbon-outline" testID="settings-membership" />
+        {sub.notice ? (
+          <ListRow
+            title={sub.notice}
+            icon="warning-outline"
+            onPress={openManage}
+            accessibilityHint={t('account.notice.openStore')}
+            testID="settings-monthly-notice"
+          />
+        ) : null}
         <ListRow
           title={t('account.manage')}
           icon="card-outline"
-          onPress={async () => Linking.openURL(await manageSubscriptionsUrl())}
+          onPress={openManage}
           testID="settings-manage"
         />
         <ListRow
