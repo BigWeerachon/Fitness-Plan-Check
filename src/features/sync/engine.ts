@@ -1,7 +1,7 @@
-import { and, asc, eq, inArray, lte } from 'drizzle-orm';
+import { and, asc, eq, gte, inArray, isNull, lt, notInArray, sql } from 'drizzle-orm';
 import { getDb, transaction } from '../../db/client';
-import { onLocalWrite } from '../../db/mutations';
-import { LOCAL_OWNER } from '../../db/owner';
+import { onLocalWrite, softDeleteRow, updateRow } from '../../db/mutations';
+import { getOwner, LOCAL_OWNER } from '../../db/owner';
 import {
   SYNCED_TABLE_NAMES,
   SYNCED_TABLES,
@@ -13,6 +13,7 @@ import { getServices } from '../../services/registry';
 import { SyncAccessDeniedError, SyncNetworkError, type RemoteRow } from '../../services/sync/types';
 import { notifyDataChanged } from '../../stores/dataVersion';
 import { useSync } from '../../stores/sync';
+import { planMerge } from '../../domain/recordMerge';
 import { now } from '../../utils/clock';
 import { fromRemote, toRemote } from './mapping';
 
@@ -28,6 +29,8 @@ const PUSH_BATCH = 200;
 /** ลำดับเวลารอก่อนลองใหม่ (ms) */
 export const BACKOFF_MS = [5_000, 15_000, 60_000, 5 * 60_000, 10 * 60_000];
 const DEBOUNCE_MS = 2_000;
+/** แถวที่เซิร์ฟเวอร์ปฏิเสธซ้ำเกินจำนวนนี้ถือว่า "เสีย" — ข้ามไม่ส่งซ้ำ แต่ยังอยู่ในคิวและนับเป็นรอส่ง (แก้ไขแถวนั้นแล้วจะลองใหม่) */
+export const MAX_ATTEMPTS = 5;
 
 type AnyTable = any;
 const tableOf = (name: SyncedTableName): AnyTable => SYNCED_TABLES[name];
@@ -79,10 +82,22 @@ export function claimLocalRows(userId: string): number {
       for (const r of rows) {
         getDb()
           .insert(syncOutbox)
-          .values({ tableName: name, rowId: r.id, ownerId: userId, queuedAt: now(), attempts: 0 })
+          .values({
+            tableName: name,
+            rowId: r.id,
+            ownerId: userId,
+            queuedAt: now(),
+            version: 1,
+            attempts: 0,
+          })
           .onConflictDoUpdate({
             target: [syncOutbox.tableName, syncOutbox.rowId],
-            set: { ownerId: userId, queuedAt: now(), attempts: 0 },
+            set: {
+              ownerId: userId,
+              queuedAt: now(),
+              version: sql`${syncOutbox.version} + 1`,
+              attempts: 0,
+            },
           })
           .run();
       }
@@ -108,58 +123,181 @@ export function wipeLocalData(userId: string): void {
   });
 }
 
-async function push(userId: string): Promise<void> {
+type QueuedRow = typeof syncOutbox.$inferSelect;
+
+const asError = (e: unknown): Error => (e instanceof Error ? e : new Error(String(e)));
+const isTransient = (e: unknown) => e instanceof SyncNetworkError || e instanceof SyncAccessDeniedError;
+
+/** ลบออกจากคิวเฉพาะรายการที่ version ไม่เปลี่ยนระหว่างส่ง (ถ้าถูกแก้ใหม่ version จะเพิ่ม → ส่งรอบหน้า) */
+function clearSent(sent: QueuedRow[]) {
+  for (const q of sent) {
+    getDb()
+      .delete(syncOutbox)
+      .where(and(eq(syncOutbox.id, q.id), eq(syncOutbox.version, q.version)))
+      .run();
+  }
+}
+
+/** error ชั่วคราว (ออฟไลน์/ไม่มีสิทธิ์) ไม่นับครั้งที่ล้มเหลว ไม่งั้นออฟไลน์นานๆ จะทำให้ทุกแถวถูกมองว่าเสีย */
+function recordFailure(q: QueuedRow, e: unknown) {
+  const counted = !isTransient(e);
+  getDb()
+    .update(syncOutbox)
+    .set({
+      lastError: asError(e).message,
+      ...(counted ? { attempts: sql`${syncOutbox.attempts} + 1` } : {}),
+    })
+    .where(and(eq(syncOutbox.id, q.id), eq(syncOutbox.version, q.version)))
+    .run();
+}
+
+async function pushRows(name: SyncedTableName, userId: string, queued: QueuedRow[]): Promise<void> {
   const { sync } = getServices();
+  const t = tableOf(name);
+  const ids = queued.map((q) => q.rowId);
+  const rows = getDb()
+    .select()
+    .from(t)
+    .where(and(inArray(t.id, ids), eq(t.ownerId, userId)))
+    .all() as Record<string, unknown>[];
+  await sync.push(
+    name,
+    userId,
+    rows.map((r) => toRemote(name, r, userId)),
+  );
+  clearSent(queued);
+}
+
+/**
+ * ส่งคิวขึ้นคลาวด์ ออฟไลน์/ไม่มีสิทธิ์ = throw ทันที (คิวอยู่ครบ)
+ * เซิร์ฟเวอร์ปฏิเสธเฉพาะบางแถว (error อื่น) = ลองส่งทีละแถว แถวที่ล้มเหลวไม่บล็อกแถวอื่น
+ * แล้วคืน error แรกให้สถานะเป็น "error" (แถวที่ล้มเหลวเกิน MAX_ATTEMPTS ถูกข้ามแต่ยังอยู่ในคิว)
+ */
+async function push(userId: string): Promise<Error | null> {
+  let firstError: Error | null = null;
   for (const name of SYNCED_TABLE_NAMES) {
+    const failedIds: number[] = [];
     for (;;) {
       const queued = getDb()
         .select()
         .from(syncOutbox)
-        .where(and(eq(syncOutbox.ownerId, userId), eq(syncOutbox.tableName, name)))
-        .orderBy(asc(syncOutbox.id))
-        .limit(PUSH_BATCH)
-        .all();
-      if (queued.length === 0) break;
-      const t = tableOf(name);
-      const ids = queued.map((q) => q.rowId);
-      const rows = getDb()
-        .select()
-        .from(t)
-        .where(and(inArray(t.id, ids), eq(t.ownerId, userId)))
-        .all() as Record<string, unknown>[];
-      const maxQueuedAt = Math.max(...queued.map((q) => q.queuedAt));
-      try {
-        await sync.push(
-          name,
-          userId,
-          rows.map((r) => toRemote(name, r, userId)),
-        );
-      } catch (e) {
-        const message = e instanceof Error ? e.message : String(e);
-        for (const q of queued) {
-          getDb()
-            .update(syncOutbox)
-            .set({ attempts: q.attempts + 1, lastError: message })
-            .where(eq(syncOutbox.id, q.id))
-            .run();
-        }
-        throw e;
-      }
-      // ลบเฉพาะรายการที่ไม่ถูกแก้เพิ่มระหว่างส่ง (ถ้าแก้ใหม่ queuedAt จะใหม่กว่า → ส่งรอบหน้า)
-      getDb()
-        .delete(syncOutbox)
         .where(
           and(
             eq(syncOutbox.ownerId, userId),
             eq(syncOutbox.tableName, name),
-            inArray(syncOutbox.rowId, ids),
-            lte(syncOutbox.queuedAt, maxQueuedAt),
+            lt(syncOutbox.attempts, MAX_ATTEMPTS),
+            failedIds.length ? notInArray(syncOutbox.id, failedIds) : undefined,
           ),
         )
-        .run();
-      if (queued.length < PUSH_BATCH) break;
+        .orderBy(asc(syncOutbox.id))
+        .limit(PUSH_BATCH)
+        .all();
+      if (queued.length === 0) break;
+      try {
+        await pushRows(name, userId, queued);
+      } catch (e) {
+        if (isTransient(e)) {
+          for (const q of queued) recordFailure(q, e);
+          throw e;
+        }
+        // ทีละแถว: หาว่าแถวไหนเป็นตัวปัญหา
+        const singles = queued.length > 1 ? queued : [];
+        if (queued.length === 1) {
+          recordFailure(queued[0], e);
+          failedIds.push(queued[0].id);
+          firstError ??= asError(e);
+        }
+        for (const q of singles) {
+          try {
+            await pushRows(name, userId, [q]);
+          } catch (e2) {
+            recordFailure(q, e2);
+            if (isTransient(e2)) throw e2;
+            failedIds.push(q.id);
+            firstError ??= asError(e2);
+          }
+        }
+      }
     }
   }
+  if (firstError) return firstError;
+  const poisoned = getDb()
+    .select()
+    .from(syncOutbox)
+    .where(and(eq(syncOutbox.ownerId, userId), gte(syncOutbox.attempts, MAX_ATTEMPTS)))
+    .orderBy(asc(syncOutbox.id))
+    .get();
+  return poisoned ? new Error(poisoned.lastError ?? 'Sync failed') : null;
+}
+
+/** ตารางที่ควรมีแถวเดียวต่อกุญแจ: profile (ต่อบัญชี) และ daily_log (ต่อวัน) */
+const DUPLICATE_RULES: {
+  table: 'profile' | 'daily_log';
+  key: (row: Record<string, unknown>) => string;
+  fields: string[];
+}[] = [
+  {
+    table: 'profile',
+    key: () => 'profile',
+    fields: [
+      'sex',
+      'age',
+      'heightCm',
+      'weightKg',
+      'activityLevel',
+      'goal',
+      'weightUnit',
+      'lengthUnit',
+      'deficitPct',
+      'surplusPct',
+      'proteinPerKg',
+      'fatPct',
+      'metLight',
+      'metModerate',
+      'metHard',
+      'restTimerEnabled',
+      'restTimerSec',
+      'weekStart',
+      'weightStepKg',
+      'activeProgramId',
+    ],
+  },
+  {
+    table: 'daily_log',
+    key: (r) => String(r.date),
+    fields: ['kcalExpenditureOverride', 'kcalIntake', 'bodyWeightKg'],
+  },
+];
+
+/**
+ * รวมแถวที่ควรมีแถวเดียวแต่สองเครื่องสร้างซ้ำตอนออฟไลน์ (SPEC L): รวมค่าตามความใหม่ลงแถวเก่าสุด
+ * แล้ว soft delete แถวที่ซ้ำ — ทุกเครื่องเลือกแถวเดียวกันจึงลู่เข้าหากัน คืนจำนวนแถวที่ถูกรวม
+ */
+export function reconcileDuplicateRows(userId: string): number {
+  let removed = 0;
+  transaction(() => {
+    for (const rule of DUPLICATE_RULES) {
+      const t = tableOf(rule.table);
+      const rows = getDb()
+        .select()
+        .from(t)
+        .where(and(eq(t.ownerId, userId), isNull(t.deletedAt)))
+        .all() as (Record<string, unknown> & { id: string; createdAt: number; updatedAt: number })[];
+      const groups = new Map<string, typeof rows>();
+      for (const r of rows) {
+        const k = rule.key(r);
+        groups.set(k, [...(groups.get(k) ?? []), r]);
+      }
+      for (const group of groups.values()) {
+        const plan = planMerge(group, rule.fields);
+        if (!plan) continue;
+        if (Object.keys(plan.patch).length > 0) updateRow(rule.table, plan.survivorId, plan.patch as never);
+        for (const id of plan.duplicateIds) softDeleteRow(rule.table, id);
+        removed += plan.duplicateIds.length;
+      }
+    }
+  });
+  return removed;
 }
 
 /** merge แถวจากคลาวด์แบบ last-write-wins (ไม่ใส่คิวซ้ำ) */
@@ -269,9 +407,12 @@ async function runSync(): Promise<SyncOutcome> {
   }
   store.set({ status: 'syncing', lastError: null });
   try {
-    await push(userId);
+    const pushError = await push(userId);
     const applied = await pull(userId);
-    if (applied > 0) notifyDataChanged();
+    const merged = getOwner() === userId ? reconcileDuplicateRows(userId) : 0;
+    if (applied > 0 || merged > 0) notifyDataChanged();
+    // ส่งบางแถวไม่สำเร็จ: ยังดึงข้อมูลได้ตามปกติ แต่สถานะต้องเป็น error (ไม่โชว์ว่าซิงก์ครบ)
+    if (pushError) throw pushError;
     failures = 0;
     useSync
       .getState()

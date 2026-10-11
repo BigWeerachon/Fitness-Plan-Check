@@ -1,4 +1,4 @@
-import { and, eq, isNull, type InferInsertModel, type InferSelectModel } from 'drizzle-orm';
+import { and, eq, isNull, sql, type InferInsertModel, type InferSelectModel } from 'drizzle-orm';
 import { now } from '../utils/clock';
 import { newId } from '../utils/id';
 import { getDb } from './client';
@@ -36,10 +36,17 @@ export function onLocalWrite(listener: () => void): () => void {
 export function enqueue(name: SyncedTableName, rowId: string, ownerId = getOwner()): void {
   getDb()
     .insert(syncOutbox)
-    .values({ tableName: name, rowId, ownerId, queuedAt: now(), attempts: 0, lastError: null })
+    .values({ tableName: name, rowId, ownerId, queuedAt: now(), version: 1, attempts: 0, lastError: null })
     .onConflictDoUpdate({
       target: [syncOutbox.tableName, syncOutbox.rowId],
-      set: { queuedAt: now(), attempts: 0, lastError: null, ownerId },
+      // version เพิ่มทุกครั้ง: push ลบคิวเฉพาะเมื่อ version ไม่เปลี่ยนระหว่างส่ง (ไม่พึ่งนาฬิกา)
+      set: {
+        queuedAt: now(),
+        version: sql`${syncOutbox.version} + 1`,
+        attempts: 0,
+        lastError: null,
+        ownerId,
+      },
     })
     .run();
   writeListeners.forEach((l) => l());

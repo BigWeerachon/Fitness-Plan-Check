@@ -3,7 +3,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Linking, StyleSheet, View } from 'react-native';
 import { AppText, Button, Card, HeroTitle, Screen, StackHeader } from '../../components';
-import { LEGAL, type LegalKey } from '../../legal/content';
+import { hasPlaceholders, LEGAL, type LegalKey } from '../../legal/content';
 import { env } from '../../services/config';
 import { spacing } from '../../theme/tokens';
 
@@ -17,9 +17,11 @@ export default function LegalScreen() {
   return (
     <Screen header={<StackHeader />}>
       <HeroTitle title={content.title} subtitle={content.updated} compact />
-      <AppText variant="caption" secondary align="center" style={styles.notice}>
-        {t('legal.templateNotice')}
-      </AppText>
+      {hasPlaceholders(content) ? (
+        <AppText variant="caption" secondary align="center" style={styles.notice}>
+          {t('legal.templateNotice')}
+        </AppText>
+      ) : null}
       <View style={styles.sections}>
         {content.sections.map((s) => (
           <Card key={s.heading}>

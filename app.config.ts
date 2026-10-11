@@ -5,6 +5,24 @@ const BUNDLE_ID = process.env.APP_BUNDLE_ID || 'com.example.fitnese';
 // ปลั๊กอิน Google Sign-In บังคับให้มี iosUrlScheme ตอน prebuild ถ้ายังไม่มีคีย์จริงใช้ค่าชั่วคราวไปก่อน
 const GOOGLE_IOS_URL_SCHEME = process.env.GOOGLE_IOS_URL_SCHEME || 'com.googleusercontent.apps.placeholder';
 
+/**
+ * ประเภทข้อมูลที่แอปเก็บ (ตรงกับตาราง App Privacy ใน docs/HUMAN_TASKS.md ส่วน R และนโยบายความเป็นส่วนตัว)
+ * ทุกประเภท: เชื่อมกับตัวตนผู้ใช้ ไม่ใช้ติดตาม ใช้เพื่อการทำงานของแอปเท่านั้น
+ */
+const COLLECTED_DATA_TYPES = [
+  'NSPrivacyCollectedDataTypeEmailAddress', // อีเมลจาก Google/Apple
+  'NSPrivacyCollectedDataTypeUserID', // id ผู้ใช้ Supabase = app user id ของ RevenueCat
+  'NSPrivacyCollectedDataTypeHealth', // ส่วนสูง น้ำหนักตัว แคลอรี่ที่กิน
+  'NSPrivacyCollectedDataTypeFitness', // โปรแกรมและบันทึกการฝึก
+  'NSPrivacyCollectedDataTypePurchaseHistory', // สถานะสมาชิกผ่าน RevenueCat
+  'NSPrivacyCollectedDataTypeOtherDataTypes', // เพศ อายุ (ไม่บังคับ)
+].map((type) => ({
+  NSPrivacyCollectedDataType: type,
+  NSPrivacyCollectedDataTypeLinked: true,
+  NSPrivacyCollectedDataTypeTracking: false,
+  NSPrivacyCollectedDataTypePurposes: ['NSPrivacyCollectedDataTypePurposeAppFunctionality'],
+}));
+
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'Fitnese',
@@ -27,7 +45,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     privacyManifests: {
       NSPrivacyTracking: false,
       NSPrivacyTrackingDomains: [],
-      NSPrivacyCollectedDataTypes: [],
+      NSPrivacyCollectedDataTypes: COLLECTED_DATA_TYPES,
       NSPrivacyAccessedAPITypes: [],
     },
   },

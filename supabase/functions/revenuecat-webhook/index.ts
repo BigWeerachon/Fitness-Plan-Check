@@ -34,6 +34,10 @@ const store: WebhookStore = {
     // 23505 = ส่งซ้ำพร้อมกันสองครั้ง → ถือว่าบันทึกแล้ว
     if (error && error.code !== '23505') throw error;
   },
+  async purgeOldEvents(retainDays) {
+    const { error } = await supabase.rpc('purge_revenuecat_events', { retain_days: retainDays });
+    if (error) throw error;
+  },
 };
 
 Deno.serve(async (req) => {

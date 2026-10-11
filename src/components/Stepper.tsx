@@ -5,6 +5,15 @@ import { usePalette } from '../theme/useTheme';
 import { AppText } from './AppText';
 import { Icon } from './Icon';
 
+/**
+ * ปุ่ม −/+ ด้านในซ่อนจากโปรแกรมอ่านหน้าจอ: แถวหลักมี action เพิ่ม/ลดอยู่แล้ว
+ * (ไม่งั้น TalkBack โฟกัสปุ่มไอคอนที่ไม่มีชื่อได้)
+ */
+const HIDDEN_FROM_READERS = {
+  importantForAccessibility: 'no-hide-descendants',
+  accessibilityElementsHidden: true,
+} as const;
+
 /** ปุ่ม − ค่า + สำหรับตัวเลขเล็กๆ (จำนวนเซ็ต ช่วงครั้ง) รองรับ VoiceOver/TalkBack แบบ adjustable */
 export function Stepper({
   label,
@@ -44,6 +53,7 @@ export function Stepper({
       <Pressable
         onPress={dec}
         disabled={value <= min}
+        {...HIDDEN_FROM_READERS}
         style={[styles.btn, { backgroundColor: p.inputBg }]}
         testID={testID ? `${testID}-dec` : undefined}
       >
@@ -55,6 +65,7 @@ export function Stepper({
       <Pressable
         onPress={inc}
         disabled={value >= max}
+        {...HIDDEN_FROM_READERS}
         style={[styles.btn, { backgroundColor: p.inputBg }]}
         testID={testID ? `${testID}-inc` : undefined}
       >

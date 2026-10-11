@@ -180,7 +180,7 @@ describe('Programs, routines and the weekly plan (SPEC E, F)', () => {
     await flush();
     expect(routineExerciseRepo.listByRoutine(r.id).map((e) => e.exerciseId)).toEqual(['barbell_bench_press']);
     fireEvent.press(await screen.findByTestId('rex-barbell_bench_press'));
-    fireEvent.press(await screen.findByTestId('setting-sets-inc'));
+    fireEvent.press(await screen.findByTestId('setting-sets-inc', { includeHiddenElements: true }));
     fireEvent.press(screen.getByTestId('mode-linear'));
     fireEvent.press(screen.getByTestId('exercise-settings-save'));
     await flush();

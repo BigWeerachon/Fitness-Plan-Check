@@ -65,7 +65,12 @@ export interface WebhookStore {
   /** 'unknown_user' = ไม่มีบัญชีนี้ใน auth.users แล้ว (เช่น ลบบัญชีไปแล้ว) */
   saveEntitlement(row: EntitlementRow): Promise<'saved' | 'unknown_user'>;
   recordEvent(event: RecordedEvent): Promise<void>;
+  /** ลบบันทึกเหตุการณ์ที่เก่ากว่า retainDays วัน (SQL: public.purge_revenuecat_events) */
+  purgeOldEvents(retainDays: number): Promise<void>;
 }
+
+/** เก็บบันทึกเหตุการณ์ไว้กันซ้ำแค่ 90 วัน (ข้อมูลขั้นต่ำ B13) */
+export const EVENT_RETENTION_DAYS = 90;
 
 export interface WebhookResult {
   status: number;
@@ -227,13 +232,20 @@ export async function handleWebhook(
   if (!ev) return { status: 400, body: { error: 'invalid event' } };
   if (await deps.store.eventSeen(ev.id)) return { status: 200, body: { duplicate: true } };
 
-  const record = () =>
-    deps.store.recordEvent({
+  const record = async () => {
+    await deps.store.recordEvent({
       id: ev.id,
       type: ev.type,
       app_user_id: ev.app_user_id ?? null,
       event_at: ev.event_timestamp_ms ? new Date(ev.event_timestamp_ms).toISOString() : null,
     });
+    // ล้างของเก่าเป็นงานเสริม: ล้มเหลวต้องไม่ทำให้ webhook ล้ม (RevenueCat จะส่งซ้ำโดยไม่จำเป็น)
+    try {
+      await deps.store.purgeOldEvents(EVENT_RETENTION_DAYS);
+    } catch (e) {
+      console.error('revenuecat_events purge failed', e);
+    }
+  };
 
   if (!isRelevant(ev)) {
     await record();

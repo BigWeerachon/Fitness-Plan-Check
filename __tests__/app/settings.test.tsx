@@ -51,7 +51,7 @@ describe('settings tab (SPEC K)', () => {
     ).toBeTruthy();
 
     // ตัวจับเวลาพัก
-    fireEvent.press(screen.getByTestId('settings-rest-inc'));
+    fireEvent.press(screen.getByTestId('settings-rest-inc', { includeHiddenElements: true }));
     await flush();
     expect(profileRepo.get()?.restTimerSec).toBe(105);
     fireEvent(screen.getByTestId('settings-rest-toggle'), 'valueChange', false);
@@ -211,13 +211,13 @@ describe('profile & targets (SPEC H1–H6)', () => {
     fireEvent.press(screen.getByTestId('profile-save'));
     await flush();
     expect(within(screen.getByTestId('profile-target')).getByText('2,044 kcal · TDEE − 20%')).toBeTruthy();
-    fireEvent.press(screen.getByTestId('profile-deficit-inc'));
+    fireEvent.press(screen.getByTestId('profile-deficit-inc', { includeHiddenElements: true }));
     await flush();
     expect(profileRepo.get()?.deficitPct).toBe(21);
     expect(within(screen.getByTestId('profile-target')).getByText('2,019 kcal · TDEE − 21%')).toBeTruthy();
 
     // โปรตีน: ค่าแนะนำของลดไขมัน 2.2 → ลดเป็น 2.1 → กลับค่าแนะนำ
-    fireEvent.press(screen.getByTestId('profile-protein-dec'));
+    fireEvent.press(screen.getByTestId('profile-protein-dec', { includeHiddenElements: true }));
     await flush();
     expect(profileRepo.get()?.proteinPerKg).toBe(2.1);
     fireEvent.press(screen.getByTestId('profile-protein-auto'));
@@ -225,8 +225,8 @@ describe('profile & targets (SPEC H1–H6)', () => {
     expect(profileRepo.get()?.proteinPerKg).toBeNull();
 
     // MET และไขมัน
-    fireEvent.press(screen.getByTestId('profile-met-light-inc'));
-    fireEvent.press(screen.getByTestId('profile-fat-inc'));
+    fireEvent.press(screen.getByTestId('profile-met-light-inc', { includeHiddenElements: true }));
+    fireEvent.press(screen.getByTestId('profile-fat-inc', { includeHiddenElements: true }));
     await flush();
     expect(profileRepo.get()).toMatchObject({ metLight: 4, fatPct: 26 });
 

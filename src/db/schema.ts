@@ -321,6 +321,8 @@ export const syncOutbox = sqliteTable(
     rowId: text('row_id').notNull(),
     ownerId: text('owner_id').notNull(),
     queuedAt: integer('queued_at').notNull(),
+    /** เพิ่มทุกครั้งที่แถวถูกใส่คิวซ้ำ — push ลบเฉพาะรายการที่ version ตรงกับที่อ่านไว้ (ไม่พึ่งนาฬิกา) */
+    version: integer('version').notNull().default(1),
     attempts: integer('attempts').notNull().default(0),
     lastError: text('last_error'),
   },
