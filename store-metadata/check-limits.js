@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* global __dirname, Buffer */
 /**
  * ตรวจจำนวนตัวอักษรของข้อความหน้าร้านทุกช่องใน store-metadata/*.md
  * ใช้: node store-metadata/check-limits.js [--url-len=80] [--release]
@@ -29,7 +30,10 @@ const LIMITS = {
   as_promo: { limit: 170, label: 'App Store promotional text' },
   as_desc: { limit: 4000, label: 'App Store description' },
   as_keywords: { limit: 100, label: 'App Store keywords', bytes: true },
-  as_keywords_long: { limit: 100, label: 'App Store keywords ชุดยาว (ใช้ได้เมื่อคอนโซลนับเป็นตัวอักษรเท่านั้น)' },
+  as_keywords_long: {
+    limit: 100,
+    label: 'App Store keywords ชุดยาว (ใช้ได้เมื่อคอนโซลนับเป็นตัวอักษรเท่านั้น)',
+  },
   whats_new: { limit: 4000, label: "App Store What's New / Play release notes (Play จำกัด 500)", also: 500 },
   play_short: { limit: 80, label: 'Play short description' },
   play_desc: { limit: 4000, label: 'Play full description' },
@@ -46,7 +50,10 @@ const fail = (msg) => {
   console.log(`  FAIL ${msg}`);
 };
 
-const files = fs.readdirSync(dir).filter((f) => f.endsWith('.md')).sort();
+const files = fs
+  .readdirSync(dir)
+  .filter((f) => f.endsWith('.md'))
+  .sort();
 for (const file of files) {
   const text = fs.readFileSync(path.join(dir, file), 'utf8');
   const lines = text.split('\n');
@@ -63,7 +70,10 @@ for (const file of files) {
     const cp = Array.from(body).length;
     const bytes = Buffer.byteLength(body, 'utf8');
     // จำลอง URL จริงแทน placeholder ประเภท URL
-    const withUrls = body.replace(/<(TERMS|PRIVACY|SUPPORT|MARKETING|DELETE_ACCOUNT)_URL>/g, 'x'.repeat(urlLen));
+    const withUrls = body.replace(
+      /<(TERMS|PRIVACY|SUPPORT|MARKETING|DELETE_ACCOUNT)_URL>/g,
+      'x'.repeat(urlLen),
+    );
     const cpUrl = Array.from(withUrls).length;
     const bytesUrl = Buffer.byteLength(withUrls, 'utf8');
 
@@ -73,7 +83,9 @@ for (const file of files) {
     for (let i = startLine - 1; i >= 0 && near.length < 3; i -= 1) {
       if (lines[i].trim()) near.push(lines[i]);
     }
-    const stated = [...near.join(' ').matchAll(/(?:count|นับได้)\s+(\d+)(?:\s*ตัวอักษร)?(?:\s*\/\s*(\d+)\s*ไบต์)?/g)];
+    const stated = [
+      ...near.join(' ').matchAll(/(?:count|นับได้)\s+(\d+)(?:\s*ตัวอักษร)?(?:\s*\/\s*(\d+)\s*ไบต์)?/g),
+    ];
 
     const unit = spec && spec.bytes ? 'bytes' : 'chars';
     const measure = spec && spec.bytes ? bytes : cp;
@@ -93,13 +105,18 @@ for (const file of files) {
         ` | ${spec.label}`,
     );
     if (!ok) fail(`${file} ${id} เกินขีดจำกัด (${measure} > ${limit})`);
-    else if (!okUrl) fail(`${file} ${id} เกินขีดจำกัดเมื่อใส่ URL ยาว ${urlLen} ตัวอักษร (${measureUrl} > ${limit})`);
+    else if (!okUrl)
+      fail(`${file} ${id} เกินขีดจำกัดเมื่อใส่ URL ยาว ${urlLen} ตัวอักษร (${measureUrl} > ${limit})`);
     if (spec.also && cp > spec.also) fail(`${file} ${id} เกิน ${spec.also} (Play release notes) (${cp})`);
 
     if (stated.length) {
-      const nums = stated.flatMap((s) => [Number(s[1]), s[2] ? Number(s[2]) : null]).filter((n) => n !== null);
+      const nums = stated
+        .flatMap((s) => [Number(s[1]), s[2] ? Number(s[2]) : null])
+        .filter((n) => n !== null);
       if (!nums.includes(cp) && !nums.includes(bytes)) {
-        fail(`${file} ${id} ตัวเลขที่เขียนไว้ (${nums.join(', ')}) ไม่ตรงกับที่นับจริง (${cp} ตัวอักษร / ${bytes} ไบต์)`);
+        fail(
+          `${file} ${id} ตัวเลขที่เขียนไว้ (${nums.join(', ')}) ไม่ตรงกับที่นับจริง (${cp} ตัวอักษร / ${bytes} ไบต์)`,
+        );
       }
     } else {
       console.log('       (ไม่พบตัวเลขที่เขียนไว้ใกล้บล็อกนี้ให้เทียบ)');

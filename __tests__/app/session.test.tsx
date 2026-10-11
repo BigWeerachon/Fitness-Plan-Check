@@ -201,7 +201,7 @@ describe('workout session (SPEC G1, G2)', () => {
     const before = benchSets().length;
     fireEvent.press(screen.getByTestId('ex-menu-barbell_bench_press'));
     fireEvent.press(await screen.findByTestId('ex-settings'));
-    fireEvent.press(await screen.findByTestId('setting-sets-inc'));
+    fireEvent.press(await screen.findByTestId('setting-sets-inc', { includeHiddenElements: true }));
     fireEvent.press(screen.getByTestId('mode-linear'));
     fireEvent.press(screen.getByTestId('exercise-settings-save'));
     await flush();
