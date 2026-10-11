@@ -1,6 +1,6 @@
 # store-metadata — ข้อความและแบบฟอร์มสำหรับส่งสโตร์
 
-ชุดไฟล์นี้คือข้อความหน้าร้าน คำตอบแบบฟอร์มความเป็นส่วนตัว และ App Review Notes ที่พร้อมคัดลอกไปวางใน App Store Connect และ Play Console (SPEC N1, N2, N6) ตรวจข้อเท็จจริงกับโค้ด สเปค และ `package.json` / `supabase/` แล้วที่ commit `c7f2171` (ดูหัวข้อ "ขอบเขตของรุ่นนี้" ด้านล่างว่าอะไรต้องตรวจซ้ำก่อนปล่อย)
+ชุดไฟล์นี้คือข้อความหน้าร้าน คำตอบแบบฟอร์มความเป็นส่วนตัว และ App Review Notes ที่พร้อมคัดลอกไปวางใน App Store Connect และ Play Console (SPEC N1, N2, N6) ตรวจข้อเท็จจริงกับโค้ด สเปค และ `package.json` / `supabase/` แล้วที่ commit `3cb4c4f` (ดูหัวข้อ "ขอบเขตของรุ่นนี้" ด้านล่างว่าอะไรต้องตรวจซ้ำก่อนปล่อย)
 
 เช็กลิสต์ส่งสโตร์ทั้งหมดอยู่ที่ [docs/RELEASE_CHECKLIST.md](../docs/RELEASE_CHECKLIST.md) งานที่ต้องทำเองทีละขั้นอยู่ที่ [docs/HUMAN_TASKS.md](../docs/HUMAN_TASKS.md) (ไฟล์นี้ไม่ทำซ้ำเนื้อหาของสองไฟล์นั้น)
 
@@ -54,20 +54,21 @@ node store-metadata/check-limits.js --release       # ล้มถ้ายั�
 
 ## ขอบเขตของรุ่นนี้ (ต้องตรวจซ้ำก่อน build ส่งรีวิว)
 
-ข้อความทุกช่องเขียนให้ "จริงเสมอ" กับโค้ดที่ commit `c7f2171` ฟีเจอร์ที่ยังอยู่ในสาขาแก้ไขที่ยังไม่รวม (`audit-fix/*`) หรือยังไม่มีโค้ด **ไม่ได้อยู่ในข้อความ** ตารางนี้บอกว่าแต่ละเรื่องตรวจอย่างไร และถ้าโค้ดรวมแล้ว จะเพิ่มข้อความอะไรได้ (ห้ามเพิ่มถ้า build ที่จะส่งยังไม่มีฟีเจอร์นั้น — หน้าร้านที่อ้างฟีเจอร์ที่ไม่มีเสี่ยงถูกปฏิเสธตาม App Review 2.3.1)
+ข้อความทุกช่องเขียนให้ "จริงเสมอ" กับโค้ดที่ commit `3cb4c4f` ฟีเจอร์ที่ยังไม่อยู่ในโค้ด (หรืออยู่ในสาขาแก้ไข `audit-fix/*` ที่ยังไม่รวม) **ไม่ได้อยู่ในข้อความ** ตารางนี้บอกว่าแต่ละเรื่องตรวจอย่างไร และถ้าโค้ดรวมแล้วจะเพิ่มข้อความอะไรได้ (ห้ามเพิ่มถ้า build ที่จะส่งยังไม่มีฟีเจอร์นั้น — หน้าร้านที่อ้างฟีเจอร์ที่ไม่มีเสี่ยงถูกปฏิเสธตาม App Review 2.3.1)
 
-| เรื่อง | สถานะที่ commit `c7f2171` | ตรวจว่ามีใน build ที่จะส่งหรือยัง | ถ้ามีแล้ว เพิ่มได้ที่ |
+| เรื่อง | สถานะที่ commit `3cb4c4f` | ตรวจว่ามีใน build ที่จะส่ง | ข้อความ |
 |---|---|---|---|
-| ไอคอนกลุ่มกล้ามเนื้อในคลังท่า | ยังไม่มี (อยู่ในสาขา programs) | `ls src/components/MuscleIcon.tsx` | listing.en: "143 exercises, including" → "143 exercises with muscle-group icons, including" · listing.th: "143 ท่า มีท่าบอดี้เวท" → "143 ท่า พร้อมไอคอนกลุ่มกล้ามเนื้อ มีท่าบอดี้เวท" (ทั้ง App Store และ Play) |
-| แก้ไขท่าที่สร้างเอง | ยังไม่มี (สร้างและลบได้เท่านั้น) | `grep -n editExercise src/i18n/locales/en/exercises.ts` | EN: "Add your own." → "Add and edit your own." · TH: "สร้างท่าเองได้" → "สร้างและแก้ไขท่าเองได้" |
-| เลือก routine ตอนบันทึกการฝึกย้อนหลัง | ยังไม่มี (เซสชันย้อนหลังเป็นเซสชันเปล่า 7 วันล่าสุด) | `grep -n pickRoutine src/i18n/locales/en/today.ts` | ไม่ต้องแก้ listing (พูดถึงแค่ "log a past workout") — ใช้ในขั้นจัดฉากของ [screenshots.md](screenshots.md) และ P-test ใน TEST_PLAN |
-| คำเตือน "ไม่ใช่คำแนะนำทางการแพทย์" ในหน้าวันนี้ กราฟความแข็งแรง + ลิงก์ "Sources" | ยังไม่มี: มีคำเตือนในสถิติ โปรไฟล์ สรุปเซสชัน รายละเอียดประวัติ ตั้งค่า และหน้าอ้างอิง | `grep -rn "<Disclaimer" src/app` และ `grep -n "sources" src/i18n/locales/en/nutrition.ts` | review-notes.md ย่อหน้า HEALTH INFORMATION: แทนประโยคแรกด้วย `A "not medical advice" disclaimer with a "Sources" link to the References screen is shown on Today, Stats, the strength chart, Profile & targets, the session summary and History.` แล้วรัน check-limits (เหลือที่ ~200 ไบต์) · play-declarations.md ข้อ 1 ปรับรายการหน้าจอตามจริง |
-| Privacy manifest ระบุข้อมูล 5 ประเภท | ยังไม่ครบ: `NSPrivacyCollectedDataTypes: []` | `npx expo config --type introspect \| grep -A30 privacyManifests` ต้องเห็น 5 ประเภทตาม [privacy-labels.md](privacy-labels.md) ข้อ 3.5 | — (ต้องแก้ `app.config.ts` ก่อน ไม่ใช่แก้ข้อความ) |
-| ลบ `revenuecat_events` เก่าอัตโนมัติ (90 วัน) | ยังไม่มี migration/cron | `grep -rn "90 days" supabase/migrations` | ถ้ามี: แก้แถวใน [privacy-labels.md](privacy-labels.md) ข้อ 1 และหัวข้อ "การเก็บรักษาและการลบข้อมูล" ใน `src/legal/content.ts` ให้ตรงกัน แล้ว `npx supabase db push` |
-| Sign in with Apple บน Android ไม่ขอชื่อ | ไม่แน่ใจ: `signInWithOAuth({ provider: 'apple' })` ไม่ระบุ `scopes` | ล็อกอิน Apple บน Android แล้วดู Raw user meta data ใน Supabase ([privacy-labels.md](privacy-labels.md) ข้อ 2.1) | ถ้าพบชื่อ: เพิ่ม `scopes: 'email'` ในโค้ด หรือประกาศ Name ในป้าย |
-| ป้าย "Template" ในหน้ากฎหมายแสดงเฉพาะเมื่อยังมี placeholder + guard `RELEASE=1` | ยังไม่มี: ป้ายแสดงเสมอ | `RELEASE=1 npm test` ต้องผ่านเมื่อกรอก `PLACEHOLDERS` ครบ | — (ดู [docs/RELEASE_CHECKLIST.md](../docs/RELEASE_CHECKLIST.md) ข้อ 5) |
+| ไอคอนกลุ่มกล้ามเนื้อในคลังท่า | **มีแล้ว** (`MuscleIcon` ในคลังท่า รายละเอียดท่า เซสชัน) | `ls src/components/MuscleIcon.tsx` | อยู่ใน listing.en/th แล้ว ("with muscle-group icons" / "พร้อมไอคอนกลุ่มกล้ามเนื้อ") ถ้า build ที่จะส่งไม่มี ให้ลบวลีนี้และนับใหม่ |
+| แก้ไขท่าที่สร้างเอง | **มีแล้ว** (`exercises/new.tsx?editId`) | `grep -n editExercise src/i18n/locales/en/exercises.ts` | อยู่ใน listing แล้ว ("Add and edit your own" / "สร้างและแก้ไขท่าเองได้") ถ้าไม่มี ให้เปลี่ยนเป็น "Add your own." / "สร้างท่าเองได้" |
+| เลือก routine ตอนบันทึกการฝึกย้อนหลัง | **มีแล้ว** (ชีต `today.menu.pickRoutine`) | `grep -n pickRoutine src/i18n/locales/en/today.ts` | ไม่อยู่ใน listing (พูดถึงแค่ "log a past workout") ใช้ในขั้นจัดฉากของ [screenshots.md](screenshots.md) และ P-test |
+| เป้า RIR/RPE ต่อท่า | **มีแล้ว** (ตั้งใน `ExerciseSettingsSheet`) | `grep -n "rir" src/features/programs/ExerciseSettingsSheet.tsx` | listing เขียนเป็น "optional RIR/RPE targets" |
+| คำเตือน "ไม่ใช่คำแนะนำทางการแพทย์" ในหน้าวันนี้ กราฟความแข็งแรง + ลิงก์ "Sources" | **ยังไม่มี**: มีคำเตือนในสถิติ โปรไฟล์ สรุปเซสชัน รายละเอียดประวัติ ตั้งค่า และหน้าอ้างอิง | `grep -rn "<Disclaimer" src/app` และ `grep -n "sources" src/i18n/locales/en/nutrition.ts` | ถ้ารวมแล้ว: review-notes.md ย่อหน้า HEALTH INFORMATION แทนประโยคแรกด้วย `A "not medical advice" disclaimer with a "Sources" link to the References screen is shown on Today, Stats, the strength chart, Profile & targets, the session summary and History.` แล้วรัน check-limits (เหลือที่ ~200 ไบต์) · แก้ play-declarations.md ข้อ 1 ตามจริง |
+| Privacy manifest ระบุข้อมูล 5 ประเภท | **ยังไม่ครบ**: `NSPrivacyCollectedDataTypes: []` | `npx expo config --type introspect \| grep -A40 privacyManifests` ต้องเห็น 5 ประเภทตาม [privacy-labels.md](privacy-labels.md) ข้อ 3.5 | — (ต้องแก้ `app.config.ts` ก่อน ไม่ใช่แก้ข้อความ) |
+| ลบ `revenuecat_events` เก่าอัตโนมัติ (90 วัน) | **ยังไม่มี** migration/cron | `grep -rn "90 days" supabase/migrations` | ถ้ามี: แก้แถวใน [privacy-labels.md](privacy-labels.md) ข้อ 1 และหัวข้อ "การเก็บรักษาและการลบข้อมูล" ใน `src/legal/content.ts` ให้ตรงกัน แล้ว `npx supabase db push` |
+| Sign in with Apple บน Android ไม่ขอชื่อ | **ไม่แน่ใจ**: `signInWithOAuth({ provider: 'apple' })` ไม่ระบุ `scopes` | ล็อกอิน Apple บน Android แล้วดู Raw user meta data ใน Supabase ([privacy-labels.md](privacy-labels.md) ข้อ 2.1) | ถ้าพบชื่อ: เพิ่ม `scopes: 'email'` ในโค้ด หรือประกาศ Name ในป้าย |
+| ป้าย "Template" ในหน้ากฎหมายแสดงเฉพาะเมื่อยังมี placeholder + guard `RELEASE=1` | **ยังไม่มี**: ป้ายแสดงเสมอ | `RELEASE=1 npm test` ต้องผ่านเมื่อกรอก `PLACEHOLDERS` ครบ | — (ดู [docs/RELEASE_CHECKLIST.md](../docs/RELEASE_CHECKLIST.md) หัวข้อ 5) |
 
-ตารางนี้เป็น snapshot ที่ commit `c7f2171` เมื่อสาขาแก้ไขรวมแล้ว ให้ผู้พัฒนาปรับคอลัมน์สถานะและรันคำสั่งตรวจอีกครั้งก่อนส่ง
+ตารางนี้เป็น snapshot ที่ commit `3cb4c4f` เมื่อสาขาแก้ไขที่เหลือรวมแล้ว ให้ผู้พัฒนาปรับคอลัมน์สถานะและรันคำสั่งตรวจอีกครั้งก่อนส่ง
 
 ## เช็กลิสต์ก่อนวางข้อความลงสโตร์
 

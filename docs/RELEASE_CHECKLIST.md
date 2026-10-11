@@ -2,7 +2,7 @@
 
 > ใช้ทำตอนท้ายสุด หลังทำ [HUMAN_TASKS.md](HUMAN_TASKS.md) ส่วน A–R ครบแล้ว (HUMAN_TASKS ข้อ 80 ชี้มาที่ไฟล์นี้) ไฟล์นี้ **ไม่ทำซ้ำขั้นตอน** ของ HUMAN_TASKS แต่ระบุว่า "ต้องเห็นอะไร" ก่อนกดส่ง พร้อมคำสั่งตรวจ และอ้างข้อของ HUMAN_TASKS ที่ต้องกลับไปทำถ้ายังไม่ผ่าน การทดสอบบนเครื่องจริงทำตาม [TEST_PLAN.md](TEST_PLAN.md) ข้อความหน้าร้านอยู่ใน [../store-metadata/README.md](../store-metadata/README.md)
 >
-> ตรวจกับโค้ดที่ commit `c7f2171` สถานะ "รอรวม" ในเอกสารนี้หมายถึงการแก้ที่ยังไม่อยู่ใน commit นั้น ให้รันคำสั่งตรวจที่ระบุซ้ำก่อนส่งทุกครั้ง
+> ตรวจกับโค้ดที่ commit `3cb4c4f` สถานะ "รอรวม" ในเอกสารนี้หมายถึงการแก้ที่ยังไม่อยู่ใน commit นั้น ให้รันคำสั่งตรวจที่ระบุซ้ำก่อนส่งทุกครั้ง
 >
 > **ระยะเวลาที่ต้องเผื่อ (ไม่ใช่งานโค้ด):** สมัคร Apple Developer (หลายวัน ถ้าเป็นองค์กรนานกว่า) · สิทธิ์ service account ของ Google Play ที่ RevenueCat ใช้ (หลายชั่วโมงถึง 1–2 วัน, HUMAN_TASKS ข้อ 60) · บัญชี Play ส่วนบุคคลใหม่ต้องผ่าน Closed testing ตามเงื่อนไขของ Google ก่อนขอ Production (HUMAN_TASKS ข้อ 6 — ตรวจตัวเลขปัจจุบันในคอนโซล) · Apple/Google ตรวจแอปและสินค้า in-app
 
@@ -18,7 +18,7 @@
 |---|---|---|---|
 | N1.1 | Sign in with Apple เท่าเทียมกับ Google (Guideline 4.8) | `src/features/auth/SignInButtons.tsx` (ปุ่มสองปุ่มสูง 52 เท่ากัน สไตล์เดียวกัน D51) · `ios.usesAppleSignIn: true` ใน `app.config.ts` · `src/services/auth/supabaseAuth.ts` | [ ] เปิด capability Sign in with Apple ที่ App ID, สร้างคีย์ `.p8`, ตั้ง Apple provider ใน Supabase (HUMAN_TASKS ข้อ 24–29) · [ ] ทดสอบ P-13 บน iPhone จริง · [ ] จดวันหมดอายุ Apple OAuth secret (≤ 6 เดือน) ลงปฏิทิน (ข้อ 82) |
 | N1.2 | ปุ่มลบบัญชีในแอป (5.1.1(v)) + แจ้งว่าไม่ยกเลิกสมาชิกในสโตร์ (B12) | `src/app/delete-account.tsx` (ตั้งค่า → ส่วน "บัญชี"/Account → ลบบัญชีและข้อมูล; ไม่มีสิทธิ์ใช้งาน: Paywall → ไอคอนเฟือง → ส่วน "ข้อมูล"/Information) · Edge Function `delete-account` เพิกถอนโทเค็น Apple, ลบข้อมูลทุกตารางและลูกค้า RevenueCat (D40, D52) | [ ] deploy `delete-account` พร้อม secret `APPLE_*` และ `REVENUECAT_SECRET_API_KEY` (ข้อ 18, 29, 63) · [ ] ทดสอบ P-14 อย่างน้อย 1 ครั้งด้วยบัญชี Apple บน iPhone แล้วดู log ว่าไม่มี error ตอนเพิกถอน (ข้อ 70) |
-| N1.3 | ข้อมูลสุขภาพ/การคำนวณมีลิงก์แหล่งอ้างอิง (1.4.1) + disclaimer "ไม่ใช่การแพทย์" ในคำอธิบายแอป | หน้า `/references` (`src/app/references.tsx`, `REFERENCES` ใน `src/legal/content.ts`: Mifflin 1990, ISSN 2017, Compendium 2024, Epley) เข้าถึงได้จากตั้งค่า → เกี่ยวกับ, หน้าบัญชี, Paywall · คอมโพเนนต์ `Disclaimer` ในสถิติ โปรไฟล์ สรุปเซสชัน ประวัติ ตั้งค่า · ย่อหน้า "HEALTH DISCLAIMER"/"คำเตือนด้านสุขภาพ" ใน `store-metadata/listing.*.md` | [ ] วางคำอธิบายที่มีย่อหน้า disclaimer ลงสโตร์ (ข้อ 77) · [ ] ตรวจว่าคำเตือน "ทุกหน้าผลลัพธ์" ตาม SPEC H5 ครบใน build ที่จะส่ง: `grep -rn "<Disclaimer" src/app` ต้องเห็นอย่างน้อยหน้าวันนี้ สถิติ กราฟความแข็งแรง (`stats/exercise`) โปรไฟล์ สรุปเซสชัน ประวัติ — **ที่ `c7f2171` ยังไม่มีหน้าวันนี้และกราฟความแข็งแรง (รอรวม)** ถ้ายังไม่รวม ให้ผู้พัฒนาเพิ่มก่อนส่ง |
+| N1.3 | ข้อมูลสุขภาพ/การคำนวณมีลิงก์แหล่งอ้างอิง (1.4.1) + disclaimer "ไม่ใช่การแพทย์" ในคำอธิบายแอป | หน้า `/references` (`src/app/references.tsx`, `REFERENCES` ใน `src/legal/content.ts`: Mifflin 1990, ISSN 2017, Compendium 2024, Epley) เข้าถึงได้จากตั้งค่า → เกี่ยวกับ, หน้าบัญชี, Paywall · คอมโพเนนต์ `Disclaimer` ในสถิติ โปรไฟล์ สรุปเซสชัน ประวัติ ตั้งค่า · ย่อหน้า "HEALTH DISCLAIMER"/"คำเตือนด้านสุขภาพ" ใน `store-metadata/listing.*.md` | [ ] วางคำอธิบายที่มีย่อหน้า disclaimer ลงสโตร์ (ข้อ 77) · [ ] ตรวจว่าคำเตือน "ทุกหน้าผลลัพธ์" ตาม SPEC H5 ครบใน build ที่จะส่ง: `grep -rn "<Disclaimer" src/app` ต้องเห็นอย่างน้อยหน้าวันนี้ สถิติ กราฟความแข็งแรง (`stats/exercise`) โปรไฟล์ สรุปเซสชัน ประวัติ — **ที่ `3cb4c4f` ยังไม่มีหน้าวันนี้และกราฟความแข็งแรง (รอรวม)** ถ้ายังไม่รวม ให้ผู้พัฒนาเพิ่มก่อนส่ง |
 | N1.4 | Privacy Nutrition Labels ตรงกับข้อมูลจริง | ตารางข้อมูลที่เก็บจริงและคำตอบทุกข้อใน `store-metadata/privacy-labels.md` (ตรวจกับ `src/db/schema.ts`, `supabase/migrations/`, `package.json` — ไม่มี SDK โฆษณา/analytics/crash) · `NSPrivacyTracking: false` | [ ] กรอกฟอร์ม (ข้อ 72) · [ ] ทำหัวข้อ 8 ด้านล่าง (privacy manifest ต้องตรงกับป้าย) · [ ] ตัดสินใจเรื่อง Name จาก Google/Apple บน Android (`privacy-labels.md` ข้อ 2.1) |
 | N1.5 | Restore Purchases | ปุ่มบน Paywall, ตั้งค่า → สมาชิก, หน้าบัญชี · ต้องล็อกอินก่อน (D04) | [ ] ทดสอบ P-07 ทั้งสองแพลตฟอร์ม |
 | N1.6 | ข้อมูลช่วงทดลองและราคาบน Paywall ตรงตามข้อกำหนด subscription (3.1.2) | `src/app/paywall.tsx` + `src/domain/entitlement/paywall.ts`: ราคาจากสโตร์ (ไม่ฮาร์ดโค้ด) ติดปุ่มซื้อ · ทดลอง 7 วัน → ราคา/เดือน · ต่ออายุอัตโนมัติ · วิธียกเลิก · ซื้อขาดไม่มีทดลอง · ลิงก์ Terms/Privacy/References · ไม่โฆษณาทดลองกับผู้ไม่มีสิทธิ์ (B6) | [ ] ตั้ง intro offer ฟรี 1 สัปดาห์ (ข้อ 43) · [ ] ตั้ง Subscription Group Display Name / รายละเอียด / ภาพตัวอย่างสำหรับสินค้า (ข้อ 42, 44) · [ ] ตรวจราคาที่ Paywall แสดงใน sandbox ตรงกับที่ตั้ง แล้วกรอกตารางข้อ 58 · [ ] มีลิงก์ Terms of Use ในคำอธิบาย (ใน `listing.*.md` แล้ว ต้องแทน `<TERMS_URL>`) |
@@ -74,7 +74,7 @@
 
 ## 2. โปรไฟล์ EAS และคำสั่ง build / submit
 
-อ่านจาก `eas.json` (ที่ commit `c7f2171`) ทุกโปรไฟล์ `extends: base` (Node `22.22.0`) และ `cli.appVersionSource: remote` (EAS เก็บเลข build เอง)
+อ่านจาก `eas.json` (ที่ commit `3cb4c4f`) ทุกโปรไฟล์ `extends: base` (Node `22.22.0`) และ `cli.appVersionSource: remote` (EAS เก็บเลข build เอง)
 
 | โปรไฟล์ | ใช้ทำอะไร | ค่าสำคัญ | EAS environment |
 |---|---|---|---|
@@ -129,7 +129,7 @@ eas submit --platform android --profile production --latest
 - ทุกครั้งที่ส่งสโตร์ใหม่: เลข build ต้องสูงกว่าที่เคยอัปโหลดทุกครั้ง · ถ้าเวอร์ชันก่อนหน้าผ่านรีวิวหรือขึ้นสโตร์แล้ว ต้องเพิ่ม `version` ด้วย (เช่น `1.0.1`)
 - [ ] `version` ใน `app.config.ts` = `package.json` = เวอร์ชันที่เขียนใน "What's New"/release notes (`store-metadata/listing.*.md`)
 - [ ] ไม่ต้องตั้ง `ios.buildNumber` / `android.versionCode` ใน `app.config.ts` (ปล่อยให้ EAS จัดการ ไม่งั้นขัดกับ remote versioning)
-- [ ] `extra.eas.projectId` ใน `app.config.ts` ถูกเพิ่มแล้ว (HUMAN_TASKS ข้อ 21) — ที่ `c7f2171` ยังไม่มี `extra` ใน `app.config.ts`
+- [ ] `extra.eas.projectId` ใน `app.config.ts` ถูกเพิ่มแล้ว (HUMAN_TASKS ข้อ 21) — ที่ `3cb4c4f` ยังไม่มี `extra` ใน `app.config.ts`
 
 ---
 
@@ -163,7 +163,7 @@ eas submit --platform android --profile production --latest
 
 ขั้นตอนเต็มอยู่ที่ HUMAN_TASKS ข้อ 12–14 ที่นี่คือสิ่งที่ต้องเห็นก่อนส่ง
 
-**สถานะโค้ด:** ที่ `c7f2171` ป้าย `legal.templateNotice` ("Template — the developer must review…" / "เทมเพลต — ผู้พัฒนาต้องตรวจ…") ใน `src/app/legal/[doc].tsx` แสดงเสมอ **มีการแก้ที่รอรวม** ให้ป้ายแสดงเฉพาะตอนที่ `PLACEHOLDERS` ใน `src/legal/content.ts` ยังเป็นค่าเดิม และเพิ่มเทสต์ guard ที่ล้มเมื่อรันด้วย `RELEASE=1` ขณะที่ยังมี placeholder เหลือ (เทสต์ข้อ 5.1 ใน `TEST_PLAN.md`) ถ้าการแก้นี้ยังไม่รวม ผู้พัฒนาต้องรวมก่อน ไม่งั้นป้ายเทมเพลตจะติดไปกับแอปที่ส่งสโตร์
+**สถานะโค้ด:** ที่ `3cb4c4f` ป้าย `legal.templateNotice` ("Template — the developer must review…" / "เทมเพลต — ผู้พัฒนาต้องตรวจ…") ใน `src/app/legal/[doc].tsx` แสดงเสมอ **มีการแก้ที่รอรวม** ให้ป้ายแสดงเฉพาะตอนที่ `PLACEHOLDERS` ใน `src/legal/content.ts` ยังเป็นค่าเดิม และเพิ่มเทสต์ guard ที่ล้มเมื่อรันด้วย `RELEASE=1` ขณะที่ยังมี placeholder เหลือ (เทสต์ข้อ 5.1 ใน `TEST_PLAN.md`) ถ้าการแก้นี้ยังไม่รวม ผู้พัฒนาต้องรวมก่อน ไม่งั้นป้ายเทมเพลตจะติดไปกับแอปที่ส่งสโตร์
 
 - [ ] แทนค่าทั้ง 5 ตัวใน `PLACEHOLDERS` (`developer`, `contact`, `address`, `effective`, `law`) ด้วยข้อมูลจริง และอ่านทุกหัวข้อทั้งไทย/อังกฤษให้ตรงกับธุรกิจจริง · ตรวจเอง: คำสั่งนี้ต้องไม่พิมพ์อะไรออกมา
   ```bash
@@ -186,7 +186,7 @@ eas submit --platform android --profile production --latest
 
 - [ ] `npm run supabase:verify` ผ่าน และ `deno check supabase/functions/revenuecat-webhook/index.ts supabase/functions/delete-account/index.ts` ผ่าน (ข้อ 16)
 - [ ] `node scripts/sync-shared.js` แล้ว `__tests__/shared.test.ts` ผ่าน (สำเนา state machine ใน `supabase/functions/_shared/` ตรงกับ `src/domain/entitlement/machine.ts`)
-- [ ] **migration ครบทุกไฟล์** ใน `supabase/migrations/` ถูก push แล้ว: ที่ `c7f2171` มี `20261009000000_init.sql` และ `20261010000000_session_progression.sql` (เพิ่มคอลัมน์ `workout_session.progression` — แอปรุ่นนี้เขียนคอลัมน์นี้ ถ้าไม่ push การซิงก์เซสชันจะล้ม) ตรวจด้วย
+- [ ] **migration ครบทุกไฟล์** ใน `supabase/migrations/` ถูก push แล้ว: ที่ `3cb4c4f` มี `20261009000000_init.sql` และ `20261010000000_session_progression.sql` (เพิ่มคอลัมน์ `workout_session.progression` — แอปรุ่นนี้เขียนคอลัมน์นี้ ถ้าไม่ push การซิงก์เซสชันจะล้ม) ตรวจด้วย
   ```bash
   npx supabase migration list      # ทุกแถวต้องมีทั้งคอลัมน์ Local และ Remote
   ```
@@ -224,8 +224,8 @@ eas submit --platform android --profile production --latest
 
 **iOS** — `app.config.ts` → `ios.privacyManifests` · `ITSAppUsesNonExemptEncryption: false` (ไม่ต้องตอบ export compliance ทุกครั้งที่อัปโหลด)
 
-- [ ] `NSPrivacyTracking: false` และ `NSPrivacyTrackingDomains: []` ✓ (มีแล้วที่ `c7f2171`)
-- [ ] **`NSPrivacyCollectedDataTypes` ต้องระบุ 5 ประเภทตาม `store-metadata/privacy-labels.md` ข้อ 3.5** (Email Address, User ID, Fitness, Health, Purchase History — linked = true, tracking = false, purpose = App Functionality) — **ที่ `c7f2171` ยังเป็น `[]` (รอแก้)** จึงยังไม่ตรงกับป้ายที่ต้องตอบ "Yes, we collect data" ตรวจหลังแก้:
+- [ ] `NSPrivacyTracking: false` และ `NSPrivacyTrackingDomains: []` ✓ (มีแล้วที่ `3cb4c4f`)
+- [ ] **`NSPrivacyCollectedDataTypes` ต้องระบุ 5 ประเภทตาม `store-metadata/privacy-labels.md` ข้อ 3.5** (Email Address, User ID, Fitness, Health, Purchase History — linked = true, tracking = false, purpose = App Functionality) — **ที่ `3cb4c4f` ยังเป็น `[]` (รอแก้)** จึงยังไม่ตรงกับป้ายที่ต้องตอบ "Yes, we collect data" ตรวจหลังแก้:
   ```bash
   npx expo config --type introspect | grep -A40 privacyManifests
   ```

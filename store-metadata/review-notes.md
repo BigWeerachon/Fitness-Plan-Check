@@ -2,7 +2,7 @@
 
 > Written in English because App Review and Play review read English. Replace every `<PLACEHOLDER>` before submitting (list in [README.md](README.md)). Where to paste: App Store Connect → version page → **App Review Information**; Play Console → Policy and programs → App content → **App access**. Background: SPEC N1, HUMAN_TASKS items 71 and 76.
 >
-> Checked against commit `c7f2171` (paywall upgrade mode, "Get lifetime" row, "fix payment" prompt and the "you were not charged" message are in that commit). The disclaimer sentence below lists only the screens that have the disclaimer in that commit; if more screens get it (and a "Sources" link) before release, extend the sentence using the snippet in [README.md](README.md) "Release scope" — do not claim screens that do not have it. Re-check every menu path on the real build before pasting.
+> Checked against commit `3cb4c4f` (paywall upgrade mode, "Get lifetime" row, "fix payment" prompt and the "you were not charged" message are in that commit). The disclaimer sentence below lists only the screens that have the disclaimer in that commit; if more screens get it (and a "Sources" link) before release, extend the sentence using the snippet in [README.md](README.md) "Release scope" — do not claim screens that do not have it. Re-check every menu path on the real build before pasting.
 
 ## 1. App Store Connect → App Review Information
 

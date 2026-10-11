@@ -231,7 +231,7 @@ Use the same text as "What's New" above.
 
 ## Why this text is accurate (checked against the code)
 
-Checked against the repository at commit `c7f2171` (HEAD of `claude/clever-bell-dxizpd`). Every claim below exists in that commit. Anything that is only in an unmerged branch is deliberately **not** in the text above; ready-to-paste lines for those features are in [README.md](README.md) ("Release scope").
+Checked against the repository at commit `3cb4c4f` (HEAD of `claude/clever-bell-dxizpd`). Every claim below exists in that commit. Anything that is not in the code yet is deliberately **not** in the text above; see [README.md](README.md) ("Release scope", in Thai) for what to re-check before submitting.
 
 | Claim | Where it is in the code |
 |---|---|
@@ -242,7 +242,7 @@ Checked against the repository at commit `c7f2171` (HEAD of `claude/clever-bell-
 | Rest timer per exercise (default / off / custom) | `src/features/programs/ExerciseSettingsSheet.tsx` (`restSec`) |
 | Progression modes (double is the default, linear, custom weekly, off) and next-target suggestions | `src/domain/progression.ts`, `workout_session.progression` (D53), i18n `programs.modes.*`, `session.nextTargets` |
 | Optional RIR / RPE targets per exercise | `ExerciseSettingsSheet.tsx` (`rir`, `rpe`), i18n `programs.rir`, `programs.rpe` |
-| Add, swap, reorder, remove exercises; add / remove sets mid-workout | i18n `session.addExercise`, `swap`, `moveUp`, `moveDown`, `removeExercise`, `addSet`, `removeSet` |
+| Add, swap, reorder, remove exercises; add / remove sets mid-workout | i18n `session.addExercise`, `swap`, `moveUp`, `moveDown`, `removeExercise`, `addSet`, `removeSet`, `removeThisSet` |
 | Change a target for today only / from now on | i18n `session.todayOnly`, `session.fromNowOn`, `src/features/session/TargetSheet.tsx` |
 | Log a past workout (last 7 days, pick a routine or an empty session) | `src/app/(app)/(tabs)/index.tsx` (menu `today.menu.logPast`, `today.menu.pickRoutine`, `startSession({ date })`) |
 | Muscle-group icons | `src/components/MuscleIcon.tsx`, `src/data/muscleIcons.ts` (used in the exercise library, exercise detail and the session screen) |
