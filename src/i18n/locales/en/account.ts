@@ -43,6 +43,7 @@ const account = {
   restore: 'Restore purchases',
   manage: 'Manage subscription',
   seePlans: 'See plans',
+  getLifetime: 'Get lifetime',
   privacy: 'Privacy Policy',
   terms: 'Terms of Use',
   references: 'References',

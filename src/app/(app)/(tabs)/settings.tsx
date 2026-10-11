@@ -2,7 +2,7 @@ import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Linking, StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 import {
   AppText,
   CardGroup,
@@ -20,8 +20,11 @@ import {
 import { profileRepo } from '../../../db/repos/profileRepo';
 import type { LengthUnit, WeightUnit } from '../../../db/schema';
 import { WEIGHT_STEP_OPTIONS, preferredWeightStepKg, weightStepOptionsKg } from '../../../domain/progression';
-import { manageSubscriptionsUrl, restorePurchases, signOut } from '../../../features/access/accountFlow';
+import { offersLifetimeUpgrade } from '../../../domain/entitlement/paywall';
+import { restorePurchases, signOut } from '../../../features/access/accountFlow';
 import { describeSubscription } from '../../../features/access/subscriptionInfo';
+import { useAccess } from '../../../features/access/useAccess';
+import { useManageSubscriptions } from '../../../features/access/useManageSubscriptions';
 import { AccentPicker, LanguagePicker, ThemePicker } from '../../../features/appearance/AppearancePickers';
 import { useRepoQuery } from '../../../features/data/useRepoQuery';
 import { shareExport, type ExportKind } from '../../../features/settings/exportCsv';
@@ -49,6 +52,8 @@ export default function SettingsScreen() {
   const profile = useRepoQuery(() => profileRepo.ensure());
   const user = useAuth((s) => s.user);
   const cached = useEntitlement((s) => s.cached);
+  const access = useAccess();
+  const openManage = useManageSubscriptions();
   const sync = useSync();
   const [exporting, setExporting] = useState(false);
   const sub = describeSubscription(user ? cached : null, t);
@@ -230,10 +235,19 @@ export default function SettingsScreen() {
       <SectionTitle>{t('settings.sections.membership')}</SectionTitle>
       <CardGroup>
         <ListRow title={sub.status} value={sub.detail} icon="ribbon-outline" testID="settings-membership" />
+        {/* รายเดือน/ทดลอง → ซื้อขาดได้จากที่นี่ (SPEC J5) Paywall ปกติพาผู้มีสิทธิ์กลับหน้าแรกเสมอ */}
+        {offersLifetimeUpgrade(access.state) ? (
+          <ListRow
+            title={t('account.getLifetime')}
+            icon="infinite-outline"
+            onPress={() => router.push({ pathname: '/paywall', params: { upgrade: 'lifetime' } })}
+            testID="settings-lifetime"
+          />
+        ) : null}
         <ListRow
           title={t('account.manage')}
           icon="card-outline"
-          onPress={async () => Linking.openURL(await manageSubscriptionsUrl())}
+          onPress={() => void openManage()}
           testID="settings-manage"
         />
         <ListRow

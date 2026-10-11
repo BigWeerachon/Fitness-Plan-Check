@@ -1,16 +1,22 @@
 const paywall = {
   title: 'Fitnese Pro',
   headline: {
-    trial: 'Try everything free for {{count}} days',
     subscribe: 'Unlock your full training plan',
     winback: 'Welcome back — pick up where you left off',
     billing: 'There’s a problem with your payment',
+    upgrade: 'Keep Fitnese Pro forever',
   },
   sub: {
-    trial: 'Then {{price}} per month. Cancel anytime.',
     subscribe: 'All features, on all your devices.',
     winback: 'Your programs and history are safe and waiting for you.',
-    billing: 'Update your payment method in your store account to keep access.',
+    billing:
+      'Your last payment didn’t go through, so access is paused. Update your payment method in your {{store}} account to get it back.',
+    upgrade: 'Pay once and keep every feature on all your devices.',
+  },
+  billed: {
+    trial: '{{count}} days free, then {{price}}/month',
+    monthly: '{{price}}/month, renews automatically',
+    lifetime: '{{price}} one-time payment',
   },
   features: {
     today: 'Know exactly what to train today',
@@ -31,9 +37,10 @@ const paywall = {
     lifetimeNote: 'Unlocks everything forever. No free trial.',
   },
   cta: {
-    trial: 'Start {{count}}-day free trial',
+    trial: 'Start free trial, then {{price}}/month',
     monthly: 'Subscribe for {{price}} / month',
     lifetime: 'Buy lifetime for {{price}}',
+    fixPayment: 'Fix payment',
     signInFirst: 'You’ll sign in with Google or Apple first, so your purchase stays with your account.',
     signedInAs: 'Signed in as {{email}}',
   },
@@ -46,6 +53,11 @@ const paywall = {
     cancelAnytime:
       'Cancel anytime in your {{store}} account settings; access continues until the end of the billing period.',
     lifetimeNoTrial: 'Lifetime is a one-time purchase and does not include a free trial.',
+  },
+  upgrade: {
+    notice:
+      'Buying lifetime does not cancel your monthly subscription or free trial. Cancel it yourself in your {{store}} account settings so you aren’t charged for it.',
+    manage: 'Open subscription settings',
   },
   manageSubscription: 'Manage or cancel subscription',
   restore: 'Restore purchases',

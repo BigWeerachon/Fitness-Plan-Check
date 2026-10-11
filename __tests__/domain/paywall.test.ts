@@ -1,9 +1,13 @@
 import { describe, expect, it } from '@jest/globals';
+import { ENTITLEMENT_STATES } from '@/domain/entitlement/machine';
 import {
   assertCanPurchase,
+  billedTerms,
   buildPaywallModel,
   canStartPurchase,
   nextStepOnSelect,
+  offersLifetimeUpgrade,
+  purchaseStillNeeded,
   PurchaseRequiresLoginError,
   type StorePlan,
 } from '@/domain/entitlement/paywall';
@@ -27,7 +31,15 @@ const lifetime: StorePlan = {
 describe('paywall model (SPEC B5/B6)', () => {
   it('offers the 7-day trial only to eligible users', () => {
     const m = buildPaywallModel({ state: 'NO_ENTITLEMENT', monthly, lifetime, trialEligibility: 'eligible' });
-    expect(m).toMatchObject({ headline: 'trial', offerTrial: true, trialDays: 7, defaultPlan: 'monthly' });
+    // หัวข้อเน้นฟีเจอร์ ไม่ใช่คำว่า "ฟรี" (App Review 3.1.2)
+    expect(m).toMatchObject({
+      headline: 'subscribe',
+      offerTrial: true,
+      trialDays: 7,
+      defaultPlan: 'monthly',
+      primaryAction: 'purchase',
+      upgrade: false,
+    });
     expect(m.disclosures).toEqual([
       'paywall.disclosure.trialThenPrice',
       'paywall.disclosure.autoRenew',
@@ -60,13 +72,67 @@ describe('paywall model (SPEC B5/B6)', () => {
   });
 
   it('uses a win-back headline for expired users and a billing headline in grace', () => {
-    expect(
-      buildPaywallModel({ state: 'EXPIRED', monthly, lifetime, trialEligibility: 'ineligible' }).headline,
-    ).toBe('winback');
+    const expired = buildPaywallModel({
+      state: 'EXPIRED',
+      monthly,
+      lifetime,
+      trialEligibility: 'ineligible',
+    });
+    expect(expired).toMatchObject({ headline: 'winback', primaryAction: 'purchase' });
     expect(
       buildPaywallModel({ state: 'BILLING_GRACE', monthly, lifetime, trialEligibility: 'ineligible' })
         .headline,
     ).toBe('billing');
+  });
+
+  it('asks to fix the payment when the store revoked access during billing retry (J5)', () => {
+    const m = buildPaywallModel({
+      state: 'EXPIRED',
+      monthly,
+      lifetime,
+      trialEligibility: 'ineligible',
+      billingIssue: true,
+    });
+    expect(m).toMatchObject({ headline: 'billing', primaryAction: 'fixPayment', offerTrial: false });
+    // ยังซื้อแพ็กเกจอื่นได้ (เช่น ซื้อขาด) แต่ไม่ใช่ปุ่มหลัก
+    expect(m.monthly).toBe(monthly);
+    expect(m.lifetime).toBe(lifetime);
+    // ผู้ที่ไม่เคยมีสิทธิ์ไม่ถูกขอให้แก้การชำระเงิน
+    expect(
+      buildPaywallModel({
+        state: 'NO_ENTITLEMENT',
+        monthly,
+        lifetime,
+        trialEligibility: 'ineligible',
+        billingIssue: true,
+      }).primaryAction,
+    ).toBe('purchase');
+  });
+
+  it('shows the billed amount next to the CTA in the same sentence as the free trial', () => {
+    const trial = buildPaywallModel({
+      state: 'NO_ENTITLEMENT',
+      monthly,
+      lifetime,
+      trialEligibility: 'eligible',
+    });
+    expect(billedTerms(trial, 'monthly')).toEqual({ key: 'paywall.billed.trial', count: 7, price: '฿19.00' });
+    expect(billedTerms(trial, 'lifetime')).toEqual({ key: 'paywall.billed.lifetime', price: '฿99.00' });
+    const noTrial = buildPaywallModel({
+      state: 'NO_ENTITLEMENT',
+      monthly,
+      lifetime,
+      trialEligibility: 'ineligible',
+    });
+    expect(billedTerms(noTrial, 'monthly')).toEqual({ key: 'paywall.billed.monthly', price: '฿19.00' });
+    expect(billedTerms(noTrial, null)).toBeNull();
+    const empty = buildPaywallModel({
+      state: 'NO_ENTITLEMENT',
+      monthly: null,
+      lifetime: null,
+      trialEligibility: 'unknown',
+    });
+    expect(billedTerms(empty, 'monthly')).toBeNull();
   });
 
   it('reports unavailable when the store returns no products', () => {
@@ -78,6 +144,63 @@ describe('paywall model (SPEC B5/B6)', () => {
         trialEligibility: 'unknown',
       }).unavailable,
     ).toBe(true);
+  });
+});
+
+describe('lifetime upgrade (SPEC J5)', () => {
+  it('is offered only to entitled users who are not lifetime yet', () => {
+    expect(ENTITLEMENT_STATES.filter(offersLifetimeUpgrade)).toEqual([
+      'TRIALING',
+      'SUBSCRIBED_MONTHLY',
+      'BILLING_GRACE',
+    ]);
+  });
+
+  it.each(['TRIALING', 'SUBSCRIBED_MONTHLY', 'BILLING_GRACE'] as const)(
+    'shows only the lifetime plan from the store for %s',
+    (state) => {
+      const m = buildPaywallModel({ state, monthly, lifetime, trialEligibility: 'eligible', upgrade: true });
+      expect(m).toMatchObject({
+        upgrade: true,
+        headline: 'upgrade',
+        monthly: null,
+        lifetime,
+        defaultPlan: 'lifetime',
+        offerTrial: false,
+        trialDays: null,
+        primaryAction: 'purchase',
+        unavailable: false,
+      });
+      expect(m.disclosures).toEqual(['paywall.disclosure.lifetimeNoTrial']);
+      expect(billedTerms(m, 'monthly')).toBeNull();
+      expect(billedTerms(m, 'lifetime')).toEqual({ key: 'paywall.billed.lifetime', price: '฿99.00' });
+    },
+  );
+
+  it.each(['NO_ENTITLEMENT', 'EXPIRED', 'LIFETIME'] as const)(
+    'ignores the upgrade flag for %s (normal paywall or nothing to upgrade)',
+    (state) => {
+      const m = buildPaywallModel({
+        state,
+        monthly,
+        lifetime,
+        trialEligibility: 'ineligible',
+        upgrade: true,
+      });
+      expect(m.upgrade).toBe(false);
+      expect(m.monthly).toBe(monthly);
+    },
+  );
+
+  it('reports unavailable in upgrade mode when the store has no lifetime product', () => {
+    const m = buildPaywallModel({
+      state: 'SUBSCRIBED_MONTHLY',
+      monthly,
+      lifetime: null,
+      trialEligibility: 'ineligible',
+      upgrade: true,
+    });
+    expect(m).toMatchObject({ unavailable: true, defaultPlan: null });
   });
 });
 
@@ -101,6 +224,20 @@ describe('purchase order (SPEC B4)', () => {
     );
     expect(canStartPurchase({ authUserId: 'u1', purchasesUserId: 'u1' })).toBe(true);
     expect(nextStepOnSelect('lifetime', { authUserId: 'u1', purchasesUserId: 'u1' }).step).toBe('purchasing');
+  });
+
+  it('does not buy again when linking the account restored access (J3)', () => {
+    const none = { allowed: false, state: 'NO_ENTITLEMENT' } as const;
+    const monthlyAccess = { allowed: true, state: 'SUBSCRIBED_MONTHLY' } as const;
+    const lifetimeAccess = { allowed: true, state: 'LIFETIME' } as const;
+    expect(purchaseStillNeeded(none, 'monthly', false)).toBe(true);
+    expect(purchaseStillNeeded(none, 'lifetime', false)).toBe(true);
+    expect(purchaseStillNeeded(monthlyAccess, 'monthly', false)).toBe(false);
+    expect(purchaseStillNeeded(monthlyAccess, 'lifetime', false)).toBe(false);
+    // อัปเกรดเป็นซื้อขาดโดยตั้งใจจากหน้าอัปเกรด → ซื้อต่อได้ แต่ถ้ามีซื้อขาดแล้วไม่ซื้อซ้ำ
+    expect(purchaseStillNeeded(monthlyAccess, 'lifetime', true)).toBe(true);
+    expect(purchaseStillNeeded(lifetimeAccess, 'lifetime', true)).toBe(false);
+    expect(purchaseStillNeeded({ allowed: true, state: 'TRIALING' }, 'monthly', true)).toBe(false);
   });
 });
 

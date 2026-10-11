@@ -2,11 +2,12 @@ import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Linking, StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 import { CardGroup, HeroTitle, ListRow, Screen, SectionTitle, StackHeader } from '../components';
-import { manageSubscriptionsUrl, restorePurchases, signOut } from '../features/access/accountFlow';
+import { restorePurchases, signOut } from '../features/access/accountFlow';
 import { describeSubscription } from '../features/access/subscriptionInfo';
 import { useAccess } from '../features/access/useAccess';
+import { useManageSubscriptions } from '../features/access/useManageSubscriptions';
 import { AccentPicker, LanguagePicker, ThemePicker } from '../features/appearance/AppearancePickers';
 import { useAuth } from '../stores/auth';
 import { useEntitlement } from '../stores/entitlement';
@@ -21,6 +22,7 @@ export default function AccountScreen() {
   const user = useAuth((s) => s.user);
   const cached = useEntitlement((s) => s.cached);
   const access = useAccess();
+  const openManage = useManageSubscriptions();
   const sub = describeSubscription(user ? cached : null, t);
 
   const onRestore = async () => {
@@ -99,7 +101,8 @@ export default function AccountScreen() {
         <ListRow
           title={t('account.manage')}
           icon="card-outline"
-          onPress={async () => Linking.openURL(await manageSubscriptionsUrl())}
+          onPress={() => void openManage()}
+          testID="account-manage"
         />
       </CardGroup>
 
