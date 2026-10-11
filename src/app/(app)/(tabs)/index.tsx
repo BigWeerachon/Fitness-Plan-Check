@@ -11,6 +11,7 @@ import {
   Card,
   CardGroup,
   CircleButton,
+  Disclaimer,
   EmptyState,
   HeroTitle,
   Icon,
@@ -295,7 +296,11 @@ export default function TodayScreen() {
           style={[styles.kcal, { backgroundColor: p.card }]}
           onPress={() => setEntry('eaten')}
           accessibilityRole="button"
-          accessibilityLabel={`${t('today.kcalEaten')}: ${model.intakeKcal ?? '–'}`}
+          accessibilityLabel={`${t('today.kcalEaten')}: ${
+            model.intakeKcal != null
+              ? `${formatNumber(model.intakeKcal)} ${t('common.units.kcal')}`
+              : t('nutrition.notEntered')
+          }`}
           accessibilityHint={t('today.tapToEnter')}
           testID="today-kcal-eaten"
         >
@@ -312,6 +317,7 @@ export default function TodayScreen() {
           </AppText>
         </Pressable>
       </View>
+      <Disclaimer />
 
       <NumberPad
         visible={entry !== null}

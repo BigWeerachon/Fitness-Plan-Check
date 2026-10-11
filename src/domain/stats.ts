@@ -613,6 +613,8 @@ export interface StrengthPoint {
   weightKg: number;
   reps: number;
   sessionId: string;
+  /** ชื่อกรุ๊ปโปรแกรมของเซสชันนั้น (snapshot) — null = ไม่มีกรุ๊ป */
+  programName: string | null;
 }
 
 /** กราฟความแข็งแรงของท่า: 1RM (Epley) ที่ดีที่สุดต่อวันที่ของเซสชัน เรียงจากเก่าไปใหม่ */
@@ -633,7 +635,14 @@ export function strengthSeries(
       if (prev && (prev.e1rmKg > e1rmKg || (prev.e1rmKg === e1rmKg && prev.weightKg >= set.weightKg))) {
         continue;
       }
-      best.set(s.date, { date: s.date, e1rmKg, weightKg: set.weightKg, reps: set.reps, sessionId: s.id });
+      best.set(s.date, {
+        date: s.date,
+        e1rmKg,
+        weightKg: set.weightKg,
+        reps: set.reps,
+        sessionId: s.id,
+        programName: s.programName,
+      });
     }
   }
   return [...best.values()].sort((a, b) => compareKeys(a.date, b.date));

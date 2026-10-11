@@ -6,6 +6,7 @@ import {
   AppText,
   Card,
   CardGroup,
+  Disclaimer,
   EmptyState,
   HeroTitle,
   ListRow,
@@ -14,24 +15,54 @@ import {
   StackHeader,
 } from '../../../../components';
 import { parseLocalDate } from '../../../../domain/dates';
-import { strengthSeries } from '../../../../domain/stats';
+import { PERIODS, type DateRange, type Period } from '../../../../domain/periods';
+import { groupFilterOf, programGroups, strengthSeries } from '../../../../domain/stats';
 import { displayWeight, formatWeight } from '../../../../domain/units';
 import { useRepoQuery } from '../../../../features/data/useRepoQuery';
 import { exerciseDisplayName } from '../../../../features/exercises/resolve';
 import { TrendChart } from '../../../../features/stats/charts';
+import { groupLabels, periodLabel } from '../../../../features/stats/labels';
 import { loadStats } from '../../../../features/stats/loadStats';
 import { formatDateShort } from '../../../../i18n/format';
 import { spacing } from '../../../../theme/tokens';
 
-/** กราฟความแข็งแรงต่อท่า (SPEC I4): 1RM โดยประมาณด้วยสูตร Epley ต่อวันที่ฝึก */
+const DATE_PARAM = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * กราฟความแข็งแรงต่อท่า (SPEC I4): 1RM โดยประมาณด้วยสูตร Epley ต่อวันที่ฝึก
+ * ตามกรุ๊ปและช่วงเวลาที่เลือกไว้ในแท็บสถิติ (D24, I5) — ไม่ส่งมา = ทุกกรุ๊ป ทุกช่วง
+ */
 export default function ExerciseStrengthScreen() {
   const { t, i18n } = useTranslation();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{
+    id: string;
+    group?: string;
+    period?: string;
+    from?: string;
+    to?: string;
+  }>();
+  const id = params.id;
   const model = useRepoQuery(loadStats, i18n.language);
-  const series = strengthSeries(model.data, id);
   const unit = model.unit;
   const unitLabel = t(`common.units.${unit}`);
   const today = parseLocalDate(model.today);
+  const groups = programGroups(model.data);
+  const group = params.group ? groups.find((g) => g.key === params.group) : undefined;
+  const range: DateRange | null =
+    params.from && params.to && DATE_PARAM.test(params.from) && DATE_PARAM.test(params.to)
+      ? { start: params.from, end: params.to }
+      : null;
+  const period = PERIODS.find((x) => x === params.period) as Period | undefined;
+  const series = strengthSeries(model.data, id, { range, group: group ? groupFilterOf(group) : null });
+  const labels = groupLabels(groups, t('stats.noProgram'), (d) => formatDateShort(parseLocalDate(d), today));
+  const groupText = group ? (labels.get(group.key) ?? t('stats.noProgram')) : t('stats.allGroups');
+  const scopeText = range
+    ? `${groupText} · ${
+        period
+          ? periodLabel(period, range, model.today)
+          : `${formatDateShort(parseLocalDate(range.start), today)} – ${formatDateShort(parseLocalDate(range.end), today)}`
+      }`
+    : groupText;
   const best = series.reduce<(typeof series)[number] | null>(
     (a, b) => (!a || b.e1rmKg > a.e1rmKg ? b : a),
     null,
@@ -39,7 +70,10 @@ export default function ExerciseStrengthScreen() {
 
   return (
     <Screen header={<StackHeader title={t('stats.strengthTitle')} />} testID="exercise-strength">
-      <HeroTitle title={exerciseDisplayName(id)} subtitle={t('stats.strengthHint')} compact />
+      <HeroTitle title={exerciseDisplayName(id)} subtitle={scopeText} compact />
+      <AppText variant="caption" secondary style={styles.hint}>
+        {t('stats.strengthHint')}
+      </AppText>
       {series.length === 0 || !best ? (
         <EmptyState icon="barbell-outline" title={t('stats.noStrength')} />
       ) : (
@@ -71,17 +105,23 @@ export default function ExerciseStrengthScreen() {
               <ListRow
                 key={s.date}
                 title={`${formatWeight(s.e1rmKg, unit)} ${unitLabel}`}
-                value={`${formatDateShort(parseLocalDate(s.date), today)} · ${formatWeight(s.weightKg, unit)} ${unitLabel} × ${s.reps}`}
+                value={[
+                  formatDateShort(parseLocalDate(s.date), today),
+                  `${formatWeight(s.weightKg, unit)} ${unitLabel} × ${s.reps}`,
+                  s.programName ?? t('stats.noProgram'),
+                ].join(' · ')}
                 testID={`strength-point-${s.date}`}
               />
             ))}
           </CardGroup>
         </>
       )}
+      <Disclaimer />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   group: { marginBottom: spacing.lg },
+  hint: { marginHorizontal: spacing.xl, marginBottom: spacing.sm },
 });

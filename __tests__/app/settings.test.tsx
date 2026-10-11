@@ -175,6 +175,15 @@ describe('profile & targets (SPEC H1–H6)', () => {
     renderRouter('./src/app', { initialUrl: '/profile' });
     expect(await screen.findByTestId('profile-incomplete')).toBeTruthy();
 
+    // ตัวปรับเป้าหมาย/MET ซ่อนอยู่หลัง "More" ที่เริ่มต้นพับไว้ (A3)
+    expect(screen.getByTestId('profile-more').props.accessibilityState).toMatchObject({ expanded: false });
+    expect(within(screen.getByTestId('profile-more')).getByText('More')).toBeTruthy();
+    expect(screen.queryByTestId('profile-fat')).toBeNull();
+    expect(screen.queryByTestId('profile-met-light')).toBeNull();
+    fireEvent.press(screen.getByTestId('profile-more'));
+    expect(screen.getByTestId('profile-more').props.accessibilityState).toMatchObject({ expanded: true });
+    expect(screen.getByTestId('profile-fat')).toBeTruthy();
+
     fireEvent.press(screen.getByTestId('sex-male'));
     fireEvent.changeText(screen.getByTestId('field-age'), '30');
     fireEvent.changeText(screen.getByTestId('field-height'), '175');
@@ -245,5 +254,46 @@ describe('profile & targets (SPEC H1–H6)', () => {
 
     fireEvent.press(screen.getByTestId('profile-references'));
     expect(await screen.findByTestId('references')).toBeTruthy();
+  });
+
+  it('keeps results visible while the adjust and MET steppers stay collapsed under More (A3)', async () => {
+    await entitledApp();
+    profileRepo.update({
+      sex: 'male',
+      age: 30,
+      heightCm: 175,
+      weightKg: 70,
+      activityLevel: 'moderate',
+      goal: 'lose',
+    });
+    renderRouter('./src/app', { initialUrl: '/profile' });
+    expect(await screen.findByTestId('profile-target')).toBeTruthy();
+    expect(screen.getByTestId('macro-protein')).toBeTruthy();
+    for (const id of ['profile-deficit', 'profile-protein', 'profile-fat', 'profile-met-hard']) {
+      expect(screen.queryByTestId(id)).toBeNull();
+    }
+    fireEvent.press(screen.getByTestId('profile-more'));
+    for (const id of ['profile-deficit', 'profile-protein', 'profile-fat', 'profile-met-hard']) {
+      expect(screen.getByTestId(id)).toBeTruthy();
+    }
+    // กดซ้ำ → พับกลับ
+    fireEvent.press(screen.getByTestId('profile-more'));
+    expect(screen.queryByTestId('profile-deficit')).toBeNull();
+  });
+
+  it('hides the deficit stepper for an under-18 user even while the profile is incomplete (H2)', async () => {
+    await entitledApp();
+    // ยังไม่มีส่วนสูง/น้ำหนัก → ไม่มี summary แต่รู้อายุ + เป้าลดไขมันแล้ว
+    profileRepo.update({ age: 16, goal: 'lose' });
+    renderRouter('./src/app', { initialUrl: '/profile' });
+    expect(await screen.findByTestId('profile-incomplete')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('profile-more'));
+    expect(screen.getByTestId('profile-protein')).toBeTruthy();
+    expect(screen.queryByTestId('profile-deficit')).toBeNull();
+
+    // ผู้ใหญ่ที่โปรไฟล์ยังไม่ครบ → ยังปรับ % ลดได้ตามปกติ
+    fireEvent.changeText(screen.getByTestId('field-age'), '25');
+    await flush();
+    expect(screen.getByTestId('profile-deficit')).toBeTruthy();
   });
 });

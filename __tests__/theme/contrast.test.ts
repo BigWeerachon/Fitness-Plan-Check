@@ -1,4 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
+import { MUSCLE_GROUPS } from '@/data/exerciseLibrary';
 import { contrastRatio, ensureContrast, hexToHsl, hslToHex, onColor } from '@/theme/color';
 import {
   ACCENT_PRESETS,
@@ -78,6 +79,18 @@ describe('accent palettes (SPEC DS / N5)', () => {
       for (const c of chartColors('#E5A9DC', mode)) {
         expect(contrastRatio(c, NEUTRALS[mode].card)).toBeGreaterThanOrEqual(3);
       }
+    }
+  });
+});
+
+describe('chart palette size (I2)', () => {
+  it.each(MODES)('%s: has a distinct colour for every muscle group, all passing 3:1 on the card', (mode) => {
+    for (const { id: accent } of ACCENT_PRESETS) {
+      const chart = buildPalette(mode, accent).chart;
+      expect(chart.length).toBeGreaterThanOrEqual(MUSCLE_GROUPS.length);
+      const used = chart.slice(0, MUSCLE_GROUPS.length);
+      expect(new Set(used).size).toBe(MUSCLE_GROUPS.length);
+      for (const c of chart) expect(contrastRatio(c, NEUTRALS[mode].card)).toBeGreaterThanOrEqual(3);
     }
   });
 });

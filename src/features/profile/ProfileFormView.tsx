@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { AppText, CardGroup, Chip, ListRow, SegmentedControl, TextField, Icon } from '../../components';
 import type { ActivityLevel, Goal, LengthUnit, Sex, WeightUnit } from '../../db/schema';
-import { ACTIVITY_LEVELS, GOALS } from '../../domain/nutrition';
+import { ACTIVITY_LEVELS, ADULT_AGE, GOALS } from '../../domain/nutrition';
 import { switchFormUnits, type ProfileErrors, type ProfileForm } from '../../domain/profileInput';
 import { spacing } from '../../theme/tokens';
 import { usePalette } from '../../theme/useTheme';
@@ -75,7 +75,7 @@ export function ProfileFormView({
         error={err('age')}
         testID="field-age"
       />
-      {form.age !== '' && Number.isFinite(age) && age < 18 ? (
+      {form.age !== '' && Number.isFinite(age) && age < ADULT_AGE ? (
         <AppText variant="caption" color={p.warning}>
           {t('onboarding.under18')}
         </AppText>

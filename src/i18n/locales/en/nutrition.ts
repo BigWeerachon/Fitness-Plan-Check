@@ -1,7 +1,9 @@
 const nutrition = {
   title: 'Profile & targets',
   disclaimer:
-    'These values are estimates and general guidance only, not medical advice, and you don’t have to follow them. If you have a medical condition, are pregnant, or have any doubts, please consult a doctor or a registered dietitian.',
+    'These values are estimates and general guidance only, not medical advice, and you don’t have to follow them. Fitnese is not a medical device and does not diagnose or treat any condition. If you have a medical condition, are pregnant, or have any doubts, please consult a doctor or a registered dietitian.',
+  sources: 'Sources',
+  moreHint: 'Adjust targets and workout calories (MET)',
   aboutYou: 'About you',
   results: 'Your estimates',
   incomplete: 'Fill in sex, age, height, weight, activity level and goal to see your estimates.',

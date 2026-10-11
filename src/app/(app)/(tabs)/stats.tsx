@@ -27,7 +27,13 @@ import { useRepoQuery } from '../../../features/data/useRepoQuery';
 import { exerciseDisplayName } from '../../../features/exercises/resolve';
 import { logBodyWeight } from '../../../features/stats/bodyWeight';
 import { DonutChart, KcalBars, ShareBars, TrendChart, type ShareItem } from '../../../features/stats/charts';
-import { metricShortValue, metricValueLabel, periodLabel } from '../../../features/stats/labels';
+import {
+  groupLabels,
+  metricShortValue,
+  metricValueLabel,
+  periodLabel,
+  sessionLine,
+} from '../../../features/stats/labels';
 import { loadStats } from '../../../features/stats/loadStats';
 import { STATS_VIEWS, buildStatsView, type StatsViewKind } from '../../../features/stats/statsView';
 import { formatDateShort, formatNumber, monthShort, weekdayShort } from '../../../i18n/format';
@@ -59,6 +65,11 @@ export default function StatsScreen() {
   const kcal = (n: number) => `${formatNumber(n)} ${t('common.units.kcal')}`;
   const atLatest = v.range.end >= model.today;
   const groupName = (name: string | null) => name ?? t('stats.noProgram');
+  // กรุ๊ปที่ชื่อซ้ำกันต้องแยกออกด้วยป้ายต่อท้าย ไม่งั้นเลือกผิดอันไม่รู้ตัว (I5)
+  const labels = groupLabels(v.groups, t('stats.noProgram'), (d) =>
+    formatDateShort(parseLocalDate(d), parseLocalDate(model.today)),
+  );
+  const labelOf = (key: string, name: string | null) => labels.get(key) ?? groupName(name);
 
   const shareItems: ShareItem[] =
     v.breakdown.view === 'needsGroup'
@@ -67,7 +78,7 @@ export default function StatsScreen() {
           key: e.key,
           label:
             v.breakdown.view === 'program'
-              ? groupName((e as { programName: string | null }).programName)
+              ? labelOf(e.key, (e as { programName: string | null }).programName)
               : v.breakdown.view === 'routineType'
                 ? t(`programs.types.${e.key}`)
                 : t(`exercises.muscles.${e.key}`),
@@ -99,7 +110,7 @@ export default function StatsScreen() {
     <Screen withTabBar testID="stats">
       <HeroTitle
         title={t('stats.title')}
-        subtitle={v.group ? groupName(v.group.programName) : t('stats.allGroups')}
+        subtitle={v.group ? labelOf(v.group.key, v.group.programName) : t('stats.allGroups')}
       />
 
       <SegmentedControl
@@ -144,7 +155,7 @@ export default function StatsScreen() {
           {v.groups.map((g) => (
             <Chip
               key={g.key}
-              label={groupName(g.programName)}
+              label={labelOf(g.key, g.programName)}
               selected={groupKey === g.key}
               onPress={() => setGroupKey(g.key)}
               testID={`group-${g.key}`}
@@ -171,7 +182,7 @@ export default function StatsScreen() {
             </AppText>
             {v.group ? (
               <AppText variant="caption" secondary>
-                {`${t('stats.groupFilter')}: ${groupName(v.group.programName)}`}
+                {`${t('stats.groupFilter')}: ${labelOf(v.group.key, v.group.programName)}`}
               </AppText>
             ) : null}
           </Card>
@@ -196,8 +207,8 @@ export default function StatsScreen() {
                 {t('stats.chooseGroup')}
               </AppText>
             ) : shareItems.length === 0 ? (
-              <AppText secondary align="center">
-                {t('stats.emptyTitle')}
+              <AppText secondary align="center" testID="stats-empty-metric">
+                {t(`stats.emptyMetric.${metric}`)}
               </AppText>
             ) : (
               <>
@@ -223,7 +234,15 @@ export default function StatsScreen() {
               title={t('stats.seeAll')}
               kind="plain"
               onPress={() =>
-                router.push({ pathname: '/history', params: groupKey ? { group: groupKey } : {} })
+                router.push({
+                  pathname: '/history',
+                  params: {
+                    period,
+                    from: v.range.start,
+                    to: v.range.end,
+                    ...(groupKey ? { group: groupKey } : {}),
+                  },
+                })
               }
               testID="stats-see-all"
             />
@@ -236,12 +255,7 @@ export default function StatsScreen() {
                 value={[
                   formatDateShort(parseLocalDate(s.date), parseLocalDate(model.today)),
                   groupName(s.programName),
-                  t('stats.sessionLine', {
-                    exercises: s.exercises,
-                    sets: s.sets,
-                    volume: formatNumber(displayWeight(s.volumeKg, unit)),
-                    unit: unitLabel,
-                  }),
+                  sessionLine(t, s, unit),
                 ].join(' · ')}
                 onPress={() => router.push({ pathname: '/history/[id]', params: { id: s.sessionId } })}
                 testID={`stats-session-${s.sessionId}`}
@@ -267,7 +281,16 @@ export default function StatsScreen() {
                       reps: s.best.reps,
                     })}
                     onPress={() =>
-                      router.push({ pathname: '/stats/exercise/[id]', params: { id: s.exerciseId } })
+                      router.push({
+                        pathname: '/stats/exercise/[id]',
+                        params: {
+                          id: s.exerciseId,
+                          period,
+                          from: v.range.start,
+                          to: v.range.end,
+                          ...(groupKey ? { group: groupKey } : {}),
+                        },
+                      })
                     }
                     testID={`strength-${s.exerciseId}`}
                   />
@@ -279,6 +302,11 @@ export default function StatsScreen() {
       )}
 
       <SectionTitle>{t('stats.energy')}</SectionTitle>
+      {v.group ? (
+        <AppText variant="caption" secondary style={styles.hint} testID="stats-energy-all-programs">
+          {t('stats.allProgramsNote')}
+        </AppText>
+      ) : null}
       {energy.series.length > 1 ? (
         <Card style={styles.gapBottom}>
           <KcalBars
@@ -330,6 +358,11 @@ export default function StatsScreen() {
       ) : null}
 
       <SectionTitle>{t('stats.weight')}</SectionTitle>
+      {v.group ? (
+        <AppText variant="caption" secondary style={styles.hint} testID="stats-weight-all-programs">
+          {t('stats.allProgramsNote')}
+        </AppText>
+      ) : null}
       <Card>
         {v.weight.length >= 2 ? (
           <TrendChart
