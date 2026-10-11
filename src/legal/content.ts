@@ -24,6 +24,12 @@ export const PLACEHOLDERS = {
 
 const P = PLACEHOLDERS;
 
+/** เอกสารยังมีค่าตัวแทน (PLACEHOLDERS) ที่เจ้าของโปรเจกต์ยังไม่ได้กรอกหรือไม่ */
+export function hasPlaceholders(doc: LegalDoc): boolean {
+  const text = [doc.title, doc.updated, ...doc.sections.flatMap((s) => [s.heading, s.body])].join('\n');
+  return Object.values(PLACEHOLDERS).some((value) => text.includes(value));
+}
+
 export const LEGAL: Record<LegalKey, Record<Language, LegalDoc>> = {
   privacy: {
     th: {

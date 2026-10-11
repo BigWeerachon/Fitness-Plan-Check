@@ -1,5 +1,6 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, jest } from '@jest/globals';
 import {
+  EVENT_RETENTION_DAYS,
   handleWebhook,
   isAuthorized,
   targetsOf,
@@ -40,6 +41,12 @@ class MemoryStore implements WebhookStore {
   async recordEvent(e: RecordedEvent) {
     this.events.set(e.id, e);
   }
+  purged: number[] = [];
+  failPurge = false;
+  async purgeOldEvents(retainDays: number) {
+    if (this.failPurge) throw new Error('purge failed');
+    this.purged.push(retainDays);
+  }
 }
 
 let n = 0;
@@ -68,6 +75,19 @@ function send(store: MemoryStore, body: unknown, authorization: string | null = 
 }
 
 describe('RevenueCat webhook (SPEC J6)', () => {
+  it('purges event records older than 90 days after recording, and a failed purge does not fail the webhook (B13)', async () => {
+    const store = new MemoryStore();
+    expect(EVENT_RETENTION_DAYS).toBe(90);
+    expect((await send(store, event({}))).status).toBe(200);
+    // เหตุการณ์ที่ไม่เกี่ยวข้องก็ล้างด้วย
+    expect((await send(store, event({ entitlement_ids: ['other'] }))).body).toEqual({ ignored: true });
+    expect(store.purged).toEqual([90, 90]);
+    store.failPurge = true;
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    expect((await send(store, event({}))).status).toBe(200);
+    spy.mockRestore();
+  });
+
   it('rejects missing configuration, wrong secrets and malformed bodies', async () => {
     const store = new MemoryStore();
     expect(

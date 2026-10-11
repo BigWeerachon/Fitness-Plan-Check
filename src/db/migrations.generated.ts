@@ -53,5 +53,11 @@ export const MIGRATIONS: EmbeddedMigration[] = [
     "statements": [
       "ALTER TABLE `entitlement_cache` ADD `also_renewing_monthly` integer DEFAULT false NOT NULL;"
     ]
+  },
+  {
+    "tag": "0003_third_rocket_raccoon",
+    "statements": [
+      "ALTER TABLE `sync_outbox` ADD `version` integer DEFAULT 1 NOT NULL;"
+    ]
   }
 ];

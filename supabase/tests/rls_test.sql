@@ -128,4 +128,26 @@ do $$ begin
   then raise exception 'FAIL: account data survived deletion'; end if;
 end $$;
 
+-- 8) revenuecat_events เก็บแค่ 90 วัน และผู้ใช้แอปเรียกฟังก์ชันล้างไม่ได้
+insert into public.revenuecat_events (id, type, received_at) values
+  ('evt_old', 'RENEWAL', now() - interval '91 days'),
+  ('evt_recent', 'RENEWAL', now() - interval '89 days');
+set role authenticated;
+do $$ begin
+  begin
+    perform public.purge_revenuecat_events(90);
+    raise exception 'FAIL: authenticated can purge events';
+  exception when insufficient_privilege then null;
+  end;
+end $$;
+reset role;
+set role service_role;
+do $$ declare removed integer; begin
+  removed := public.purge_revenuecat_events(90);
+  if removed <> 1 then raise exception 'FAIL: expected 1 purged event, got %', removed; end if;
+  if exists (select 1 from public.revenuecat_events where id = 'evt_old') then raise exception 'FAIL: old event kept'; end if;
+  if not exists (select 1 from public.revenuecat_events where id = 'evt_recent') then raise exception 'FAIL: recent event purged'; end if;
+end $$;
+reset role;
+
 select 'ALL SUPABASE SQL CHECKS PASSED' as result;
