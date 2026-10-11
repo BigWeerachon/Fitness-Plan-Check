@@ -1,10 +1,12 @@
 # HUMAN_TASKS — งานที่เจ้าของโปรเจกต์ต้องทำเอง (เรียงตามลำดับ)
 
-> โค้ด เทสต์ และเอกสารของแอปทำเสร็จแล้ว (`npm run check` ผ่าน 34 ชุดเทสต์ / 487 ข้อ) งานในไฟล์นี้ต้องใช้บัญชี บัตรชำระเงิน การยืนยันตัวตน หรือการตัดสินใจทางธุรกิจของเจ้าของ จึงไม่มีใครทำแทนได้
+> โค้ด เทสต์ และเอกสารของแอปทำเสร็จแล้ว (`npm run check` ผ่าน — ดูจำนวนชุดเทสต์/ข้อที่บรรทัดสุดท้ายของผลลัพธ์ เพราะตัวเลขเปลี่ยนทุกครั้งที่ผู้พัฒนาแก้โค้ด จึงไม่ระบุตัวเลขในเอกสารนี้) งานในไฟล์นี้ต้องใช้บัญชี บัตรชำระเงิน การยืนยันตัวตน หรือการตัดสินใจทางธุรกิจของเจ้าของ จึงไม่มีใครทำแทนได้
 >
 > **วิธีใช้:** ทำตามเลขข้อ (ข้อหลังมักใช้ค่าจากข้อก่อน) ติ๊ก `[x]` เมื่อเสร็จ ทุกข้อบอก **ทำไม** · **ที่ไหน** · **ใส่ค่า** · **ผลลัพธ์ →** (ค่าที่ได้ต้องไปใส่ที่ไหน) และจดค่าลงตาราง "สมุดจดค่า" ด้านล่าง
 >
-> ชื่อเมนูในคอนโซลของ Apple / Google / Supabase / RevenueCat เปลี่ยนบ่อย ถ้าหาไม่เจอ ให้ค้นด้วยชื่อที่อยู่ในวงเล็บ ระหว่างที่ยังทำไม่ครบ แอปยังรันได้ในโหมด mock (`EXPO_PUBLIC_USE_MOCKS=1` ใน `.env`) โดยไม่ต้องมีคีย์จริง
+> ชื่อเมนูในคอนโซลของ Apple / Google / Supabase / RevenueCat เปลี่ยนบ่อย ถ้าหาไม่เจอ ให้ค้นด้วยชื่อที่อยู่ในวงเล็บ ระหว่างที่ยังทำไม่ครบ แอปยังรันได้ในโหมด mock (`EXPO_PUBLIC_USE_MOCKS=1` ใน `.env`) โดยไม่ต้องมีคีย์จริง — เฉพาะ development build และพรีวิวเว็บ; **release build บนมือถือไม่ใช้ mock เด็ดขาด** (`src/services/config.ts`)
+>
+> **เลขข้อคงที่:** เอกสารอื่น (`docs/TEST_PLAN.md`, `store-metadata/*`, `docs/RELEASE_CHECKLIST.md`) อ้างเลขข้อในไฟล์นี้ ผู้พัฒนาจึงเพิ่มรายการใหม่ภายในข้อเดิมแทนการแทรกเลขข้อใหม่ — ถ้าต้องแทรกข้อใหม่จริง ต้องแก้เลขอ้างอิงในไฟล์เหล่านั้นด้วย
 
 ## สารบัญ
 
@@ -14,19 +16,19 @@
 | B | สมัครบัญชีทั้งหมด | 4–10 |
 | C | เตรียมเครื่องและ repo | 11 |
 | D | กฎหมาย: กรอกเทมเพลตและโฮสต์ Privacy / Terms | 12–14 |
-| E | Supabase: โปรเจกต์, ฐานข้อมูล, Edge Functions, URL | 15–20 |
+| E | Supabase: โปรเจกต์, migrations ทั้งหมด, Edge Functions (`revenuecat-webhook`, `delete-account`), URL | 15–20 |
 | F | Expo / EAS: โปรเจกต์และ keystore | 21–23 |
 | G | Apple: App ID, Sign in with Apple, คีย์ .p8 | 24–29 |
 | H | Google Sign-In (Google Cloud OAuth) | 30–34 |
 | I | RevenueCat ตอนที่ 1: โปรเจกต์และแอป | 35 |
-| J | ตาราง `.env` ครบทุกตัว + EAS environment variables | 36–38 |
+| J | ตาราง `.env` ครบทุกตัว + EAS environment variables + secret ฝั่งเซิร์ฟเวอร์ | 36–38 |
 | K | Development build และทดสอบล็อกอินจริง | 39–40 |
 | L | App Store Connect: แอป, สินค้า, ทดลองฟรี, grace period | 41–47 |
 | M | Google Play Console: แอป, สินค้า, ทดลองฟรี, grace / account hold | 48–56 |
-| N | ราคา (SPEC J2) และตาราง "ราคาที่ตั้งได้จริง" | 57–58 |
+| N | ราคา (SPEC J2) และตาราง "ราคาที่ตั้งได้จริง" (ราคาขั้นต่ำเงินบาทต้องตรวจในคอนโซลจริง) | 57–58 |
 | O | RevenueCat ตอนที่ 2: สินค้า, entitlement, offering, webhook | 59–64 |
 | P | Build และ Submit ด้วย EAS | 65–67 |
-| Q | ทดสอบบนอุปกรณ์จริง + บัญชีสำหรับผู้รีวิว | 68–71 |
+| Q | ทดสอบบนอุปกรณ์จริง (รวมเส้นทาง "Get lifetime" และการลบบัญชี) + บัญชีสำหรับผู้รีวิว | 68–71 |
 | R | ฟอร์มของสโตร์: App Privacy, Data safety, Health apps, เรตติ้ง, ภาพหน้าจอ | 72–79 |
 | S | ส่งรีวิวและเช็กลิสต์สุดท้าย | 80–81 |
 | T | งานประจำหลังเปิดตัว | 82–85 |
@@ -70,7 +72,7 @@
 
 - [ ] **1. เลือกชื่อแอปจริง**
   - **ทำไม:** "Fitnese" เป็นชื่อชั่วคราว (SPEC A, D03) ชื่อในสโตร์ต้องไม่ซ้ำกับแอปอื่นใน App Store
-  - **ที่ไหน:** ดูชื่อทางเลือก 5 ชื่อใน `store-metadata/` แล้วตัดสินใจ จากนั้นจองชื่อทันทีโดยสร้าง app record ใน App Store Connect (ข้อ 41) และ Play Console (ข้อ 48) — ชื่อในสโตร์ยาวได้ไม่เกิน 30 ตัวอักษร
+  - **ที่ไหน:** ดูชื่อทางเลือก 5 ชื่อใน `store-metadata/app-names.md` (มีวิธีตรวจชื่อซ้ำ/เครื่องหมายการค้าและรายการจุดที่ต้องแก้เมื่อเปลี่ยนชื่อ) แล้วตัดสินใจ จากนั้นจองชื่อทันทีโดยสร้าง app record ใน App Store Connect (ข้อ 41) และ Play Console (ข้อ 48) — ชื่อในสโตร์ยาวได้ไม่เกิน 30 ตัวอักษร
   - **ใส่ค่า:** ถ้าเลือกชื่ออื่นที่ไม่ใช่ "Fitnese" ต้องให้ผู้พัฒนา/เอเจนต์แก้ชื่อในโค้ดแล้วรัน `npm run check` จุดที่มีชื่อแอปหาได้ด้วย `grep -rn "Fitnese" app.config.ts src store-metadata docs/legal` (หลักๆ คือ `name` ใน `app.config.ts`, `src/i18n/native/th.json`, `src/i18n/native/en.json`, `src/legal/content.ts`, `src/i18n/locales/{en,th}/{common,settings,legal,paywall}.ts`) **ห้ามเปลี่ยน** `slug: 'fitnese'` และ `scheme: 'fitnese'` (scheme ผูกกับ redirect URL `fitnese://auth-callback` ในข้อ 19)
   - **ผลลัพธ์ →** `<APP_NAME>`
 
@@ -81,7 +83,7 @@
 
 - [ ] **3. ตรวจไอคอนและ splash**
   - **ทำไม:** ไอคอนใน `assets/` สร้างอัตโนมัติด้วย `scripts/generate-icons.py` (พื้นดำ + แสงเรือง + ดัมเบลสีชมพูม่วงตามภาษาภาพ DS) เจ้าของควรยืนยันว่าพอใจก่อนส่งสโตร์
-  - **ที่ไหน:** เปิดดู `assets/icon.png` (1024×1024 ไม่มีพื้นโปร่งใส — App Store บังคับ), `assets/android-icon-foreground.png`, `assets/android-icon-monochrome.png` (1024×1024), `assets/splash-icon.png`, `assets/favicon.png`
+  - **ที่ไหน:** brief และไฟล์ปัจจุบันอยู่ใน `store-metadata/icon.md` · เปิดดู `assets/icon.png` (1024×1024 ไม่มีพื้นโปร่งใส — App Store บังคับ), `assets/android-icon-foreground.png`, `assets/android-icon-monochrome.png` (1024×1024), `assets/splash-icon.png`, `assets/favicon.png`
   - **ใส่ค่า:** ถ้าจะสร้างใหม่: `pip install Pillow` แล้ว `python3 scripts/generate-icons.py assets` ถ้าใช้ไอคอนที่ออกแบบเอง ให้ทับไฟล์ชื่อเดิมด้วยขนาดเดิม (foreground ของ Android ให้วางรูปไว้กลางภาพในพื้นที่ปลอดภัยราว 2/3) แล้วรัน `npm run check`
   - **ผลลัพธ์ →** ไฟล์ใน `assets/` (ไอคอน 512×512 สำหรับหน้าร้าน Google Play ทำในข้อ 78)
 
@@ -137,7 +139,7 @@
     ```bash
     node --version            # ควรเป็น Node 22 (eas.json ใช้ 22.22.0 บนเครื่อง build)
     npm ci
-    npm run check             # typecheck + lint + jest — ต้องผ่าน 34 ชุดเทสต์ / 487 ข้อ
+    npm run check             # typecheck + lint + jest — ต้องผ่านทั้งหมด (ดูบรรทัดสุดท้ายของผลลัพธ์สำหรับจำนวนชุด/ข้อเทสต์)
     npm run doctor            # npx expo-doctor ตรวจเวอร์ชันแพ็กเกจของ Expo SDK 57
     cp .env.example .env      # ถ้ายังไม่มี .env (ไฟล์นี้ถูก .gitignore)
     mkdir -p secrets          # โฟลเดอร์เก็บไฟล์ลับ (ถูก .gitignore)
@@ -155,18 +157,18 @@
   - **ทำไม:** SPEC N4 ให้ร่างเป็นเทมเพลต เจ้าของต้องตรวจและรับผิดชอบสุดท้าย สโตร์ทั้งสองบังคับ URL ของ Privacy Policy และ Google OAuth consent screen (ข้อ 30) ก็ต้องใช้
   - **ที่ไหน:** `src/legal/content.ts` → ออบเจ็กต์ `PLACEHOLDERS` (เนื้อหาเดียวกันนี้แสดงในแอปที่หน้า `/legal/[doc]`)
   - **ใส่ค่า:** แทนค่าทั้ง 5 ตัว: `developer` (ชื่อผู้พัฒนา/บริษัท), `contact` (อีเมลติดต่อที่ใช้งานได้จริง — ใช้รับคำขอลบข้อมูลด้วย), `address` (ที่อยู่), `effective` (วันที่มีผล), `law` (ประเทศ/กฎหมายที่ใช้บังคับ) แล้วอ่านทุกหัวข้อทั้งฉบับไทยและอังกฤษให้ตรงกับธุรกิจจริง แนะนำให้ผู้เชี่ยวชาญกฎหมายตรวจทาน (โดยเฉพาะ PDPA ของไทยและ GDPR ถ้าขายในยุโรป)
-  - **หลังแก้:** รัน `npm run check` และขอให้ผู้พัฒนาเอาป้าย "Template — the developer must review…" (คีย์ i18n `legal.templateNotice` ที่หน้า `src/app/legal/[doc].tsx`) ออก เพราะเป็นป้ายสำหรับช่วงร่างเท่านั้น
+  - **หลังแก้:** รัน `npm run check` — **ไม่ต้องขอให้ผู้พัฒนาลบป้ายเทมเพลต**: ป้าย "Template — the developer must review…" (คีย์ i18n `legal.templateNotice` ที่หน้า `src/app/legal/[doc].tsx`) ถูกออกแบบให้ซ่อนเองเมื่อ placeholder ทั้ง 5 ตัวถูกแทนที่ครบ และก่อนส่งสโตร์ให้รัน `RELEASE=1 npm test` — เทสต์ยามนี้จะล้มถ้ายังเหลือ placeholder ใน `src/legal/content.ts` (ตรวจ ณ วันที่เขียน: โค้ดชุดนี้เป็นส่วนของการแก้ที่กำลัง merge — ถ้าเปิด `src/app/legal/[doc].tsx` แล้วยังเห็นป้ายแสดงเสมอแบบไม่มีเงื่อนไข หรือ `RELEASE=1 npm test` ไม่มีการตรวจนี้ แปลว่ายังไม่รวม ให้แจ้งผู้พัฒนาก่อนส่งสโตร์)
   - **ผลลัพธ์ →** `src/legal/content.ts` ที่กรอกครบ
 
 - [ ] **13. ส่งออกเป็นหน้าเว็บ**
   - **คำสั่ง:** `npm run legal:export` → เขียนทับ `docs/legal/privacy.th.md`, `docs/legal/privacy.en.md`, `docs/legal/terms.th.md`, `docs/legal/terms.en.md`, `docs/legal/references.md`
-  - **ใส่ค่า:** ไฟล์ที่ส่งออกมีบรรทัดหมายเหตุ "> เทมเพลต —/ > Template —" ที่ต้นไฟล์ทุกครั้ง ให้ลบบรรทัดนั้นออกจากสำเนาที่จะเผยแพร่
+  - **ใส่ค่า:** ไฟล์ที่ส่งออกอาจมีบรรทัดหมายเหตุ "> เทมเพลต —/ > Template —" ที่ต้นไฟล์ (ตรวจหลังส่งออก) ถ้ามี ให้ลบบรรทัดนั้นออกจากสำเนาที่จะเผยแพร่
   - **ผลลัพธ์ →** ไฟล์ Markdown พร้อมโฮสต์
 
 - [ ] **14. โฮสต์หน้า Privacy / Terms และจด URL**
   - **ทำไม:** สโตร์และ Google OAuth ต้องการ URL สาธารณะที่เปิดได้โดยไม่ต้องล็อกอิน ปุ่ม "Open web version" ในหน้า `/legal/[doc]` ของแอปจะแสดงเมื่อมี URL นี้ (ถ้าว่าง แอปแสดงฉบับในแอปอย่างเดียว)
   - **ที่ไหน:** เว็บโฮสต์แบบ static ใดก็ได้ที่คุณควบคุม (เว็บไซต์ของคุณ, GitHub Pages ฯลฯ) ควรมีทั้งไทยและอังกฤษ
-  - **ใส่ค่า:** หน้า Privacy ต้องมีหัวข้ออธิบายวิธีลบบัญชีและข้อมูล (มีอยู่แล้วในเทมเพลต: บัญชี → ลบบัญชีและข้อมูล + อีเมลติดต่อ) เพราะ Google Play ต้องการ "ลิงก์ขอลบบัญชีบนเว็บ" ที่ผู้ใช้ทำได้โดยไม่ต้องติดตั้งแอป (ข้อ 73)
+  - **ใส่ค่า:** หน้า Privacy ต้องมีหัวข้ออธิบายวิธีลบบัญชีและข้อมูล (มีอยู่แล้วในเทมเพลต: บัญชี → ลบบัญชีและข้อมูล + อีเมลติดต่อ) เพราะ Google Play ต้องการ "ลิงก์ขอลบบัญชีบนเว็บ" ที่ผู้ใช้ทำได้โดยไม่ต้องติดตั้งแอป (ข้อ 73) · ต้องคงประโยคที่บอกว่าผู้ที่ล็อกอินด้วย Apple บน **Android** ต้องถอนสิทธิ์แอปเองที่ appleid.apple.com → Sign in with Apple เพราะการลบบัญชีจากฝั่ง Android เพิกถอนโทเค็น Apple ให้ไม่ได้ (D40, ดูข้อ 29) — มีอยู่ในเทมเพลต `src/legal/content.ts` แล้ว อย่าตัดออกตอนปรับถ้อยคำ
   - **ผลลัพธ์ →** `<PRIVACY_URL>`, `<TERMS_URL>` → `EXPO_PUBLIC_PRIVACY_URL`, `EXPO_PUBLIC_TERMS_URL` (ข้อ 36–37), App Store Connect (ข้อ 41, 72), Play Console (ข้อ 73), Google OAuth consent (ข้อ 30)
 
 ---
@@ -194,16 +196,21 @@
     ```
   - **ผลลัพธ์ →** ทั้งสองคำสั่งจบโดยไม่มี error
 
-- [ ] **17. สร้างตารางบนคลาวด์ (`supabase db push`)**
+- [ ] **17. สร้างตารางบนคลาวด์ (`supabase db push` — ต้องรัน migration ทุกไฟล์)**
+  - **ไฟล์ที่มีใน `supabase/migrations/` ตอนนี้ (รันตามลำดับชื่อ):**
+    1. `20261009000000_init.sql` — ตารางทั้งหมด + RLS + ฟังก์ชัน `has_sync_access` + last-write-wins
+    2. `20261010000000_session_progression.sql` — เพิ่มคอลัมน์ `progression` (jsonb) ที่ `workout_session` (D53) — **แอปรุ่นปัจจุบันซิงก์คอลัมน์นี้ ถ้าไม่รันไฟล์นี้ การซิงก์เซสชันจะล้ม**
+    - ไฟล์ migration ใหม่อาจถูกเพิ่มโดยผู้พัฒนาก่อนส่งสโตร์ (เช่น ลบบันทึก webhook เก่าอัตโนมัติ ตาม `store-metadata/privacy-labels.md`) — `ls supabase/migrations` คือรายการที่เชื่อถือได้ ให้ **push ให้ครบทุกไฟล์ก่อนปล่อยแอป** และรัน `npm run supabase:verify` (ข้อ 16) ทุกครั้งที่มีไฟล์ใหม่
   - **คำสั่ง:**
     ```bash
     npx supabase login
     npx supabase link --project-ref <PROJECT_REF>    # ถามรหัสผ่านฐานข้อมูลจากข้อ 15
-    npx supabase db push                              # รัน supabase/migrations/20261009000000_init.sql
+    npx supabase db push                              # รันทุกไฟล์ใน supabase/migrations/ ที่ยังไม่เคยรัน
+    npx supabase migration list                       # ทุกไฟล์ต้องมีค่าทั้งคอลัมน์ Local และ Remote
     ```
-  - **ตรวจ:** Dashboard → Table Editor (schema `public`) ต้องเห็นตาราง `user_entitlements`, `revenuecat_events`, `profile`, `custom_exercise`, `program`, `routine`, `routine_exercise`, `week_plan`, `day_override`, `workout_session`, `session_exercise`, `session_set`, `daily_log` และทุกตารางมีป้าย RLS enabled
+  - **ตรวจ:** Dashboard → Table Editor (schema `public`) ต้องเห็นตาราง `user_entitlements`, `revenuecat_events`, `profile`, `custom_exercise`, `program`, `routine`, `routine_exercise`, `week_plan`, `day_override`, `workout_session`, `session_exercise`, `session_set`, `daily_log` (13 ตาราง) และทุกตารางมีป้าย RLS enabled · `workout_session` ต้องมีคอลัมน์ `progression`
   - **หมายเหตุ:** `supabase/config.toml` ใช้กับ `supabase start` ในเครื่องเท่านั้น อย่าใช้ `supabase config push` กับโปรเจกต์จริง เพราะค่า OAuth ในไฟล์อ้างอิง `env(...)` ที่ยังไม่มี — ตั้งค่า Auth ผ่านแดชบอร์ดตามข้อ 19, 28, 34
-  - **ผลลัพธ์ →** ฐานข้อมูลพร้อม
+  - **ผลลัพธ์ →** ฐานข้อมูลพร้อม (ทุก migration ถูกรันแล้ว)
 
 - [ ] **18. Deploy Edge Functions และตั้ง secret ของ webhook**
   - **ทำไม:** `revenuecat-webhook` อัปเดต `user_entitlements` เมื่อ RevenueCat แจ้งเหตุการณ์ (J6) ส่วน `delete-account` ลบบัญชีและข้อมูลทั้งหมด (B12)
@@ -228,7 +235,8 @@
       -H "Authorization: Bearer <WEBHOOK_SECRET>" -H "Content-Type: application/json" \
       -d '{"event":{"id":"manual-smoke-1","type":"TEST"}}'
     ```
-  - **ผลลัพธ์ →** URL webhook `https://<PROJECT_REF>.supabase.co/functions/v1/revenuecat-webhook` (ใช้ในข้อ 62) — secret ของ Apple/RevenueCat สำหรับ `delete-account` ตั้งในข้อ 29 และ 63
+    `delete-account` ต้องส่ง JWT ของผู้ใช้จริง (ทดสอบผ่านแอปในข้อ 70 ไม่ใช่ด้วย curl) — ถ้าเรียกโดยไม่มี `Authorization` จะถูกปฏิเสธ (401) ซึ่งถือว่าปกติ
+  - **ผลลัพธ์ →** URL webhook `https://<PROJECT_REF>.supabase.co/functions/v1/revenuecat-webhook` (ใช้ในข้อ 62) — secret ของ Apple/RevenueCat สำหรับ `delete-account` ตั้งในข้อ 29 และ 63 · รายชื่อ secret ทั้งหมดอยู่ที่ข้อ 38
 
 - [ ] **19. ตั้ง URL ของ Auth**
   - **ทำไม:** Sign in with Apple บน Android ใช้ OAuth บนเว็บของ Supabase แล้วเด้งกลับแอปด้วย `Linking.createURL('auth-callback')` = `fitnese://auth-callback` (D11, `src/services/auth/supabaseAuth.ts`)
@@ -322,6 +330,7 @@
     ```
     `APPLE_CLIENT_ID` ต้องเป็น **Bundle ID** (ไม่ใช่ Services ID) เพราะ authorization code ที่ลบบัญชีมาจาก Sign in with Apple แบบ native บน iOS · `APPLE_PRIVATE_KEY` คือเนื้อหาไฟล์ .p8 ทั้งไฟล์ในบรรทัดเดียว โดยแทนการขึ้นบรรทัดใหม่ด้วย `\n` (โค้ดแปลง `\n` กลับเป็นบรรทัดใหม่ให้) สร้างได้ด้วย `awk 'NF {printf "%s\\n", $0}' secrets/AuthKey_<SIWA_KEY_ID>.p8`
   - **คำสั่ง:** `npx supabase secrets set --env-file secrets/supabase-functions.env` แล้ว `npx supabase secrets list` ต้องเห็นชื่อทั้ง 4 ตัว + `REVENUECAT_WEBHOOK_SECRET`
+  - **ข้อจำกัดที่ต้องรู้ (D40):** การเพิกถอนโทเค็น Apple ทำได้เฉพาะเมื่อลบบัญชีจาก **iPhone/iPad** (แอปขอ authorization code ใหม่จาก Apple แล้วส่งให้ `delete-account` — ฟิลด์ `appleAuthorizationCode`) ผู้ที่ล็อกอินด้วย **Apple บน Android** (OAuth เว็บ) ไม่มี code จึง **เพิกถอนโทเค็นให้ไม่ได้** — ข้อมูลถูกลบครบ แต่ผู้ใช้ต้องถอนสิทธิ์แอปเองที่ appleid.apple.com → Sign in with Apple หน้า Privacy ในแอปบอกไว้แล้ว (ข้อ 14) ห้ามตอบแบบฟอร์ม/ผู้รีวิวว่าเพิกถอนครบทุกกรณี ถ้าเจ้าของไม่ยอมรับข้อจำกัดนี้ ต้องตัดสินใจเรื่องการปรับ flow (งานของผู้พัฒนา ไม่ใช่งานตั้งค่า)
   - **ผลลัพธ์ →** Supabase Edge Function secrets
 
 ---
@@ -377,8 +386,8 @@
 
     | ตัวแปร | ใช้ที่ | ได้มาจาก | ค่าสำหรับ build จริง | ความลับ? |
     |---|---|---|---|---|
-    | `EXPO_PUBLIC_USE_MOCKS` | `src/services/config.ts` → `src/services/registry.ts` | ตั้งเอง | **`0`** (ถ้าเป็น `1` แอปจะใช้ล็อกอิน/สโตร์จำลองแม้ใน release build) | ไม่ |
-    | `EXPO_PUBLIC_MOCK_SCENARIO` | `MockPurchasesService` (เฉพาะโหมด mock) | ตั้งเอง: `new` · `trial_used` · `trialing` · `monthly` · `lifetime` · `expired` · `billing_grace` | ไม่มีผลเมื่อ mock ปิด (ปล่อย `new`) | ไม่ |
+    | `EXPO_PUBLIC_USE_MOCKS` | `src/services/config.ts` → `src/services/registry.ts` | ตั้งเอง | **`0`** (ถ้าเป็น `1` ใน dev build / พรีวิวเว็บ จะใช้ล็อกอิน/สโตร์จำลอง; release build บนมือถือไม่ใช้ mock แม้ตั้ง `1` ผิด แต่ควรตั้ง `0` ให้ชัด) | ไม่ |
+    | `EXPO_PUBLIC_MOCK_SCENARIO` | `MockPurchasesService` (เฉพาะโหมด mock) | ตั้งเอง: `new` · `trial_used` · `trialing` · `monthly` · `lifetime` · `expired` · `billing_grace` (ตรงกับ `.env.example`) | ไม่มีผลเมื่อ mock ปิด (ปล่อย `new`) | ไม่ |
     | `EXPO_PUBLIC_SUPABASE_URL` | Supabase client | ข้อ 15 | `<SUPABASE_URL>` | ไม่ |
     | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase client | ข้อ 15 | `<SUPABASE_ANON_KEY>` (ห้ามใช้ service_role) | ไม่ (เป็นคีย์สาธารณะ ป้องกันด้วย RLS) |
     | `EXPO_PUBLIC_RC_IOS_KEY` | RevenueCat บน iOS | ข้อ 35 | `appl_...` | ไม่ |
@@ -391,7 +400,7 @@
     | `APP_BUNDLE_ID` | `app.config.ts` (iOS bundle id + Android package) | ข้อ 2 | `<BUNDLE_ID>` | ไม่ |
     | `APPLE_TEAM_ID` | `app.config.ts` (`ios.appleTeamId`) | ข้อ 4 | `<TEAM_ID>` | ไม่ |
 
-  - **กฎของโค้ดที่ควรรู้:** ถ้า `EXPO_PUBLIC_USE_MOCKS` ไม่ใช่ `1` แต่คีย์ขาด — dev build จะสลับไปใช้ mock เอง ส่วน release build **จะไม่ใช้ mock** และจะ error แทน (`shouldUseMocks()` ใน `src/services/config.ts`) ตัวที่ถือว่า "ขาด" คือ Supabase URL/anon key, RevenueCat key (อย่างน้อย 1 แพลตฟอร์ม) และ Google web client ID
+  - **กฎของโค้ดที่ควรรู้:** ถ้า `EXPO_PUBLIC_USE_MOCKS` ไม่ใช่ `1` แต่คีย์ขาด — dev build และพรีวิวเว็บจะสลับไปใช้ mock เอง ส่วน release build บนมือถือ **ไม่ใช้ mock เด็ดขาด** (ต่อให้ตั้ง `1`) และจะ error แทน (`decideMocks()` / `shouldUseMocks()` ใน `src/services/config.ts`) ตัวที่ถือว่า "ขาด" คือ Supabase URL/anon key, RevenueCat key (อย่างน้อย 1 แพลตฟอร์ม) และ Google web client ID
   - **ผลลัพธ์ →** `.env` ในเครื่อง (ห้าม commit)
 
 - [ ] **37. ใส่ค่าชุดเดียวกันใน EAS environment variables**
@@ -415,11 +424,13 @@
   |---|---|---|---|
   | `REVENUECAT_WEBHOOK_SECRET` | Supabase Edge Function secrets | `revenuecat-webhook` (ตรวจ header `Authorization`) | 18 |
   | `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`, `APPLE_CLIENT_ID` | Supabase Edge Function secrets | `delete-account` (เพิกถอนโทเค็น Apple) | 29 |
-  | `REVENUECAT_SECRET_API_KEY` (ไม่บังคับ แต่แนะนำ) | Supabase Edge Function secrets | `delete-account` (ลบลูกค้าใน RevenueCat ด้วย) | 63 |
+  | `REVENUECAT_SECRET_API_KEY` (ไม่บังคับ แต่แนะนำ — `Deno.env.get` ใน `delete-account/index.ts`) | Supabase Edge Function secrets | `delete-account` (ลบลูกค้าใน RevenueCat ด้วย) | 63 |
   | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Supabase ใส่ให้อัตโนมัติ | ทั้งสองฟังก์ชัน | ไม่ต้องตั้ง (CLI ไม่ยอมให้ตั้งชื่อที่ขึ้นต้น `SUPABASE_`) |
   | Google web client secret, Apple OAuth secret | Supabase Dashboard → Auth Providers | Supabase Auth | 28, 34 |
   | `GOOGLE_WEB_CLIENT_ID`, `GOOGLE_WEB_CLIENT_SECRET`, `APPLE_SERVICES_ID`, `APPLE_OAUTH_SECRET` | env ของเครื่องคุณ (เฉพาะถ้ารัน `supabase start` ในเครื่อง) | `supabase/config.toml` | ไม่จำเป็นสำหรับโปรเจกต์จริง |
-  | ไฟล์ service account ของ Play | `secrets/google-play-service-account.json` | `eas submit` (`eas.json`) | 54 |
+  | ไฟล์ service account ของ Play | `secrets/google-play-service-account.json` | `eas submit` (`eas.json`) | 55 |
+
+  - **ตรวจครบ:** `npx supabase secrets list` ต้องเห็นอย่างน้อย `REVENUECAT_WEBHOOK_SECRET`, `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`, `APPLE_CLIENT_ID` และ (แนะนำ) `REVENUECAT_SECRET_API_KEY` — ชื่อเหล่านี้ตรงกับ `Deno.env.get(...)` ใน `supabase/functions/revenuecat-webhook/index.ts` และ `supabase/functions/delete-account/index.ts` (ฟังก์ชันอื่นอ่านเฉพาะ `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` ที่ Supabase ใส่ให้) ถ้าชื่อไม่ตรง ฟังก์ชันจะข้ามขั้นนั้นแบบเงียบๆ (เช่น ไม่เพิกถอน Apple)
 
 ---
 
@@ -483,7 +494,7 @@
 
 - [ ] **46. สร้างคีย์ให้ RevenueCat และ EAS**
   - **ที่ไหน / ใส่ค่า:**
-    - **In-App Purchase Key** (RevenueCat ใช้ตรวจธุรกรรม StoreKit 2 — `react-native-purchases` รุ่นที่ใช้เป็น StoreKit 2 โดยค่าเริ่มต้น): Users and Access → Integrations → **In-App Purchase** → Generate → ดาวน์โหลด `.p8` เก็บที่ `secrets/` + จด Key ID และ **Issuer ID**
+    - **In-App Purchase Key** (RevenueCat ใช้ตรวจธุรกรรม StoreKit 2 — แอปใช้ `react-native-purchases` ^10.12 ตาม `package.json`; ต้องตรวจในเอกสาร/คอนโซล RevenueCat ปัจจุบันว่าต้องใช้ key ชนิดนี้เท่านั้นหรือใช้ shared secret ด้วย): Users and Access → Integrations → **In-App Purchase** → Generate → ดาวน์โหลด `.p8` เก็บที่ `secrets/` + จด Key ID และ **Issuer ID**
     - **App-Specific Shared Secret** (สำหรับใบเสร็จแบบเก่า): App Information → App-Specific Shared Secret → Manage → Generate
     - **App Store Connect API Key** (ให้ RevenueCat นำเข้าสินค้า และให้ `eas submit` ใช้แทนการล็อกอิน Apple ID): Users and Access → Integrations → **App Store Connect API** → Team Keys → **+** → Access = App Manager → ดาวน์โหลด `.p8` เก็บที่ `secrets/` + Key ID + Issuer ID
   - **ผลลัพธ์ →** ไฟล์และ ID เหล่านี้ใช้ในข้อ 59 (RevenueCat) และข้อ 67 (`eas submit` ถามหรือเลือกผ่าน `eas credentials` → iOS → App Store Connect API Key)
@@ -553,7 +564,7 @@
 
 ## ส่วน N — ราคา (SPEC J2)
 
-> **สถานะข้อมูล: ยังไม่ได้ยืนยัน** — ในสภาพแวดล้อมที่เขียนเอกสารนี้ เปิดหน้าทางการของ Apple และ Google เพื่อตรวจ price point ขั้นต่ำปัจจุบันของประเทศไทยไม่ได้ แหล่งข้อมูลเดียวที่พบคือโพสต์ Android Developers Blog เดือนพฤศจิกายน 2015 ที่ระบุว่า Google Play ลดราคาขั้นต่ำในประเทศไทยลงเหลือ **10 บาท** (https://android-developers.googleblog.com/2015/11/minimum-purchase-price-for-apps-and-in.html) ข้อมูลนี้เก่าราว 10 ปี **ห้ามถือเป็นค่าปัจจุบัน** ส่วน price point เงินบาทของ App Store ต้องเปิดดูใน App Store Connect เท่านั้น ตัวเลข 19 / 99 บาทจึงยังเป็น "เป้า" จนกว่าเจ้าของจะกรอกตารางด้านล่าง
+> **สถานะข้อมูล: ยังไม่ได้ยืนยัน — ต้องตรวจในคอนโซลจริง** — ราคาขั้นต่ำ (price floor) และ price point เงินบาทของ App Store กับ Google Play ในวันนี้ **ไม่มีใครตรวจได้นอกคอนโซลของเจ้าของ** (เปิดหน้าทางการของทั้งสองสโตร์ไม่ได้ในสภาพแวดล้อมที่เขียนเอกสารนี้) แหล่งข้อมูลเดียวที่พบคือโพสต์ Android Developers Blog เดือนพฤศจิกายน 2015 ที่ระบุว่า Google Play ลดราคาขั้นต่ำในประเทศไทยลงเหลือ **10 บาท** (https://android-developers.googleblog.com/2015/11/minimum-purchase-price-for-apps-and-in.html — ไม่ได้เปิดตรวจซ้ำในรอบนี้) ข้อมูลนี้เก่าราว 10 ปี **ห้ามถือเป็นค่าปัจจุบัน** ดังนั้นทุกช่อง "ราคาต่ำสุดที่คอนโซลอนุญาต" ในตารางข้อ 58 คือ **"ต้องตรวจในคอนโซลจริง"** จนกว่าเจ้าของจะกรอก ตัวเลข 19 / 99 บาทเป็นแค่ "เป้า" ตาม SPEC J2 ไม่ใช่ราคาที่ยืนยันว่าตั้งได้
 >
 > แอปไม่ฮาร์ดโค้ดราคา Paywall แสดง `priceString` ที่ได้จากสโตร์ผ่าน RevenueCat เสมอ (ราคา ฿19.00 / ฿99.00 มีเฉพาะในสโตร์จำลองของโหมด mock — D20)
 
@@ -574,6 +585,7 @@
     3. `fitnese_lifetime` → ราคา → ประเทศไทย `99` → ทำแบบเดียวกัน
   - **ตรวจในแอป:** หลังข้อ 64 เปิด Paywall ด้วยบัญชี sandbox (iOS) และ license tester (Android) แล้วจดราคาที่ Paywall แสดง ต้องตรงกับที่ตั้ง
   - **ถ้าคอนโซลระบุว่าราคารวม/ไม่รวมภาษี** ให้จดตามที่คอนโซลแสดงในคอลัมน์หมายเหตุ
+  - **ห้ามเขียนราคาลงข้อความหน้าร้าน/Paywall เอง** — แอปแสดง `priceString` จากสโตร์ และข้อความใน `store-metadata/` ตั้งใจไม่ระบุราคา
 
 - [ ] **58. กรอกตาราง "ราคาที่ตั้งได้จริง" (รายงานตาม SPEC J2)**
 
@@ -581,10 +593,10 @@
 
   | สโตร์ | สินค้า (Product ID) | เป้า SPEC J2 | ราคาต่ำสุดที่คอนโซลอนุญาต | มีราคาตรงเป้าไหม (ใช่/ไม่) | ราคาที่ตั้งจริง | ราคาที่ Paywall แสดง (sandbox / tester) | หมายเหตุ (เหตุผลถ้าไม่ตรงเป้า, ภาษี) | วันที่ตรวจ | ผู้ตรวจ |
   |---|---|---|---|---|---|---|---|---|---|
-  | App Store | `fitnese_monthly` (รายเดือน) | 19 | | | | | | | |
-  | App Store | `fitnese_lifetime` (ซื้อขาด) | 99 | | | | | | | |
-  | Google Play | `fitnese_monthly` base plan `monthly` | 19 | | | | | | | |
-  | Google Play | `fitnese_lifetime` (ซื้อขาด) | 99 | | | | | | | |
+  | App Store | `fitnese_monthly` (รายเดือน) | 19 | ต้องตรวจในคอนโซลจริง | | | | | | |
+  | App Store | `fitnese_lifetime` (ซื้อขาด) | 99 | ต้องตรวจในคอนโซลจริง | | | | | | |
+  | Google Play | `fitnese_monthly` base plan `monthly` | 19 | ต้องตรวจในคอนโซลจริง | | | | | | |
+  | Google Play | `fitnese_lifetime` (ซื้อขาด) | 99 | ต้องตรวจในคอนโซลจริง | | | | | | |
 
   **ช่วงทดลองที่ตั้งจริง**
 
@@ -637,10 +649,11 @@
   - **คำสั่ง:** `npx supabase secrets set REVENUECAT_SECRET_API_KEY=<RC_SECRET_KEY>` (ห้ามใส่คีย์นี้ใน `.env`)
   - **ผลลัพธ์ →** Supabase Edge Function secret
 
-- [ ] **64. ตรวจครบวงจรด้วยการซื้อทดสอบ 1 ครั้ง**
-  - **คำสั่ง:** development build (ข้อ 39) + `.env` คีย์จริง → ตั้งบัญชี sandbox (ข้อ 68) หรือ license tester (ข้อ 69) → เปิดแอป → ตั้งค่าเริ่มต้น → Paywall ต้องแสดงราคาจากสโตร์และข้อความ "Start 7-day free trial" → ล็อกอิน → ซื้อ
-  - **ตรวจ:** RevenueCat → Customers → ค้นหา id ผู้ใช้ Supabase → entitlement `pro` active · Supabase → `user_entitlements` มีแถวของผู้ใช้ state = `TRIALING` · ในแอป หน้า Account → สถานะสมาชิกแสดงวันสิ้นสุดทดลอง และสถานะซิงก์ไม่ค้างที่ "รอยืนยันสมาชิก"
-  - **ผลลัพธ์ →** ระบบสมาชิกทำงานครบ แล้วจดราคาที่ Paywall แสดงลงตารางข้อ 58
+- [ ] **64. ตรวจครบวงจรด้วยการซื้อทดสอบ (ทดลอง → ซื้อขายผ่าน "Get lifetime")**
+  - **ก. ซื้อทดลองครั้งแรก:** development build (ข้อ 39) + `.env` คีย์จริง → ตั้งบัญชี sandbox (ข้อ 68) หรือ license tester (ข้อ 69) → เปิดแอป → ตั้งค่าเริ่มต้น → Paywall ต้องแสดงราคาจากสโตร์ (บรรทัดยอดเรียกเก็บ `"7 days free, then {price}/month"` และปุ่มหลัก `"Start free trial, then {price}/month"` — หัวข้อ Paywall ปัจจุบันนำด้วยประโยชน์ เช่น `"Unlock your full training plan"` ไม่ใช่คำว่า "ฟรี"; ข้อความจริงอยู่ที่ `src/i18n/locales/en/paywall.ts`) → ล็อกอิน → ซื้อ
+  - **ตรวจ:** RevenueCat → Customers → ค้นหา id ผู้ใช้ Supabase → entitlement `pro` active · Supabase → `user_entitlements` มีแถวของผู้ใช้ state = `TRIALING` · ในแอป หน้า Account → สถานะสมาชิกแสดงวันสิ้นสุดทดลอง และสถานะซิงก์ไม่ค้างที่ `"Waiting for your membership to be confirmed"` / `"รอยืนยันสถานะสมาชิก"`
+  - **ข. เส้นทางอัปเกรด Settings → "Get lifetime" (SPEC J5):** ด้วยบัญชีเดิมที่เป็น `TRIALING` (หรือ `SUBSCRIBED_MONTHLY` / `BILLING_GRACE`) → แท็บ Settings → ส่วน Membership → แถว **"Get lifetime"** (`settings-lifetime`) ต้องเห็นเฉพาะสามสถานะนี้ (บัญชีที่ `LIFETIME`/`EXPIRED`/ไม่มีสิทธิ์ต้องไม่เห็นแถวนี้) → แตะแล้วต้องเปิด Paywall โหมดอัปเกรด (ปุ่มปิด ✕ แทนไอคอนตั้งค่า, หัวข้อ `"Keep Fitnese Pro forever"`, มีแผนซื้อขาดแผนเดียว, ไม่มีทดลองฟรี) พร้อมกล่องเตือนว่า **ซื้อขาดไม่ยกเลิกสมาชิกรายเดือน/ช่วงทดลองให้อัตโนมัติ** และปุ่ม `"Open subscription settings"` → ซื้อ → สถานะต้องเป็น `Lifetime` (Supabase `state = LIFETIME`) → กลับไป Settings ต้องมีคำเตือนว่ารายเดือนยังต่ออายุอยู่จนกว่าจะยกเลิกในสโตร์ รายละเอียดทุกขั้นดู `docs/TEST_PLAN.md` P-06
+  - **ผลลัพธ์ →** ระบบสมาชิกทำงานครบทั้งสองเส้นทาง แล้วจดราคาที่ Paywall แสดงลงตารางข้อ 58
 
 ---
 
@@ -670,17 +683,17 @@
 
 - [ ] **68. Apple sandbox testers + TestFlight**
   - **ที่ไหน:** App Store Connect → Users and Access → **Sandbox** → Test Accounts → **+** (ใช้อีเมลที่ไม่เคยเป็น Apple ID; สร้างหลายบัญชีเพื่อทดสอบ "ลูกค้าใหม่" ซ้ำได้) · บน iPhone: Settings → App Store → Sandbox Account → ล็อกอินบัญชี sandbox · TestFlight: แอป → TestFlight → Internal Testing → เพิ่มผู้ทดสอบ
-  - **ทดสอบ:** ทุกสถานะตาม SPEC N3 ใน `docs/TEST_PLAN.md` (เริ่มทดลอง, ทดลองหมดแล้วแปลงเป็นจ่าย, ยกเลิกระหว่างทดลอง, ซื้อขาด, restore, เปลี่ยนเครื่อง, ลบบัญชี) — sandbox เร่งเวลาต่ออายุให้สั้นลงมาก
+  - **ทดสอบ:** ทุกสถานะตาม SPEC N3 ใน `docs/TEST_PLAN.md` (เริ่มทดลอง, ทดลองหมดแล้วแปลงเป็นจ่าย, ยกเลิกระหว่างทดลอง, ซื้อขาด, **อัปเกรดจากรายเดือน/ทดลองเป็นซื้อขาดผ่านแถว "Get lifetime" (P-06)**, restore, เปลี่ยนเครื่อง, ลบบัญชี) — sandbox เร่งเวลาต่ออายุให้สั้นลงมาก
   - **ผลลัพธ์ →** ผลทดสอบ iOS บันทึกตาม `docs/TEST_PLAN.md`
 
 - [ ] **69. Google Play license testers + internal testing**
   - **ที่ไหน:** Play Console → Settings (ระดับบัญชี ไม่ใช่ในแอป) → **License testing** → เพิ่มอีเมล Gmail ผู้ทดสอบ · License response = RESPOND_NORMALLY · ผู้ทดสอบต้องอยู่ในรายชื่อ Internal testing (ข้อ 49) กดลิงก์ opt-in แล้วติดตั้งจาก Play Store และใช้บัญชีนั้นเป็นบัญชีหลักของ Play Store ในเครื่อง
-  - **ทดสอบ:** ชุดเดียวกับข้อ 68 + grace period / account hold (Play Console มีตัวเลือกบัตรทดสอบที่ถูกปฏิเสธ)
+  - **ทดสอบ:** ชุดเดียวกับข้อ 68 (รวมเส้นทาง "Get lifetime") + grace period / account hold (Play Console มีตัวเลือกบัตรทดสอบที่ถูกปฏิเสธ)
   - **ผลลัพธ์ →** ผลทดสอบ Android บันทึกตาม `docs/TEST_PLAN.md`
 
 - [ ] **70. ทดสอบซ้ำฝั่งเซิร์ฟเวอร์หลัง deploy**
   - **ทำไม:** `npm run supabase:verify` ใช้ตัวแทนของ Supabase อาจต่างจากของจริงเล็กน้อย (D41)
-  - **ตรวจ:** ล็อกอิน 2 บัญชีบน 2 เครื่อง → ข้อมูลไม่ปนกัน · ปิดเน็ตแล้วบันทึกเซสชัน → เปิดเน็ตแล้วซิงก์ขึ้น · ลบบัญชี (ด้วยบัญชี Apple บน iPhone) → Supabase ไม่มีผู้ใช้และข้อมูลแล้ว และ log ของ `delete-account` ไม่มี error ตอนเพิกถอน Apple · ดู Edge Functions → Logs ของทั้งสองฟังก์ชัน
+  - **ตรวจ:** ล็อกอิน 2 บัญชีบน 2 เครื่อง → ข้อมูลไม่ปนกัน · ปิดเน็ตแล้วบันทึกเซสชัน → เปิดเน็ตแล้วซิงก์ขึ้น · ลบบัญชี (ด้วยบัญชี Apple บน iPhone) → Supabase ไม่มีผู้ใช้และข้อมูลแล้ว และ log ของ `delete-account` ไม่มี error ตอนเพิกถอน Apple · ลบบัญชี Apple บน **Android** อีกบัญชี → ข้อมูลหายครบ แต่ **ไม่มีการเพิกถอนโทเค็น Apple** (เป็นข้อจำกัดที่ทราบ D40 — บันทึกผลตามจริงและตรวจว่าหน้า Privacy บอกผู้ใช้ให้ถอนเองที่ appleid.apple.com) · ดู Edge Functions → Logs ของทั้งสองฟังก์ชัน (`revenuecat-webhook`, `delete-account`)
   - **ผลลัพธ์ →** ผ่านตาม `docs/TEST_PLAN.md`
 
 - [ ] **71. บัญชีทดสอบสำหรับผู้รีวิว (App Review / Play review)**
@@ -692,13 +705,15 @@
 
 ## ส่วน R — ฟอร์มของสโตร์
 
-ตารางอ้างอิงข้อมูลที่แอปเก็บจริง (จาก `src/legal/content.ts`, `docs/DATA_MODEL.md`) ใช้ตอบทั้ง App Privacy และ Data safety — แอปไม่มี SDK โฆษณา/analytics/crash reporting ไม่ติดตามข้ามแอป ไม่เก็บตำแหน่ง รูป วิดีโอ รายชื่อ หรือข้อมูลบัตร
+ตารางสรุปข้อมูลที่แอปเก็บจริง (จาก `src/legal/content.ts`, `docs/DATA_MODEL.md`) ใช้ตอบทั้ง App Privacy และ Data safety — แอปไม่มี SDK โฆษณา/analytics/crash reporting ไม่ติดตามข้ามแอป ไม่เก็บตำแหน่ง รูป วิดีโอ รายชื่อ หรือข้อมูลบัตร
+
+> **ฉบับละเอียดและถือเป็นหลักเมื่อขัดกัน:** `store-metadata/privacy-labels.md` (คำตอบทีละช่อง Apple + Google และจุดที่ต้องตรวจในระบบจริง เช่น ชื่อ/รูปจาก Google ที่ Supabase อาจเก็บเอง) · `store-metadata/play-declarations.md` (Health apps, Target audience, Content rating, Ads, Account deletion, free trial offer) · `store-metadata/review-notes.md` (App Review Notes / App access)
 
 | ข้อมูล | ตัวอย่างในแอป | Apple App Privacy | Google Data safety | วัตถุประสงค์ | บังคับ? |
 |---|---|---|---|---|---|
 | อีเมล | จาก Google/Apple (รวม private relay) | Contact Info → Email Address | Personal info → Email address | App functionality, Account management | บังคับ (ล็อกอิน) |
 | User ID | id ผู้ใช้ Supabase (= app user id ของ RevenueCat) | Identifiers → User ID | Personal info → User IDs | App functionality, Account management | บังคับ |
-| เพศ, อายุ | โปรไฟล์ (ข้ามได้) | Other Data | Personal info → Other info | App functionality (คำนวณ BMR) | ไม่บังคับ |
+| เพศ, อายุ | โปรไฟล์ (ข้ามได้) | Health & Fitness → Health (รวมกับค่าร่างกาย ตาม `privacy-labels.md` ข้อ 3.2 เพื่อให้ตรง manifest) | Personal info → Other info | App functionality (คำนวณ BMR) | ไม่บังคับ |
 | ส่วนสูง, น้ำหนักตัว, แคลอรี่ที่กิน | โปรไฟล์, `daily_log` | Health & Fitness → Health | Health and fitness → Health info | App functionality | ไม่บังคับ |
 | การฝึก, ระดับกิจกรรม, แคลอรี่ที่ใช้ | โปรแกรม, เซสชัน, เซ็ต | Health & Fitness → Fitness | Health and fitness → Fitness info | App functionality | ใช้เมื่อผู้ใช้บันทึก |
 | ประวัติการซื้อ/สถานะสมาชิก | ผ่าน RevenueCat | Purchases → Purchase History | Financial info → Purchase history | App functionality | บังคับเมื่อซื้อ |
@@ -707,43 +722,46 @@
 
 - [ ] **72. App Store Connect → App Privacy (Privacy Nutrition Labels)**
   - **ที่ไหน:** แอป → **App Privacy** → Get Started → Data Collection = Yes → เลือกประเภทตามตารางด้านบน → แต่ละประเภท: ใช้เพื่อ App Functionality · Linked to the user = Yes · Used for tracking = No → Publish · Privacy Policy URL = `<PRIVACY_URL>`
-  - **หมายเหตุ:** `app.config.ts` ตั้ง `NSPrivacyTracking: false` และรายการ `NSPrivacyCollectedDataTypes` ว่าง (privacy manifest ของแอป) ฟอร์มนี้คือสิ่งที่แสดงต่อผู้ใช้ในสโตร์และต้องตรงกับข้อมูลจริง (SPEC N1) ถ้าต้องการให้ manifest ระบุประเภทข้อมูลด้วย ให้แจ้งผู้พัฒนา
+  - **ให้ตรงกับ privacy manifest:** `app.config.ts` → `ios.privacyManifests` ตั้ง `NSPrivacyTracking: false` และ **ประกาศ (declared)** ประเภทข้อมูลที่เก็บ 5 ประเภท — อีเมล, User ID, Fitness, Health, Purchase History — ทุกประเภท linked = true, tracking = false, วัตถุประสงค์ App Functionality (รายละเอียดและ key ทีละตัวอยู่ใน `store-metadata/privacy-labels.md` ข้อ 3.5) ป้ายในสโตร์ต้องติ๊กชุดเดียวกันนี้พอดี (SPEC N1) · **ก่อนส่งรีวิว** เปิด `app.config.ts` ตรวจว่า `NSPrivacyCollectedDataTypes` มี 5 รายการจริง — ถ้ายังเห็น `NSPrivacyCollectedDataTypes: []` แปลว่าชุดแก้ที่ประกาศประเภทข้อมูลยังไม่ถูกรวม อย่าส่งจนกว่าจะรวม · และตรวจ Privacy Report ของ archive (Xcode → Generate Privacy Report) เทียบกับ SDK ที่มี manifest ของตัวเอง
   - **ผลลัพธ์ →** ป้ายความเป็นส่วนตัวเผยแพร่แล้ว
 
 - [ ] **73. Google Play → Data safety**
+  - **คำตอบทีละช่อง:** `store-metadata/privacy-labels.md` ข้อ 4 (ต้องตรงกับป้าย Apple ในข้อ 72)
   - **ที่ไหน:** Play Console → Policy and programs → **App content** → Data safety
   - **ใส่ค่า:** Collects data = Yes · Shares data = **No** (Supabase/RevenueCat เป็นผู้ให้บริการที่ประมวลผลแทนเรา) · Encrypted in transit = Yes · Users can request deletion = Yes · ประเภทข้อมูลตามตารางด้านบน · **Delete account URL** = หน้าเว็บที่อธิบายวิธีลบบัญชีและให้ขอลบทางอีเมลได้โดยไม่ต้องติดตั้งแอป (ใช้หัวข้อการลบข้อมูลในหน้า Privacy จากข้อ 14 ได้ถ้าครบตามนี้)
   - **ผลลัพธ์ →** Data safety ส่งแล้ว
 
 - [ ] **74. Google Play → Health apps declaration และ App content อื่นๆ**
+  - **คำตอบทีละหัวข้อ:** `store-metadata/play-declarations.md`
   - **ที่ไหน:** App content → **Health apps** → เลือกหมวดที่ตรงกับแอป: Activity and fitness, Nutrition and weight management · ไม่ใช่อุปกรณ์การแพทย์ · ไม่ใช้ Health Connect (SPEC L ยังไม่เชื่อม)
   - **ส่วนอื่นใน App content:** Privacy policy = `<PRIVACY_URL>` · Ads = ไม่มีโฆษณา · App access = มีส่วนที่ต้องล็อกอิน → ใส่บัญชีจากข้อ 71 + วิธีใช้ (ข้อ 76) · Advertising ID = ไม่ใช้ (ถ้าคอนโซลแจ้งว่า manifest มีสิทธิ์ `com.google.android.gms.permission.AD_ID` ให้แจ้งผู้พัฒนา) · Target audience = ไม่เลือกกลุ่มอายุต่ำกว่า 13 ปี (เลี่ยงข้อกำหนด Families; แอปไม่แสดงเป้าลดน้ำหนักให้ผู้อายุต่ำกว่า 18 อยู่แล้ว — การเลือกช่วงอายุเป็นการตัดสินใจของเจ้าของ) · Government apps / Financial features / News = ไม่ใช่
-  - **คำอธิบายในหน้าร้าน:** ต้องมีข้อความว่าแอปไม่ใช่อุปกรณ์การแพทย์และไม่วินิจฉัย/รักษาโรค (SPEC N2) — ใช้ข้อความจาก `store-metadata/`
+  - **คำอธิบายในหน้าร้าน:** ต้องมีข้อความว่าแอปไม่ใช่อุปกรณ์การแพทย์และไม่วินิจฉัย/รักษาโรค (SPEC N2) — ใช้ข้อความจาก `store-metadata/listing.*.md`
   - **ผลลัพธ์ →** App content ทุกหัวข้อเป็นสีเขียว
 
 - [ ] **75. Content rating / Age rating**
+  - **คำตอบทีละข้อ:** `store-metadata/play-declarations.md` ข้อ 3
   - **Google Play:** App content → Content rating → Start questionnaire → อีเมลติดต่อ → หมวดแอปที่ไม่ใช่เกม → ตอบตามจริง: ไม่มีความรุนแรง เนื้อหาทางเพศ การพนัน ยาเสพติด ไม่มีการแชร์เนื้อหาระหว่างผู้ใช้ ไม่แชร์ตำแหน่ง มีการซื้อสินค้าดิจิทัล = ใช่
   - **App Store:** App Information → **Age Rating** → Edit → ตอบตามจริงแบบเดียวกัน ถ้ามีคำถามเรื่องข้อมูลทางการแพทย์หรือหัวข้อสุขภาพ/เวลเนส ให้ตอบตามจริง (แอปมีการคำนวณแคลอรี่/สารอาหารแบบประมาณพร้อมคำเตือน ไม่ใช่การรักษา) · Unrestricted web access = No (ลิงก์ภายนอกเปิดเฉพาะหน้าที่กำหนด)
   - **ผลลัพธ์ →** ได้เรตติ้ง (คาดว่าเป็นเรตสำหรับทุกวัย)
 
 - [ ] **76. App Review Information / App access**
-  - **App Store:** หน้าเวอร์ชัน → **App Review Information** → Sign-in required = Yes → User name/Password = บัญชี Google จากข้อ 71 → Notes = ข้อความ App Review Notes จาก `store-metadata/` (อธิบายว่าแอปทำงานแบบบัญชีผู้ใช้ ซิงก์ข้ามอุปกรณ์ สิทธิ์สมาชิกผูกกับบัญชี ต้องล็อกอินก่อนเริ่มทดลอง และใช้ Sign in with Apple ได้ — SPEC N1) + ช่องทางติดต่อ
-  - **Google Play:** App content → **App access** → All or some functionality is restricted → Add instructions → ชื่อบัญชี/รหัสผ่านจากข้อ 71 + ขั้นตอนเดียวกัน
+  - **App Store:** หน้าเวอร์ชัน → **App Review Information** → Sign-in required = Yes → User name/Password = บัญชี Google จากข้อ 71 → Notes = ข้อความ App Review Notes จาก `store-metadata/review-notes.md` (อธิบายว่าแอปทำงานแบบบัญชีผู้ใช้ ซิงก์ข้ามอุปกรณ์ สิทธิ์สมาชิกผูกกับบัญชี ต้องล็อกอินก่อนเริ่มทดลอง และใช้ Sign in with Apple ได้ — SPEC N1) + ช่องทางติดต่อ
+  - **Google Play:** App content → **App access** → All or some functionality is restricted → Add instructions → ชื่อบัญชี/รหัสผ่านจากข้อ 71 + ขั้นตอนเดียวกัน (ข้อความสำเร็จรูปใน `store-metadata/review-notes.md` ข้อ 2) · placeholder ทั้งหมดใน `store-metadata/` (เช่น `<REVIEW_GOOGLE_EMAIL>`, `<DELETE_ACCOUNT_URL>`, `<CONTACT_EMAIL>`) ต้องแทนด้วยค่าจริงก่อนวาง — รายการรวมอยู่ใน `store-metadata/README.md` เมื่อไฟล์นั้นถูกเขียนเสร็จ
   - **ผลลัพธ์ →** ข้อมูลสำหรับผู้รีวิวครบ
 
 - [ ] **77. ข้อความหน้าร้าน (ไทย + อังกฤษ)**
   - **ที่ไหน:** App Store Connect → หน้าเวอร์ชัน (Promotional Text, Description, Keywords, Support URL, Marketing URL) + App Information (Name, Subtitle) · Play Console → Grow users → Store presence → **Main store listing** (App name, Short description, Full description) + Store settings (Category = Health & Fitness, อีเมลติดต่อ)
-  - **ใส่ค่า:** คัดลอกจาก `store-metadata/` ตามชื่อที่เลือกในข้อ 1 (ต้องมี disclaimer "ไม่ใช่คำแนะนำทางการแพทย์" ในคำอธิบาย — SPEC N1/N2) · Support URL ต้องเป็นหน้าเว็บที่ติดต่อคุณได้
+  - **ใส่ค่า:** คัดลอกจาก `store-metadata/listing.th.md` และ `store-metadata/listing.en.md` (คัดลอกเฉพาะข้อความในกล่องโค้ด แล้วแทน placeholder ในวงเล็บมุมให้ครบ) ตามชื่อที่เลือกในข้อ 1 (ต้องมี disclaimer "ไม่ใช่คำแนะนำทางการแพทย์" ในคำอธิบาย — SPEC N1/N2) · Support URL ต้องเป็นหน้าเว็บที่ติดต่อคุณได้
   - **ผลลัพธ์ →** หน้าร้านทั้งสองภาษา
 
 - [ ] **78. ไอคอนหน้าร้าน Google Play และ feature graphic**
   - **คำสั่ง:** `python3 -c "from PIL import Image; Image.open('assets/icon.png').resize((512, 512), Image.LANCZOS).save('play-icon-512.png')"` → อัปโหลดเป็น App icon (512×512) แล้วลบไฟล์ออกจาก repo
-  - **ใส่ค่า:** Feature graphic 1024×500 ต้องออกแบบเอง (ใช้ภาษาภาพ DS: พื้นดำ แสงเรืองสีหลัก) — App Store ใช้ `assets/icon.png` จาก build อัตโนมัติ
+  - **ใส่ค่า:** Feature graphic 1024×500 ต้องออกแบบเอง (brief ใน `store-metadata/screenshots.md` ข้อ 5) (ใช้ภาษาภาพ DS: พื้นดำ แสงเรืองสีหลัก) — App Store ใช้ `assets/icon.png` จาก build อัตโนมัติ
   - **ผลลัพธ์ →** กราฟิกหน้าร้าน Play ครบ
 
 - [ ] **79. ภาพหน้าจอสโตร์**
   - **ทำไม:** ภาพใน `docs/screenshots/` มาจากพรีวิวเว็บ (D43) ฟอนต์/สัดส่วนต่างจากเครื่องจริง ใช้เป็นแนวทางเท่านั้น ห้ามส่งสโตร์
-  - **ที่ไหน/คำสั่ง:** ใช้ไอเดียภาพ 5 รูปใน `store-metadata/` (ธีมตามหมวด DS ทั้งไทยและอังกฤษ) ถ่ายจาก build จริง:
+  - **ที่ไหน/คำสั่ง:** ใช้ไอเดียภาพ 5 รูปใน `store-metadata/screenshots.md` (ธีมตามหมวด DS ทั้งไทยและอังกฤษ พร้อมขนาดที่สโตร์ต้องการ) ถ่ายจาก build จริง:
     - iOS Simulator (build `development-simulator`) ขนาด iPhone 6.9 นิ้ว (เช่น iPhone 16 Pro Max) → `xcrun simctl io booted screenshot shot.png` — แอปตั้ง `supportsTablet: false` จึงไม่ต้องมีภาพ iPad
     - Android emulator/เครื่องจริง → `adb exec-out screencap -p > shot.png` (ตามขนาด/อัตราส่วนที่ Play Console แจ้งในหน้าอัปโหลด อย่างน้อย 2 ภาพ)
     - จะใช้โหมด mock เพื่อจัดฉากข้อมูลก็ได้ (`.env`: `EXPO_PUBLIC_USE_MOCKS=1`, `EXPO_PUBLIC_MOCK_SCENARIO=lifetime` แล้ว `npm start`) แต่ภาพ Paywall ต้องถ่ายจากโหมดจริง เพราะราคาในโหมด mock (฿19.00 / ฿99.00) อาจไม่ตรงกับราคาที่ตั้งจริงในข้อ 58
@@ -755,7 +773,7 @@
 
 - [ ] **80. ไล่เช็กลิสต์ก่อนส่ง**
   - **ที่ไหน:** `docs/RELEASE_CHECKLIST.md` — ทำครบทุกข้อ และตรวจว่าตารางในข้อ 58 กรอกครบแล้ว
-  - **ตรวจซ้ำสั้นๆ:** EAS production env มี `EXPO_PUBLIC_USE_MOCKS=0` · `npm run check` ผ่าน · ทดลองฟรีและราคาบน Paywall ตรงกับที่ตั้งในสโตร์ · ปุ่ม Restore / จัดการสมาชิก / Privacy / Terms / แหล่งอ้างอิง / ลบบัญชี ใช้ได้ · ป้าย template ในหน้ากฎหมายถูกเอาออกแล้ว (ข้อ 12)
+  - **ตรวจซ้ำสั้นๆ:** EAS production env มี `EXPO_PUBLIC_USE_MOCKS=0` · `npm run check` ผ่าน และ `RELEASE=1 npm test` ผ่าน (ยืนยันว่าไม่เหลือ placeholder กฎหมาย — ข้อ 12; ป้ายเทมเพลตในหน้ากฎหมายต้องหายเองแล้ว) · ทุก migration ใน `supabase/migrations/` ถูก push แล้ว (ข้อ 17) และทั้งสองฟังก์ชัน deploy แล้ว (ข้อ 18) · ทดลองฟรีและราคาบน Paywall ตรงกับที่ตั้งในสโตร์ · เส้นทาง "Get lifetime" ผ่าน (ข้อ 64) · privacy manifest ประกาศ 5 ประเภทข้อมูลตรงกับป้ายสโตร์ (ข้อ 72) · ปุ่ม Restore / จัดการสมาชิก / Privacy / Terms / แหล่งอ้างอิง / ลบบัญชี ใช้ได้
   - **ผลลัพธ์ →** พร้อมส่ง
 
 - [ ] **81. ส่งรีวิว**
@@ -769,18 +787,18 @@
 
 - [ ] **82. ต่ออายุ Apple OAuth client secret ก่อนหมดอายุ (ทุก ≤ 6 เดือน)** — ทำข้อ 27 ใหม่แล้ววางใน Supabase (ข้อ 28) ถ้าลืม Sign in with Apple บน Android จะใช้ไม่ได้ทันที (iOS ไม่กระทบ)
 - [ ] **83. ต่ออายุ Apple Developer Program รายปี** — ถ้าหมด แอปจะถูกถอดจาก App Store
-- [ ] **84. เฝ้าดูการทำงานของเซิร์ฟเวอร์** — RevenueCat → Integrations → Webhooks (ดูการส่งที่ล้มเหลว), Supabase → Edge Functions → Logs, Supabase → Authentication → Users ถ้า webhook ล้ม การซิงก์ของผู้ใช้จะค้างที่ "รอยืนยันสมาชิก" (D39) แต่ข้อมูลในเครื่องไม่หาย
-- [ ] **85. เมื่อผู้พัฒนาแก้โค้ดฝั่งเซิร์ฟเวอร์** — migration ใหม่ใน `supabase/migrations/` → `npm run supabase:verify` แล้ว `npx supabase db push` · แก้ `supabase/functions/*` หรือ `src/domain/entitlement/machine.ts` (ผู้พัฒนารัน `node scripts/sync-shared.js` แล้ว) → deploy ฟังก์ชันใหม่ตามคำสั่งในข้อ 18 · แก้ JS/ค่า `EXPO_PUBLIC_*` → build และ submit ใหม่ (ข้อ 66–67)
+- [ ] **84. เฝ้าดูการทำงานของเซิร์ฟเวอร์** — RevenueCat → Integrations → Webhooks (ดูการส่งที่ล้มเหลว), Supabase → Edge Functions → Logs, Supabase → Authentication → Users ถ้า webhook ล้ม การซิงก์ของผู้ใช้จะค้างที่ "รอยืนยันสถานะสมาชิก" (`Waiting for your membership to be confirmed`, D39) แต่ข้อมูลในเครื่องไม่หาย
+- [ ] **85. เมื่อผู้พัฒนาแก้โค้ดฝั่งเซิร์ฟเวอร์** — migration ใหม่ใน `supabase/migrations/` (ไฟล์ใหม่ทุกไฟล์ต้อง push — ข้อ 17) → `npm run supabase:verify` แล้ว `npx supabase db push` · แก้ `supabase/functions/*` หรือ `src/domain/entitlement/machine.ts` (ผู้พัฒนารัน `node scripts/sync-shared.js` แล้ว) → deploy ฟังก์ชันใหม่ตามคำสั่งในข้อ 18 · แก้ JS/ค่า `EXPO_PUBLIC_*` → build และ submit ใหม่ (ข้อ 66–67)
 
 ---
 
 ## สิ่งที่โค้ดทำให้แล้ว ไม่ต้องทำเอง
 
 - **ลำดับซื้อที่ถูกต้อง (B4):** บังคับล็อกอินก่อนซื้อ 2 ชั้น (`assertCanPurchase`), เรียก `Purchases.logIn(<id ผู้ใช้ Supabase>)` ให้เอง, หลังล็อกอินกลับ Paywall พร้อมแพ็กเกจเดิม (D05), Restore ต้องล็อกอินก่อน (D04)
-- **Paywall ตามกฎสโตร์ (B5–B6, J2):** แสดงราคาจากสโตร์ผ่าน RevenueCat ไม่ฮาร์ดโค้ด, ตรวจ eligibility ทดลองฟรีก่อนโฆษณา, ข้อความต่ออายุอัตโนมัติ/ยกเลิก/ซื้อขาดไม่มีทดลอง, ลิงก์จัดการสมาชิกของทั้งสองสโตร์ (`STORE_SUBSCRIPTION_URLS`)
+- **Paywall ตามกฎสโตร์ (B5–B6, J2):** หัวข้อนำด้วยประโยชน์ของแอป (ไม่ใช้คำว่า "ฟรี" เป็นหัวข้อ) ยอดที่เรียกเก็บจริงเด่นเหนือปุ่มซื้อ ("Start free trial, then {price}/month"), แสดงราคาจากสโตร์ผ่าน RevenueCat ไม่ฮาร์ดโค้ด, เส้นทางอัปเกรดเป็นซื้อขาดจาก Settings ("Get lifetime") พร้อมคำเตือนว่าไม่ยกเลิกรายเดือนให้, ตรวจ eligibility ทดลองฟรีก่อนโฆษณา, ข้อความต่ออายุอัตโนมัติ/ยกเลิก/ซื้อขาดไม่มีทดลอง, ลิงก์จัดการสมาชิกของทั้งสองสโตร์ (`STORE_SUBSCRIPTION_URLS`)
 - **สถานะสิทธิ์ (B8–B9):** state machine ตัวเดียวทั้งแอปและ webhook (`src/domain/entitlement/machine.ts` + สำเนา `supabase/functions/_shared/entitlement-machine.ts`), แคชออฟไลน์ + ผ่อนผัน 48 ชม. (D06), ไม่มีตัวนับทดลองในแอป
-- **ฝั่งเซิร์ฟเวอร์:** SQL migration + RLS + last-write-wins + จำกัดซิงก์ด้วย `has_sync_access` (ตรวจด้วย `npm run supabase:verify`), webhook ตรวจ Authorization / กันเหตุการณ์ซ้ำ / ข้ามเหตุการณ์เก่า / รองรับ TRANSFER, `delete-account` เพิกถอนโทเค็น Apple + ลบลูกค้า RevenueCat (ถ้ามีคีย์) + ลบข้อมูลทุกตารางแบบ cascade, `supabase/config.toml` ตั้ง `verify_jwt` ของทั้งสองฟังก์ชันไว้แล้ว
-- **Native config ใน `app.config.ts`:** bundle id/package จาก `APP_BUNDLE_ID`, Sign in with Apple capability (`usesAppleSignIn`), URL scheme ของ Google, `scheme: 'fitnese'` สำหรับ redirect, `ITSAppUsesNonExemptEncryption: false` (ไม่ต้องตอบ export compliance), privacy manifest แบบไม่ติดตาม, ตัดสิทธิ์ Android ที่ไม่ใช้, ไม่ขอ Face ID (D46), ชื่อแอปแยกภาษาไทย/อังกฤษ
+- **ฝั่งเซิร์ฟเวอร์:** SQL migration + RLS + last-write-wins + จำกัดซิงก์ด้วย `has_sync_access` (ตรวจด้วย `npm run supabase:verify`), webhook ตรวจ Authorization / กันเหตุการณ์ซ้ำ / ข้ามเหตุการณ์เก่า / รองรับ TRANSFER, `delete-account` เพิกถอนโทเค็น Apple (เฉพาะลบจาก iPhone/iPad — Apple บน Android ทำไม่ได้ D40) + ลบลูกค้า RevenueCat (ถ้ามีคีย์) + ลบข้อมูลทุกตารางแบบ cascade, `supabase/config.toml` ตั้ง `verify_jwt` ของทั้งสองฟังก์ชันไว้แล้ว (`revenuecat-webhook` = false, `delete-account` = true)
+- **Native config ใน `app.config.ts`:** bundle id/package จาก `APP_BUNDLE_ID`, Sign in with Apple capability (`usesAppleSignIn`), URL scheme ของ Google, `scheme: 'fitnese'` สำหรับ redirect, `ITSAppUsesNonExemptEncryption: false` (ไม่ต้องตอบ export compliance), privacy manifest แบบไม่ติดตามและประกาศประเภทข้อมูลที่เก็บ (ตรวจในข้อ 72 ว่ารวมแล้ว), ตัดสิทธิ์ Android ที่ไม่ใช้, ไม่ขอ Face ID (D46), ชื่อแอปแยกภาษาไทย/อังกฤษ
 - **โหมด mock:** รันและทดสอบได้ครบโดยไม่มีคีย์ (`EXPO_PUBLIC_USE_MOCKS=1` + `EXPO_PUBLIC_MOCK_SCENARIO`) และ release build จะไม่แอบใช้ mock เมื่อคีย์ขาด
 - **เนื้อหาและคุณภาพ:** i18n ไทย/อังกฤษครบ, contrast WCAG AA ทุกสีหลัก (`npm run contrast`), ปุ่ม ≥ 48, เทมเพลต Privacy/Terms + หน้าแหล่งอ้างอิง (H6) + สคริปต์ `npm run legal:export`, ไอคอน/splash (`scripts/generate-icons.py`), โปรไฟล์ build `development` / `development-simulator` / `preview` / `production` ใน `eas.json`
-- **เทสต์อัตโนมัติ:** `npm run check` = typecheck + lint + jest (34 ชุด / 487 ข้อ) ครอบคลุมสูตร, state machine ทุกสถานะ, Paywall, ลำดับบัญชี, ซิงก์, webhook, ลบบัญชี, schema ตรงกันระหว่างเครื่องกับคลาวด์
+- **เทสต์อัตโนมัติ:** `npm run check` = typecheck + lint + jest (จำนวนชุด/ข้อดูที่บรรทัดสุดท้ายของผลลัพธ์) ครอบคลุมสูตร, state machine ทุกสถานะ, Paywall, ลำดับบัญชี, ซิงก์, webhook, ลบบัญชี, schema ตรงกันระหว่างเครื่องกับคลาวด์

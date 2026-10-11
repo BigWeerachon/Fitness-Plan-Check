@@ -2,7 +2,7 @@
 
 > Written in English because App Review and Play review read English. Replace every `<PLACEHOLDER>` before submitting (list in [README.md](README.md)). Where to paste: App Store Connect → version page → **App Review Information**; Play Console → Policy and programs → App content → **App access**. Background: SPEC N1, HUMAN_TASKS items 71 and 76.
 >
-> Everything below matches the code of this release, including the changes being merged for it (paywall upgrade mode, "Get lifetime" row, disclaimer with "Sources" link on result screens, "fix payment" prompt, "you were not charged" message when offline).
+> Checked against commit `c7f2171` (paywall upgrade mode, "Get lifetime" row, "fix payment" prompt and the "you were not charged" message are in that commit). The disclaimer sentence below lists only the screens that have the disclaimer in that commit; if more screens get it (and a "Sources" link) before release, extend the sentence using the snippet in [README.md](README.md) "Release scope" — do not claim screens that do not have it. Re-check every menu path on the real build before pasting.
 
 ## 1. App Store Connect → App Review Information
 
@@ -14,7 +14,7 @@
 | Contact first / last name | `<CONTACT_NAME>` |
 | Contact phone | `<CONTACT_PHONE>` |
 | Contact email | `<CONTACT_EMAIL>` |
-| Notes | The block below (count 3787; App Store Connect shows its own limit for this field — about 4000 characters) |
+| Notes | The block below (count 3798; App Store Connect shows its own limit for this field — about 4000 characters) |
 | Attachment (optional, recommended) | A short screen recording of: setup → paywall → sign-in → back to paywall → sandbox purchase → Today → Settings > Account > Delete account and data |
 
 ### Notes — paste this block
@@ -40,12 +40,12 @@ WHERE THINGS ARE
 - Paywall: after setup and whenever there is no active membership (features locked, data kept). With an active Monthly plan or trial: Settings > Membership > Get lifetime opens the paywall in upgrade mode, warning that the monthly subscription/trial is not cancelled automatically.
 - Restore Purchases: on the paywall, in Settings > Membership, and in the Account screen (gear icon on the paywall). Restore asks the user to sign in first because purchases belong to the account.
 - Manage/cancel subscription: Settings > Membership > Manage subscription (opens App Store subscriptions); also on the paywall and in Account.
-- Delete account: Settings > Account > Delete account and data. Without a membership: paywall gear icon > Account & settings > Delete account and data. It explains that deleting the account does not cancel the App Store subscription and links to subscription settings. For Sign in with Apple users, Apple asks for one more confirmation so the server can revoke the Apple token.
+- Delete account: Settings > Account > Delete account and data. Without a membership: paywall gear icon (Account & settings) > Information > Delete account and data. It explains that deleting the account does not cancel the App Store subscription and links to subscription settings. For Sign in with Apple users, Apple asks for one more confirmation so the server can revoke the Apple token.
 - Privacy Policy and Terms of Use: on the paywall, in Settings > About and in Account.
 
 HEALTH INFORMATION (Guideline 1.4.1)
-- BMR/TDEE, calorie and macro targets, workout calories and estimated 1RM are estimates. A "not medical advice" disclaimer is shown on Today, Stats, the strength chart, Profile & targets, the session summary and History, with a "Sources" link to the References screen.
-- References (also in Settings > About and on the paywall) cite and link Mifflin et al. 1990 (BMR), ISSN protein position stand 2017, 2024 Adult Compendium of Physical Activities (MET) and the Epley 1RM formula.
+- BMR/TDEE, calorie and macro targets, workout calories and estimated 1RM are estimates. A "not medical advice" disclaimer is shown on Stats, Profile & targets, the session summary, History detail, Settings and the References screen.
+- References (Settings > About > References, Account > References, and the paywall footer) cite and link Mifflin et al. 1990 (BMR), ISSN protein position stand 2017, 2024 Adult Compendium of Physical Activities (MET) and the Epley 1RM formula.
 - Fitnese is not a medical device and does not diagnose or treat any condition. Weight-loss targets are not shown to users under 18.
 
 PRIVACY

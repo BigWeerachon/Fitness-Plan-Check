@@ -1,6 +1,8 @@
 # ป้ายความเป็นส่วนตัว: App Store Privacy Nutrition Label + Google Play Data safety
 
-> คำตอบในไฟล์นี้ตรวจจากโค้ดจริง (รายการไฟล์ในข้อ 1) และต้องตรงกับ **privacy manifest ของ iOS ใน `app.config.ts` หลังชุดแก้โค้ดของรุ่นนี้** ซึ่งประกาศข้อมูล 5 ประเภท: อีเมล, User ID, Fitness, Health (ค่าร่างกาย), Purchase History — ทุกประเภทเชื่อมกับตัวผู้ใช้ ไม่ใช้ติดตาม วัตถุประสงค์ App Functionality (SPEC N1, N2, B13)
+> คำตอบในไฟล์นี้ตรวจจากโค้ดที่ commit `c7f2171` (รายการไฟล์ในข้อ 1) และต้องตรงกับ **privacy manifest ของ iOS ใน `app.config.ts`** ซึ่งต้องประกาศข้อมูล 5 ประเภท: อีเมล, User ID, Fitness, Health (ค่าร่างกาย), Purchase History — ทุกประเภทเชื่อมกับตัวผู้ใช้ ไม่ใช้ติดตาม วัตถุประสงค์ App Functionality (SPEC N1, N2, B13)
+>
+> **สถานะที่ตรวจล่าสุด:** ที่ commit `c7f2171` `ios.privacyManifests.NSPrivacyCollectedDataTypes` ใน `app.config.ts` ยังเป็น `[]` — **ยังไม่ตรงกับคำตอบ "Yes, we collect data" ในไฟล์นี้** ต้องให้ผู้พัฒนาแก้ให้ครบ 5 ประเภท (ข้อ 3.5) ก่อน build ส่งรีวิว ตรวจด้วย `npx expo config --type introspect` (ดู [docs/RELEASE_CHECKLIST.md](../docs/RELEASE_CHECKLIST.md) หัวข้อ privacy manifest)
 >
 > ไฟล์นี้ละเอียดกว่าและ **ใช้แทนตารางในหัวข้อ "ส่วน R" ของ [HUMAN_TASKS.md](../docs/HUMAN_TASKS.md)** ในจุดที่ต่างกัน (เพศ/อายุ ฝั่ง Apple — ดูข้อ 3.2)
 >
@@ -13,9 +15,9 @@
 | ข้อมูล | ส่งไปไหน | ที่มาในโค้ด |
 |---|---|---|
 | อีเมล (รวมอีเมลซ่อนของ Apple) และ id ผู้ใช้ | Supabase Auth ตอนล็อกอิน | `src/services/auth/supabaseAuth.ts` — Apple ขอเฉพาะ scope `EMAIL` (ไม่ขอชื่อ), Google ใช้ ID token แลกเซสชัน (`signInWithIdToken`) |
-| id ผู้ใช้ (= app user id ของ RevenueCat) + ประวัติการซื้อ/สถานะสมาชิก | RevenueCat (และ App Store / Google Play ที่ดำเนินการชำระเงินเอง) | `src/services/purchases/revenueCat.ts` เรียกเฉพาะ `configure`, `logIn`, `getOfferings`, `checkTrialOrIntroductoryPriceEligibility`, `purchasePackage`, `restorePurchases`, `getCustomerInfo`, `logOut` — **ไม่มี** `setEmail`/`setAttributes`/`collectDeviceIdentifiers` |
+| id ผู้ใช้ (= app user id ของ RevenueCat) + ประวัติการซื้อ/สถานะสมาชิก | RevenueCat (และ App Store / Google Play ที่ดำเนินการชำระเงินเอง) | `src/services/purchases/revenueCat.ts` เรียกเฉพาะ `configure`, `logIn`, `logOut`, `getOfferings`, `checkTrialOrIntroductoryPriceEligibility`, `purchasePackage`, `restorePurchases`, `getCustomerInfo` และ listener ของ customerInfo — **ไม่มี** `setEmail`/`setAttributes`/`collectDeviceIdentifiers` |
 | สถานะสิทธิ์ (state, product_id, period_type, วันหมดอายุ, will_renew, billing issue) | ตาราง `user_entitlements` บน Supabase (webhook ของ RevenueCat เขียน) | `supabase/migrations/20261009000000_init.sql`, `supabase/functions/revenuecat-webhook/` |
-| บันทึกกันเหตุการณ์ webhook ซ้ำ (id เหตุการณ์, ชนิด, app_user_id, เวลา) — ไม่เก็บ payload เต็ม | ตาราง `revenuecat_events` — ลบอัตโนมัติหลัง 90 วัน (ชุดแก้รุ่นนี้) และลบทันทีเมื่อลบบัญชี | migration เดียวกัน, `supabase/functions/delete-account/index.ts` |
+| บันทึกกันเหตุการณ์ webhook ซ้ำ (id เหตุการณ์, ชนิด, app_user_id, เวลา) — ไม่เก็บ payload เต็ม | ตาราง `revenuecat_events` — ลบทันทีเมื่อลบบัญชี ที่ commit `c7f2171` **ยังไม่มีการลบอัตโนมัติ** (ไม่มี migration/cron ที่ลบแถวเก่า) ถ้าผู้พัฒนาเพิ่มการลบอัตโนมัติ (เช่น เก่ากว่า 90 วัน) ก่อนปล่อย ให้แก้แถวนี้และหัวข้อ "การเก็บรักษาและการลบข้อมูล" ใน `src/legal/content.ts` ให้ตรงกัน | `supabase/migrations/20261009000000_init.sql`, `supabase/functions/delete-account/index.ts` |
 | โปรไฟล์: เพศ, อายุ (ตัวเลข ไม่เก็บวันเกิด D16), ส่วนสูง, น้ำหนัก, ระดับกิจกรรม, เป้าหมาย, หน่วย, ค่าตั้งเป้า (% / โปรตีน / MET), ตั้งค่าตัวจับเวลาพัก | ตาราง `profile` (ซิงก์) | `src/db/schema.ts` |
 | การฝึก: โปรแกรม, routine, ท่าที่สร้างเอง (ชื่อ/กล้ามเนื้อ/อุปกรณ์/โน้ต), ตารางสัปดาห์, override รายวัน, เซสชัน (วันที่ เวลา ความหนัก แคลอรี่ น้ำหนักตัว ณ วันนั้น), เซ็ต (น้ำหนัก ครั้ง เสร็จหรือไม่), คำแนะนำ progression | ตาราง `custom_exercise`, `program`, `routine`, `routine_exercise`, `week_plan`, `day_override`, `workout_session`, `session_exercise`, `session_set` (ซิงก์) | `src/db/schema.ts` → `SYNCED_TABLES` |
 | บันทึกรายวัน: แคลอรี่ที่ใช้ (กรอกเอง), แคลอรี่ที่กิน, น้ำหนักตัว | ตาราง `daily_log` (ซิงก์) | `src/db/schema.ts` |
@@ -26,12 +28,13 @@
 
 **การส่งข้อมูล:** Supabase และ RevenueCat ใช้ HTTPS ทั้งหมด → เข้ารหัสระหว่างส่ง (encrypted in transit) = ใช่ · ฝั่งคลาวด์เปิด RLS ให้แต่ละบัญชีอ่านได้เฉพาะข้อมูลของตัวเอง
 
-**การลบ:** ในแอป ตั้งค่า → บัญชี → ลบบัญชีและข้อมูล (และจากหน้า "บัญชีและการตั้งค่า" ที่เข้าได้จาก Paywall แม้ไม่มีสิทธิ์) → Edge Function `delete-account` ลบผู้ใช้ใน Supabase (ทุกตารางลบตามแบบ cascade), ลบ `revenuecat_events` ของผู้ใช้, ลบลูกค้าใน RevenueCat (ถ้าตั้ง `REVENUECAT_SECRET_API_KEY` — HUMAN_TASKS ข้อ 63), เพิกถอนโทเค็น Sign in with Apple (เมื่อลบจาก iPhone/iPad) และลบข้อมูลในเครื่อง (D52) — หมายเหตุ: การ **ล็อกเอาต์** ไม่ลบข้อมูลในเครื่อง (D12)
+**การลบ:** ในแอป แท็บตั้งค่า → ส่วน "บัญชี" → ลบบัญชีและข้อมูล (และจากไอคอนเฟืองบน Paywall → "บัญชีและการตั้งค่า" → ส่วน "ข้อมูล" → ลบบัญชีและข้อมูล ซึ่งเข้าได้แม้ไม่มีสิทธิ์) → Edge Function `delete-account` ลบผู้ใช้ใน Supabase (ทุกตารางลบตามแบบ cascade), ลบ `revenuecat_events` ของผู้ใช้, ลบลูกค้าใน RevenueCat (ถ้าตั้ง `REVENUECAT_SECRET_API_KEY` — HUMAN_TASKS ข้อ 63), เพิกถอนโทเค็น Sign in with Apple (เมื่อลบจาก iPhone/iPad) และลบข้อมูลในเครื่อง (D52) — หมายเหตุ: การ **ล็อกเอาต์** ไม่ลบข้อมูลในเครื่อง (D12)
 
 ## 2. [ต้องตัดสินใจก่อนส่ง] จุดที่ต้องตรวจในระบบจริง
 
 1. **ชื่อและรูปโปรไฟล์จาก Google ที่ Supabase อาจเก็บเอง**
-   - แอปไม่ขอและไม่ใช้ชื่อ แต่ ID token ของ Google ปกติมี claim `name` และ `picture` และ Supabase Auth มักคัดลอก claim ของผู้ให้บริการไปเก็บใน `auth.users.raw_user_meta_data` / `auth.identities.identity_data` เองโดยอัตโนมัติ (ผู้ใช้ Apple ไม่มี เพราะแอปไม่ขอชื่อจาก Apple)
+   - แอปไม่ขอและไม่ใช้ชื่อ แต่ ID token ของ Google ปกติมี claim `name` และ `picture` และ Supabase Auth มักคัดลอก claim ของผู้ให้บริการไปเก็บใน `auth.users.raw_user_meta_data` / `auth.identities.identity_data` เองโดยอัตโนมัติ
+   - Apple บน iPhone/iPad: แอปขอเฉพาะ scope `EMAIL` (`src/services/auth/supabaseAuth.ts` บรรทัด `requestedScopes`) จึงไม่ได้ชื่อ — แต่ **Apple บน Android ใช้ OAuth บนเว็บของ Supabase** (`signInWithAppleWeb` เรียก `signInWithOAuth({ provider: 'apple' })` โดยไม่ระบุ `scopes`) ซึ่งตามค่าเริ่มต้นของ Supabase อาจขอ scope `name email` ทำให้ Apple ส่งชื่อมาในการล็อกอินครั้งแรก — **ต้องตรวจในระบบจริงด้วยบัญชี Apple บน Android** และถ้าพบชื่อ ให้ผู้พัฒนาเพิ่ม `scopes: 'email'` ใน `signInWithOAuth` (ทางเลือก A)
    - **ตรวจ:** Supabase Dashboard → Authentication → Users → เปิดผู้ใช้ที่ล็อกอินด้วย Google → ดู Raw user meta data (ต้องตรวจในระบบจริง)
    - **ถ้าพบชื่อ/รูป:** เลือกทางใดทางหนึ่ง (A) ให้ผู้พัฒนาตัดค่าเหล่านี้ทิ้งฝั่งเซิร์ฟเวอร์ (ตรงหลักข้อมูลขั้นต่ำ B13 — ไม่ต้องแก้ป้าย) หรือ (B) ประกาศเพิ่ม: Apple = Contact Info → **Name** (App Functionality, Linked, ไม่ติดตาม) และให้ผู้พัฒนาเพิ่ม `NSPrivacyCollectedDataTypeName` ใน manifest ให้ตรงกัน, Google = Personal info → **Name** — **ห้ามปล่อยให้ป้ายกับข้อมูลจริงไม่ตรงกัน**
 2. **วัตถุประสงค์ของ Purchase History:** คำตอบด้านล่างคือ App Functionality อย่างเดียว ถ้าเจ้าของจะใช้แดชบอร์ด/Charts ของ RevenueCat วิเคราะห์ยอดขายหรืออัตราแปลงจากทดลองเป็นจ่าย ให้พิจารณาเพิ่ม **Analytics** (Apple) / **Analytics** (Google) และแจ้งผู้พัฒนาให้เพิ่ม purpose เดียวกันใน manifest
@@ -72,7 +75,7 @@
 - **Data Linked to You:** Contact Info (Email Address), Health & Fitness (Health, Fitness), Purchases (Purchase History), Identifiers (User ID)
 - **Data Not Linked to You:** ไม่มี
 
-### 3.5 Privacy manifest ที่ต้องตรงกัน (`app.config.ts` → `ios.privacyManifests` หลังชุดแก้รุ่นนี้)
+### 3.5 Privacy manifest ที่ต้องตรงกัน (`app.config.ts` → `ios.privacyManifests` — ที่ commit `c7f2171` ยังไม่ครบ)
 
 | ค่า | ต้องเป็น |
 |---|---|
@@ -80,7 +83,7 @@
 | `NSPrivacyTrackingDomains` | `[]` |
 | `NSPrivacyCollectedDataTypes` | 5 รายการตามตาราง 3.2 แต่ละรายการ `NSPrivacyCollectedDataTypeLinked: true`, `NSPrivacyCollectedDataTypeTracking: false`, `NSPrivacyCollectedDataTypePurposes: [NSPrivacyCollectedDataTypePurposeAppFunctionality]` |
 
-ถ้าเปิด `app.config.ts` แล้วยังเห็น `NSPrivacyCollectedDataTypes: []` แปลว่าชุดแก้ยังไม่ถูกรวม — **อย่าส่งรีวิว** จนกว่าจะรวมแล้ว
+ถ้าเปิด `app.config.ts` แล้วยังเห็น `NSPrivacyCollectedDataTypes: []` แปลว่ายังไม่ได้แก้ — **อย่าส่งรีวิว** จนกว่าจะแก้แล้ว (ป้ายใน App Store Connect, manifest ของแอป และ Data safety ต้องตรงกันทั้งสามที่)
 
 ## 4. Google Play Console → App content → Data safety
 

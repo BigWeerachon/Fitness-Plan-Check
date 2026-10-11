@@ -3,7 +3,7 @@
 > Temporary app name: **Fitnese** (SPEC A, D03). If the owner picks another name from [app-names.md](app-names.md), replace "Fitnese" in every block below and recount.
 > Copy **only the text inside each code block**. Placeholders in angle brackets (`<TERMS_URL>` …) must be replaced before submitting — see [README.md](README.md).
 >
-> **How counts were made:** every number below was computed by script from the exact block text: Unicode code points, including spaces, punctuation and line breaks. Store consoles show their own counter; if it disagrees, the console wins.
+> **How counts were made:** `node store-metadata/check-limits.js` counts the exact text of every block below (Unicode code points, including spaces, punctuation and line breaks) and fails if a limit is exceeded or a printed number is stale. Run it again after every edit and update the numbers in this file. Store consoles show their own counter; if it disagrees, the console wins. The URL placeholders (`<TERMS_URL>`, `<PRIVACY_URL>`) are counted at their placeholder length; the script also checks the descriptions with 80-character URLs.
 >
 > **Honesty rules used:** no prices in the text (prices come from the store through RevenueCat and differ by country), the free trial is described as "for eligible users", sign-in before the trial is stated, and the "not a medical device" disclaimer is included (SPEC N1, N2). The App Store text does not mention Android or Google Play (App Review Guideline 2.3.10); the Play text does not mention the App Store.
 
@@ -15,11 +15,11 @@
 | App name with descriptor (optional) | App Store / Play | 30 / 30 | 24 |
 | Subtitle | App Store | 30 | 29 |
 | Promotional text | App Store | 170 | 147 |
-| Description | App Store | 4000 | 3814 |
+| Description | App Store | 4000 | 3793 |
 | Keywords | App Store | 100 | 98 characters / 98 bytes |
 | What's New (1.0) | App Store | 4000 | 315 |
 | Short description | Google Play | 80 | 65 |
-| Full description | Google Play | 4000 | 3712 |
+| Full description | Google Play | 4000 | 3691 |
 | Release notes (1.0) | Google Play | 500 | 315 (same text as What's New) |
 
 ---
@@ -58,7 +58,7 @@ Comma-separated, no spaces after commas. Words already in the name or subtitle (
 strength,lifting,weightlifting,progressive,overload,ppl,split,routine,tracker,1rm,fitness,exercise
 ```
 
-### Description — limit 4000 · count 3814
+### Description — limit 4000 · count 3793
 <!-- id:as_desc -->
 ```text
 Fitnese is a strength-training planner and workout log: open the app, see today's workout, and start in a few taps.
@@ -121,6 +121,7 @@ Privacy Policy: <PRIVACY_URL>
 ```
 
 ### What's New in this version (1.0) — count 315
+App Store Connect normally does not show this field for the very first version of an app (it appears from the first update). If you do not see it, skip it and reuse the text in the 1.0.1 update. The same text is used as the Google Play release notes.
 <!-- id:whats_new -->
 ```text
 First release of Fitnese: see today's workout the moment you open the app, plan your week freely, start from 6 editable templates and 143 exercises, log sets fast with a rest timer, get progressive overload suggestions, and see stats by program and muscle. Works offline and syncs to your account. English and Thai.
@@ -152,7 +153,7 @@ Same text as the App Store name block above (`Fitnese`, or the optional descript
 Plan your gym week, log sets fast and track progressive overload.
 ```
 
-### Full description — limit 4000 · count 3712
+### Full description — limit 4000 · count 3691
 <!-- id:play_desc -->
 ```text
 Fitnese is a strength-training planner and workout log: open the app, see today's workout, and start in a few taps.
@@ -230,20 +231,30 @@ Use the same text as "What's New" above.
 
 ## Why this text is accurate (checked against the code)
 
+Checked against the repository at commit `c7f2171` (HEAD of `claude/clever-bell-dxizpd`). Every claim below exists in that commit. Anything that is only in an unmerged branch is deliberately **not** in the text above; ready-to-paste lines for those features are in [README.md](README.md) ("Release scope").
+
 | Claim | Where it is in the code |
 |---|---|
-| 143 exercises, bodyweight moves, English/Thai | `src/data/exercises.json` (143 entries, 42 bodyweight) |
-| 6 templates (PPL 3 and 6 days, Upper/Lower, Full Body 3, Bro Split, 5×5) | `src/data/templates.ts` (`ppl3`, `ppl6`, `upper_lower`, `full_body3`, `bro_split`, `starter_5x5`) |
+| 143 exercises, English/Thai names, 42 bodyweight | `src/data/exercises.json` (143 entries, every entry has `name.en` and `name.th`, 42 with `equipment: bodyweight`; includes Push-Up and Pull-Up) |
+| 6 templates (PPL 3 and 6 days, Upper/Lower, Full Body 3, Bro Split, 5×5 Beginner) | `src/data/templates.ts` (`ppl3`, `ppl6`, `upper_lower`, `full_body3`, `bro_split`, `starter_5x5`) |
 | Copy / move routines between programs | `src/app/(app)/routine/[id].tsx` (`copyTo`, `moveTo`) |
-| Weekday dots, copy day, switch whole week, week start, change one date | `src/app/(app)/week.tsx`, i18n `week.*` |
-| Rest timer per exercise or off | `src/features/programs/ExerciseSettingsSheet.tsx` (`restSec`: default / off / custom) |
-| Progression modes and next-target suggestions | `src/domain/progression.ts`, `workout_session.progression` (D53) |
-| Stats % by program / routine type / muscle, 3 metrics, sum = 100 | `src/domain/stats.ts` (largest remainder, D27) |
-| Estimated 1RM (Epley), body-weight trend | `src/domain/stats.ts`, `src/features/stats/bodyWeight.ts` |
-| BMR / TDEE / targets / MET, no weight-loss target under 18 | `src/domain/nutrition.ts` (D28) |
-| CSV export (2 files) | `src/features/settings/*`, D34 |
-| Sign in with Google / Apple only | `src/services/auth/supabaseAuth.ts` |
-| 7-day trial for eligible users, lifetime without trial, prices from the store | `src/app/paywall.tsx`, `src/services/purchases/mapping.ts`, i18n `paywall.*` |
-| No ads / analytics / tracking SDKs | `package.json` dependencies; `app.config.ts` `NSPrivacyTracking: false` |
+| Weekday dots, copy a day, switch whole week, week start, change one date | `src/app/(app)/week.tsx`, i18n `week.*` |
+| Rest timer per exercise (default / off / custom) | `src/features/programs/ExerciseSettingsSheet.tsx` (`restSec`) |
+| Progression modes (double is the default, linear, custom weekly, off) and next-target suggestions | `src/domain/progression.ts`, `workout_session.progression` (D53), i18n `programs.modes.*`, `session.nextTargets` |
+| Optional RIR / RPE targets per exercise | `ExerciseSettingsSheet.tsx` (`rir`, `rpe`), i18n `programs.rir`, `programs.rpe` |
+| Add, swap, reorder, remove exercises; add / remove sets mid-workout | i18n `session.addExercise`, `swap`, `moveUp`, `moveDown`, `removeExercise`, `addSet`, `removeSet` |
+| Change a target for today only / from now on | i18n `session.todayOnly`, `session.fromNowOn`, `src/features/session/TargetSheet.tsx` |
+| Log a past workout (last 7 days) | `src/app/(app)/(tabs)/index.tsx` (menu `today.menu.logPast`, `startSession({ date })`) |
+| Stats: day / week / month / year; % by program, routine type and muscle; sets, volume or workouts; sum = 100 | `src/domain/stats.ts` (largest remainder, D27), i18n `stats.*` |
+| Estimated 1RM (Epley), body-weight trend | `src/domain/stats.ts` (`epley1RM`), `src/features/stats/bodyWeight.ts` |
+| BMR / TDEE / targets / MET; no weight-loss target under 18 | `src/domain/nutrition.ts` (`ADULT_AGE`, D28), i18n `onboarding.under18` |
+| CSV export (2 files) | `src/features/settings/exportCsv.ts`, D34 |
+| 8 accent colors or your own, dark / light / system theme | `src/theme/tokens.ts` (`ACCENT_PRESETS`) |
+| Sign in with Google / Apple only, equal prominence | `src/services/auth/supabaseAuth.ts`, D51 |
+| 7-day trial only for eligible users, lifetime without trial, prices from the store | `src/app/paywall.tsx`, `src/domain/entitlement/paywall.ts`, `src/services/purchases/mapping.ts`, i18n `paywall.*` |
+| Sign in before trial or purchase | `nextStepOnSelect` in `src/domain/entitlement/paywall.ts`, SPEC B4 |
+| Upgrade Monthly → Lifetime from Settings (does not cancel the monthly plan) | `src/app/(app)/(tabs)/settings.tsx` (`settings-lifetime`), i18n `paywall.upgrade.notice` |
+| Features locked but data kept when membership ends | SPEC B3, `src/features/access/AccessGate.tsx` |
+| Offline-first, sync to the account, delete account and data in the app | SPEC L, `src/features/sync/engine.ts`, `src/app/delete-account.tsx` |
+| No ads / analytics / tracking SDKs | `package.json` (none); `app.config.ts` `NSPrivacyTracking: false` |
 | References (Mifflin 1990, ISSN 2017, Compendium 2024, Epley) | `src/legal/content.ts` `REFERENCES`, screen `/references` |
-| Upgrade Monthly → Lifetime from Settings, RIR/RPE, back-fill a past day, muscle-group icons, edit custom exercises | Code changes merged for this release (see README "Release scope") |
