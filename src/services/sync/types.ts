@@ -16,6 +16,11 @@ export interface PullResult {
 export interface SyncBackend {
   push(table: SyncedTableName, userId: string, rows: RemoteRow[]): Promise<void>;
   pull(table: SyncedTableName, userId: string, since: string | null, limit: number): Promise<PullResult>;
+  /**
+   * เซิร์ฟเวอร์ยืนยันสิทธิ์ซิงก์ของบัญชีนี้แล้วหรือยัง (user_entitlements จาก webhook)
+   * จำเป็นเพราะ RLS ซ่อนแถวตอน SELECT โดยไม่แจ้ง error — ถ้าไม่ถามก่อน เครื่องใหม่จะดูเหมือนซิงก์ครบทั้งที่ยังดึงอะไรไม่ได้
+   */
+  hasSyncAccess(userId: string): Promise<boolean>;
   /** ปรับเคอร์เซอร์ที่เก็บไว้ก่อนเริ่มดึงแต่ละรอบ (เช่น ย้อนเวลาเผื่อธุรกรรมที่ commit ช้า) */
   startCursor?(stored: string | null): string | null;
 }

@@ -85,6 +85,15 @@ export default function AccountScreen() {
       <SectionTitle>{t('account.sections.membership')}</SectionTitle>
       <CardGroup>
         <ListRow title={sub.status} value={sub.detail} icon="ribbon-outline" />
+        {sub.notice ? (
+          <ListRow
+            title={sub.notice}
+            icon="warning-outline"
+            onPress={openManage}
+            accessibilityHint={t('account.notice.openStore')}
+            testID="account-monthly-notice"
+          />
+        ) : null}
         {!access.allowed ? (
           <ListRow
             title={t('account.seePlans')}
@@ -101,7 +110,7 @@ export default function AccountScreen() {
         <ListRow
           title={t('account.manage')}
           icon="card-outline"
-          onPress={() => void openManage()}
+          onPress={openManage}
           testID="account-manage"
         />
       </CardGroup>

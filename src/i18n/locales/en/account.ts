@@ -37,8 +37,13 @@ const account = {
   },
   badge: {
     trial: 'Trial ends {{date}}',
+    renews: 'Renews {{date}}',
     ending: 'Access until {{date}}',
     billing: 'Payment issue',
+  },
+  notice: {
+    monthlyStillActive: 'Your monthly plan is still active — cancel it in {{store}} to avoid being charged',
+    openStore: 'Opens your store subscription settings',
   },
   restore: 'Restore purchases',
   manage: 'Manage subscription',

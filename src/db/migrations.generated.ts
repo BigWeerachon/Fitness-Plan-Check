@@ -47,5 +47,11 @@ export const MIGRATIONS: EmbeddedMigration[] = [
     "statements": [
       "ALTER TABLE `workout_session` ADD `progression` text;"
     ]
+  },
+  {
+    "tag": "0002_charming_mikhail_rasputin",
+    "statements": [
+      "ALTER TABLE `entitlement_cache` ADD `also_renewing_monthly` integer DEFAULT false NOT NULL;"
+    ]
   }
 ];

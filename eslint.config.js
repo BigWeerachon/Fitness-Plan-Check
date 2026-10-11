@@ -47,6 +47,7 @@ module.exports = defineConfig([
     ignores: [
       '.claude/**',
       'dist/*',
+      'dist-web/**',
       'ios/*',
       'android/*',
       'coverage/*',

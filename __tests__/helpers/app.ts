@@ -39,6 +39,7 @@ export async function entitledApp(at = '2026-10-09T09:00:00'): Promise<TestServi
     willRenew: false,
     billingIssueAt: null,
     verifiedAt: t0,
+    alsoRenewingMonthly: false,
   });
   useAuth.setState({ user, status: 'signedIn' });
   useEntitlement.setState({

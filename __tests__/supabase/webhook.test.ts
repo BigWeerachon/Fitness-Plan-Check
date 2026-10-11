@@ -12,13 +12,16 @@ import {
 const SECRET = 'whsec_test';
 const A = '11111111-1111-4111-8111-111111111111';
 const B = '22222222-2222-4222-8222-222222222222';
+const C = '33333333-3333-4333-8333-333333333333';
 const DAY = 86_400_000;
 const T0 = Date.parse('2026-10-09T09:00:00Z');
 
 class MemoryStore implements WebhookStore {
   rows = new Map<string, EntitlementRow>();
   events = new Map<string, RecordedEvent>();
-  users = new Set([A, B]);
+  users = new Set([A, B, C]);
+  /** จำลองฐานข้อมูลล้มตอนบันทึกบัญชีนี้หนึ่งครั้ง */
+  failSaveFor: string | null = null;
   async eventSeen(id: string) {
     return this.events.has(id);
   }
@@ -26,6 +29,10 @@ class MemoryStore implements WebhookStore {
     return this.rows.get(userId) ?? null;
   }
   async saveEntitlement(row: EntitlementRow) {
+    if (this.failSaveFor === row.user_id) {
+      this.failSaveFor = null;
+      throw new Error('database unavailable');
+    }
     if (!this.users.has(row.user_id)) return 'unknown_user' as const;
     this.rows.set(row.user_id, row);
     return 'saved' as const;
@@ -216,6 +223,147 @@ describe('RevenueCat webhook (SPEC J6)', () => {
     ]);
     await send(store, transfer);
     expect(store.rows.get(A)?.state).toBe('EXPIRED');
+    // บัญชีที่รับสิทธิ์ต้องได้สิทธิ์ด้วย ไม่ใช่ค้างที่ NO_ENTITLEMENT (has_sync_access ปิดซิงก์ตลอดไป)
+    expect(store.rows.get(B)).toMatchObject({ state: 'SUBSCRIBED_MONTHLY', product_id: 'fitnese_monthly' });
+  });
+
+  describe('TRANSFER (restore on another account, SPEC J6)', () => {
+    const transfer = (from: string[], to: string[], at = T0 + DAY) =>
+      event({
+        type: 'TRANSFER',
+        app_user_id: null,
+        original_app_user_id: null,
+        aliases: null,
+        entitlement_ids: null,
+        product_id: null,
+        period_type: null,
+        expiration_at_ms: null,
+        transferred_from: from,
+        transferred_to: to,
+        event_timestamp_ms: at,
+      });
+
+    it('moves a subscription to the receiving account and expires the old owner', async () => {
+      const store = new MemoryStore();
+      await send(store, event({ type: 'RENEWAL', period_type: 'NORMAL', expiration_at_ms: T0 + 30 * DAY }));
+      const r = await send(store, transfer([A], [B]));
+      expect(r.body).toEqual({ results: { [A]: 'saved', [B]: 'saved' } });
+      expect(store.rows.get(B)).toMatchObject({
+        state: 'SUBSCRIBED_MONTHLY',
+        product_id: 'fitnese_monthly',
+        period_type: 'NORMAL',
+        expiration_at: new Date(T0 + 30 * DAY).toISOString(),
+        will_renew: true,
+        last_event_at: new Date(T0 + DAY).toISOString(),
+      });
+      expect(store.rows.get(A)).toMatchObject({ state: 'EXPIRED', product_id: null, will_renew: false });
+
+      // เหตุการณ์ถัดไปของสโตร์มาที่บัญชีใหม่และต่อจากสถานะที่ย้ายมา
+      await send(
+        store,
+        event({
+          type: 'CANCELLATION',
+          cancel_reason: 'UNSUBSCRIBE',
+          app_user_id: B,
+          original_app_user_id: B,
+          aliases: [B],
+          event_timestamp_ms: T0 + 2 * DAY,
+          expiration_at_ms: T0 + 30 * DAY,
+        }),
+      );
+      expect(store.rows.get(B)).toMatchObject({ state: 'SUBSCRIBED_MONTHLY', will_renew: false });
+    });
+
+    it('moves a lifetime purchase (no later events would ever grant it)', async () => {
+      const store = new MemoryStore();
+      await send(
+        store,
+        event({ type: 'NON_RENEWING_PURCHASE', product_id: 'fitnese_lifetime', expiration_at_ms: null }),
+      );
+      await send(store, transfer([A], [B]));
+      expect(store.rows.get(B)).toMatchObject({
+        state: 'LIFETIME',
+        product_id: 'fitnese_lifetime',
+        expiration_at: null,
+      });
+      expect(store.rows.get(A)?.state).toBe('EXPIRED');
+    });
+
+    it('picks the best entitlement among several sources and keeps a better one the receiver already has', async () => {
+      const store = new MemoryStore();
+      // A ทดลอง 7 วัน, B รายเดือนถึงวันที่ 30
+      await send(store, event({}));
+      await send(
+        store,
+        event({
+          app_user_id: B,
+          original_app_user_id: B,
+          aliases: [B],
+          type: 'RENEWAL',
+          period_type: 'NORMAL',
+          expiration_at_ms: T0 + 30 * DAY,
+        }),
+      );
+      await send(store, transfer([A, B], [C]));
+      expect(store.rows.get(C)).toMatchObject({
+        state: 'SUBSCRIBED_MONTHLY',
+        expiration_at: new Date(T0 + 30 * DAY).toISOString(),
+      });
+      expect(store.rows.get(A)?.state).toBe('EXPIRED');
+      expect(store.rows.get(B)?.state).toBe('EXPIRED');
+
+      // C ซื้อขาดเอง แล้วรับรายเดือนจากบัญชีอื่นมา → ยังเป็นซื้อขาด
+      await send(
+        store,
+        event({
+          app_user_id: A,
+          original_app_user_id: A,
+          aliases: [A],
+          type: 'RENEWAL',
+          period_type: 'NORMAL',
+          event_timestamp_ms: T0 + 3 * DAY,
+          expiration_at_ms: T0 + 33 * DAY,
+        }),
+      );
+      await send(
+        store,
+        event({
+          app_user_id: C,
+          original_app_user_id: C,
+          aliases: [C],
+          type: 'NON_RENEWING_PURCHASE',
+          product_id: 'fitnese_lifetime',
+          event_timestamp_ms: T0 + 3 * DAY,
+          expiration_at_ms: null,
+        }),
+      );
+      await send(store, transfer([A], [C], T0 + 4 * DAY));
+      expect(store.rows.get(C)?.state).toBe('LIFETIME');
+      expect(store.rows.get(A)?.state).toBe('EXPIRED');
+    });
+
+    it('a failure while saving the receiver is safe to retry (old owner is not expired first)', async () => {
+      const store = new MemoryStore();
+      await send(
+        store,
+        event({ type: 'NON_RENEWING_PURCHASE', product_id: 'fitnese_lifetime', expiration_at_ms: null }),
+      );
+      const t = transfer([A], [B]);
+      store.failSaveFor = B;
+      await expect(send(store, t)).rejects.toThrow('database unavailable');
+      expect(store.rows.get(A)?.state).toBe('LIFETIME');
+      // RevenueCat ส่งเหตุการณ์เดิมซ้ำ (ยังไม่ถูกบันทึกว่าประมวลผลแล้ว)
+      expect((await send(store, t)).status).toBe(200);
+      expect(store.rows.get(B)?.state).toBe('LIFETIME');
+      expect(store.rows.get(A)?.state).toBe('EXPIRED');
+    });
+
+    it('a source account without a server record leaves the receiver unchanged', async () => {
+      const store = new MemoryStore();
+      await send(store, transfer([A], [B]));
+      expect(store.rows.get(B)?.state).toBe('NO_ENTITLEMENT');
+      expect(store.rows.get(A)?.state).toBe('EXPIRED');
+    });
   });
 
   it('acknowledges events for deleted accounts so RevenueCat stops retrying', async () => {

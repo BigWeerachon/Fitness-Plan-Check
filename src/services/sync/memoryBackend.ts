@@ -11,7 +11,7 @@ import {
  * คลาวด์จำลองในหน่วยความจำ ทำงานเหมือนฝั่ง Supabase:
  * - last-write-wins: เขียนทับเฉพาะเมื่อ updated_at ใหม่กว่าหรือเท่ากัน
  * - server_updated_at เพิ่มขึ้นทุกครั้งที่เขียน (ใช้เป็นเคอร์เซอร์)
- * - ปฏิเสธบัญชีที่ไม่มีสิทธิ์ (เหมือน RLS)
+ * - บัญชีที่ไม่มีสิทธิ์: เขียนถูกปฏิเสธ แต่อ่านได้ผลว่างโดยไม่มี error (เหมือน RLS ของ Postgres)
  */
 export class MemorySyncBackend implements SyncBackend {
   private tables = new Map<string, Map<string, RemoteRow>>();
@@ -21,6 +21,7 @@ export class MemorySyncBackend implements SyncBackend {
   offline = false;
   failNext: Error | null = null;
   pushCount = 0;
+  accessChecks = 0;
   /** เทสต์ใส่ได้เพื่อจำลองการย้อนเคอร์เซอร์แบบ Supabase */
   startCursor?: (stored: string | null) => string | null;
 
@@ -28,18 +29,28 @@ export class MemorySyncBackend implements SyncBackend {
     return `${userId}:${table}`;
   }
 
-  private check(userId: string) {
+  private entitled(userId: string) {
+    return !this.entitledUsers || this.entitledUsers.has(userId);
+  }
+
+  private check() {
     if (this.offline) throw new SyncNetworkError();
     if (this.failNext) {
       const e = this.failNext;
       this.failNext = null;
       throw e;
     }
-    if (this.entitledUsers && !this.entitledUsers.has(userId)) throw new SyncAccessDeniedError();
+  }
+
+  async hasSyncAccess(userId: string): Promise<boolean> {
+    if (this.offline) throw new SyncNetworkError();
+    this.accessChecks++;
+    return this.entitled(userId);
   }
 
   async push(table: SyncedTableName, userId: string, rows: RemoteRow[]): Promise<void> {
-    this.check(userId);
+    this.check();
+    if (!this.entitled(userId)) throw new SyncAccessDeniedError();
     this.pushCount++;
     const k = this.key(table, userId);
     const store = this.tables.get(k) ?? new Map<string, RemoteRow>();
@@ -58,7 +69,8 @@ export class MemorySyncBackend implements SyncBackend {
     since: string | null,
     limit: number,
   ): Promise<PullResult> {
-    this.check(userId);
+    this.check();
+    if (!this.entitled(userId)) return { rows: [], cursor: since };
     const store = this.tables.get(this.key(table, userId));
     const from = since ? Number(since) : 0;
     const rows = [...(store?.values() ?? [])]

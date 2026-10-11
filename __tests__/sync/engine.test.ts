@@ -109,6 +109,22 @@ describe('sync engine (SPEC L, J6, B11)', () => {
     expect(pendingCount(USER)).toBe(1);
   });
 
+  it('a new device shows "waiting", not "up to date", until the server confirms the entitlement (B11, J6)', async () => {
+    createRow('program', { name: 'PPL' });
+    expect(await syncNow()).toBe('synced');
+    newDevice();
+    // webhook ยังไม่มา: RLS ซ่อนแถวโดยไม่แจ้ง error — ไม่มีอะไรต้องส่ง จึงต้องถามสิทธิ์จากเซิร์ฟเวอร์ก่อนดึง
+    s.sync.entitledUsers = new Set();
+    expect(await syncNow()).toBe('denied');
+    expect(useSync.getState().status).toBe('waiting');
+    expect(listRows('program')).toHaveLength(0);
+    // เซิร์ฟเวอร์ยืนยันสิทธิ์แล้ว → ดึงข้อมูลมาครบ
+    s.sync.entitledUsers = new Set([USER]);
+    expect(await syncNow()).toBe('synced');
+    expect(useSync.getState().status).toBe('idle');
+    expect(listRows('program').map((x) => x.name)).toEqual(['PPL']);
+  });
+
   it('does not sync at all without an entitlement (J6)', async () => {
     canSync = false;
     createRow('program', { name: 'A' });

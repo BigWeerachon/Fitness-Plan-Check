@@ -190,6 +190,9 @@ export function mergeRemoteRow(
 
 async function pull(userId: string): Promise<number> {
   const { sync } = getServices();
+  // RLS ซ่อนแถวโดยไม่แจ้ง error ถ้าเซิร์ฟเวอร์ยังไม่ยืนยันสิทธิ์ (webhook มาช้า/หาย) — ถ้าดึงต่อ
+  // เครื่องใหม่จะขึ้น "ซิงก์แล้ว" ทั้งที่ข้อมูลบนคลาวด์ถูกซ่อนอยู่ (B11) จึงถามก่อนและให้สถานะเป็น "รอ"
+  if (!(await sync.hasSyncAccess(userId))) throw new SyncAccessDeniedError();
   let applied = 0;
   for (const name of SYNCED_TABLE_NAMES) {
     const stored = getCursor(userId, name);

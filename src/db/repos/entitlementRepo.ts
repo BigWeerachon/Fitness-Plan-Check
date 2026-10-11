@@ -19,6 +19,7 @@ export const entitlementRepo = {
       willRenew: row.willRenew,
       billingIssueAt: row.billingIssueAt,
       verifiedAt: row.verifiedAt,
+      alsoRenewingMonthly: row.alsoRenewingMonthly,
     };
   },
   save(userId: string, s: EntitlementSnapshot): void {
@@ -31,6 +32,7 @@ export const entitlementRepo = {
       willRenew: s.willRenew,
       billingIssueAt: s.billingIssueAt,
       verifiedAt: s.verifiedAt,
+      alsoRenewingMonthly: s.alsoRenewingMonthly,
     };
     getDb()
       .insert(entitlementCache)

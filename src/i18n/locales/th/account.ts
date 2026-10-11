@@ -40,8 +40,13 @@ const account: LocaleShape<typeof en> = {
   },
   badge: {
     trial: 'ทดลองถึง {{date}}',
+    renews: 'ต่ออายุ {{date}}',
     ending: 'ใช้ได้ถึง {{date}}',
     billing: 'มีปัญหาการชำระเงิน',
+  },
+  notice: {
+    monthlyStillActive: 'แพ็กเกจรายเดือนของคุณยังใช้งานอยู่ — ยกเลิกใน {{store}} เพื่อไม่ให้ถูกเรียกเก็บเงิน',
+    openStore: 'เปิดหน้าการสมัครสมาชิกในสโตร์',
   },
   restore: 'กู้คืนการซื้อ',
   manage: 'จัดการสมาชิก',

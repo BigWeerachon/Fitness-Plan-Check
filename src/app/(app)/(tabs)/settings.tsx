@@ -244,10 +244,19 @@ export default function SettingsScreen() {
             testID="settings-lifetime"
           />
         ) : null}
+        {sub.notice ? (
+          <ListRow
+            title={sub.notice}
+            icon="warning-outline"
+            onPress={openManage}
+            accessibilityHint={t('account.notice.openStore')}
+            testID="settings-monthly-notice"
+          />
+        ) : null}
         <ListRow
           title={t('account.manage')}
           icon="card-outline"
-          onPress={() => void openManage()}
+          onPress={openManage}
           testID="settings-manage"
         />
         <ListRow
