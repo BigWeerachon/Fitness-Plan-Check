@@ -1,10 +1,10 @@
 # ป้ายความเป็นส่วนตัว: App Store Privacy Nutrition Label + Google Play Data safety
 
-> คำตอบในไฟล์นี้ตรวจจากโค้ดที่ commit `3cb4c4f` (รายการไฟล์ในข้อ 1) และต้องตรงกับ **privacy manifest ของ iOS ใน `app.config.ts`** ซึ่งต้องประกาศข้อมูล 5 ประเภท: อีเมล, User ID, Fitness, Health (ค่าร่างกาย), Purchase History — ทุกประเภทเชื่อมกับตัวผู้ใช้ ไม่ใช้ติดตาม วัตถุประสงค์ App Functionality (SPEC N1, N2, B13)
+> คำตอบในไฟล์นี้ตรวจจากโค้ดที่ commit `88bfff2` (รายการไฟล์ในข้อ 1) และตรงกับ **privacy manifest ของ iOS ใน `app.config.ts`** (`COLLECTED_DATA_TYPES`) ซึ่งประกาศข้อมูล 6 ประเภท: Email Address, User ID, Health (ส่วนสูง น้ำหนักตัว แคลอรี่ที่กิน), Fitness, Purchase History และ Other Data Types (เพศ อายุ) — ทุกประเภทเชื่อมกับตัวผู้ใช้ (`Linked: true`) ไม่ใช้ติดตาม (`Tracking: false`) วัตถุประสงค์ App Functionality อย่างเดียว (SPEC N1, N2, B13)
 >
-> **สถานะที่ตรวจล่าสุด:** ที่ commit `3cb4c4f` `ios.privacyManifests.NSPrivacyCollectedDataTypes` ใน `app.config.ts` ยังเป็น `[]` — **ยังไม่ตรงกับคำตอบ "Yes, we collect data" ในไฟล์นี้** ต้องให้ผู้พัฒนาแก้ให้ครบ 5 ประเภท (ข้อ 3.5) ก่อน build ส่งรีวิว ตรวจด้วย `npx expo config --type introspect` (ดู [docs/RELEASE_CHECKLIST.md](../docs/RELEASE_CHECKLIST.md) หัวข้อ privacy manifest)
+> **สถานะที่ตรวจล่าสุด:** manifest ในโค้ดตรงกับตารางข้อ 3.2 แล้ว (6 ประเภท, `NSPrivacyTracking: false`, `NSPrivacyTrackingDomains: []`) ยังต้องตรวจซ้ำกับ build ที่จะส่งด้วย `npx expo config --type introspect | grep -A60 privacyManifests` และกรอกป้ายใน App Store Connect ให้ตรง (ดู [docs/RELEASE_CHECKLIST.md](../docs/RELEASE_CHECKLIST.md) หัวข้อ 8)
 >
-> ไฟล์นี้ละเอียดกว่าและ **ใช้แทนตารางในหัวข้อ "ส่วน R" ของ [HUMAN_TASKS.md](../docs/HUMAN_TASKS.md)** ในจุดที่ต่างกัน (เพศ/อายุ ฝั่ง Apple — ดูข้อ 3.2)
+> ไฟล์นี้ละเอียดกว่าและ **ใช้แทนตารางในหัวข้อ "ส่วน R" ของ [HUMAN_TASKS.md](../docs/HUMAN_TASKS.md)** ในจุดที่ต่างกัน (เพศ/อายุ ฝั่ง Apple อยู่ใน Other Data Types — ดูข้อ 3.2)
 >
 > ชื่อเมนูและตัวเลือกในคอนโซลเขียนเป็นภาษาอังกฤษตามที่คอนโซลแสดง เพื่อให้หาเจอง่าย ชื่อเมนูอาจเปลี่ยนเล็กน้อยตามเวลา
 
@@ -17,7 +17,7 @@
 | อีเมล (รวมอีเมลซ่อนของ Apple) และ id ผู้ใช้ | Supabase Auth ตอนล็อกอิน | `src/services/auth/supabaseAuth.ts` — Apple ขอเฉพาะ scope `EMAIL` (ไม่ขอชื่อ), Google ใช้ ID token แลกเซสชัน (`signInWithIdToken`) |
 | id ผู้ใช้ (= app user id ของ RevenueCat) + ประวัติการซื้อ/สถานะสมาชิก | RevenueCat (และ App Store / Google Play ที่ดำเนินการชำระเงินเอง) | `src/services/purchases/revenueCat.ts` เรียกเฉพาะ `configure`, `logIn`, `logOut`, `getOfferings`, `checkTrialOrIntroductoryPriceEligibility`, `purchasePackage`, `restorePurchases`, `getCustomerInfo` และ listener ของ customerInfo — **ไม่มี** `setEmail`/`setAttributes`/`collectDeviceIdentifiers` |
 | สถานะสิทธิ์ (state, product_id, period_type, วันหมดอายุ, will_renew, billing issue) | ตาราง `user_entitlements` บน Supabase (webhook ของ RevenueCat เขียน) | `supabase/migrations/20261009000000_init.sql`, `supabase/functions/revenuecat-webhook/` |
-| บันทึกกันเหตุการณ์ webhook ซ้ำ (id เหตุการณ์, ชนิด, app_user_id, เวลา) — ไม่เก็บ payload เต็ม | ตาราง `revenuecat_events` — ลบทันทีเมื่อลบบัญชี ที่ commit `3cb4c4f` **ยังไม่มีการลบอัตโนมัติ** (ไม่มี migration/cron ที่ลบแถวเก่า) ถ้าผู้พัฒนาเพิ่มการลบอัตโนมัติ (เช่น เก่ากว่า 90 วัน) ก่อนปล่อย ให้แก้แถวนี้และหัวข้อ "การเก็บรักษาและการลบข้อมูล" ใน `src/legal/content.ts` ให้ตรงกัน | `supabase/migrations/20261009000000_init.sql`, `supabase/functions/delete-account/index.ts` |
+| บันทึกกันเหตุการณ์ webhook ซ้ำ (id เหตุการณ์, ชนิด, app_user_id, เวลา) — ไม่เก็บ payload เต็ม | ตาราง `revenuecat_events` — ลบทันทีเมื่อลบบัญชี และ **ลบแถวที่เก่ากว่า 90 วันอัตโนมัติ**: ฟังก์ชัน SQL `public.purge_revenuecat_events` (migration `20261011000000_revenuecat_events_retention.sql`) ที่ Edge Function `revenuecat-webhook` เรียกหลังบันทึกเหตุการณ์ทุกครั้ง (`EVENT_RETENTION_DAYS = 90`; ถ้าไม่มี webhook เข้ามาเลย แถวเก่าจะไม่ถูกลบจนกว่าจะมีทราฟฟิกหรือเปิด pg_cron ตามคอมเมนต์ใน migration) | `supabase/migrations/20261009000000_init.sql`, `supabase/migrations/20261011000000_revenuecat_events_retention.sql`, `supabase/functions/revenuecat-webhook/`, `supabase/functions/delete-account/index.ts` |
 | โปรไฟล์: เพศ, อายุ (ตัวเลข ไม่เก็บวันเกิด D16), ส่วนสูง, น้ำหนัก, ระดับกิจกรรม, เป้าหมาย, หน่วย, ค่าตั้งเป้า (% / โปรตีน / MET), ตั้งค่าตัวจับเวลาพัก | ตาราง `profile` (ซิงก์) | `src/db/schema.ts` |
 | การฝึก: โปรแกรม, routine, ท่าที่สร้างเอง (ชื่อ/กล้ามเนื้อ/อุปกรณ์/โน้ต), ตารางสัปดาห์, override รายวัน, เซสชัน (วันที่ เวลา ความหนัก แคลอรี่ น้ำหนักตัว ณ วันนั้น), เซ็ต (น้ำหนัก ครั้ง เสร็จหรือไม่), คำแนะนำ progression | ตาราง `custom_exercise`, `program`, `routine`, `routine_exercise`, `week_plan`, `day_override`, `workout_session`, `session_exercise`, `session_set` (ซิงก์) | `src/db/schema.ts` → `SYNCED_TABLES` |
 | บันทึกรายวัน: แคลอรี่ที่ใช้ (กรอกเอง), แคลอรี่ที่กิน, น้ำหนักตัว | ตาราง `daily_log` (ซิงก์) | `src/db/schema.ts` |
@@ -41,6 +41,9 @@
 3. **ตรวจ manifest รวมของทั้งแอปก่อนส่ง:** ใน Xcode เปิด archive ของ build production → คลิกขวา → **Generate Privacy Report** แล้วเทียบกับข้อ 3 — SDK ที่มี manifest ของตัวเอง (เช่น RevenueCat, Google Sign-In) อาจประกาศประเภทข้อมูล/วัตถุประสงค์เพิ่ม ถ้ามี ให้ปรับป้ายให้ครอบคลุม และอ่านหน้า privacy/data disclosure ของ RevenueCat และ Supabase ประกอบ
 4. **IP address:** เซิร์ฟเวอร์ของ Supabase/RevenueCat เห็น IP ของคำขอตามปกติของการเชื่อมต่อเครือข่าย (เช่น ใน log) แอปไม่ได้ใช้ IP หาตำแหน่ง จึงไม่ได้ประกาศเป็น Location — ถ้าคู่มือของผู้ให้บริการแนะนำต่างจากนี้ ให้ทำตามคู่มือ
 
+5. **[จุดเปิด — ข้อความกฎหมายในแอป] การลบ `revenuecat_events` เก่า 90 วัน:** โค้ดลบแถวเก่ากว่า 90 วันจริง (ดูข้อ 1) แต่หัวข้อ "การเก็บรักษาและการลบข้อมูล" / "Retention and deletion" ใน `src/legal/content.ts` ยังเขียนแค่ว่า "เก็บข้อมูลไว้ตราบที่คุณยังมีบัญชี" และไม่พูดถึงบันทึก webhook ที่ลบเองเมื่อเก่ากว่า 90 วัน — **ไม่ขัดแย้งกัน** (เก็บสั้นกว่าที่บอกไว้) และบันทึกนี้ไม่มีข้อมูลสุขภาพ จึงไม่ถึงขั้นทำให้ป้ายผิด แต่ถ้าเจ้าของอยากให้นโยบายตรงตามจริงทุกประการ ให้ผู้พัฒนาเพิ่มประโยคเดียว (เอกสารนี้ไม่แก้โค้ด) และแก้ไทย/อังกฤษให้ตรงกัน
+6. **ยืนยันเรื่องเพศ/อายุ:** manifest ประกาศเป็น Other Data Types (ไม่ใช่ Health) ตามโค้ด `COLLECTED_DATA_TYPES` ถ้าเจ้าของจะจัดไว้ใน Health แทน ต้องแก้ทั้ง manifest และป้ายพร้อมกัน
+
 ## 3. App Store Connect → App Privacy (Privacy Nutrition Label)
 
 ที่ไหน: App Store Connect → แอป → **App Privacy** → Get Started / Edit (HUMAN_TASKS ข้อ 72) · Privacy Policy URL = `<PRIVACY_URL>`
@@ -48,21 +51,22 @@
 ### 3.1 คำถามแรก
 - **Do you or your third-party partners collect data from this app?** → **Yes, we collect data from this app**
 
-### 3.2 ประเภทข้อมูลที่ติ๊ก (ต้องตรงกับ manifest 5 ประเภท)
+### 3.2 ประเภทข้อมูลที่ติ๊ก (ต้องตรงกับ manifest 6 ประเภท)
 
 | หมวดในคอนโซล | ประเภท | ข้อมูลในแอป | manifest key |
 |---|---|---|---|
 | Contact Info | **Email Address** | อีเมลจาก Google/Apple (รวม private relay) | `NSPrivacyCollectedDataTypeEmailAddress` |
-| Health & Fitness | **Health** | ค่าร่างกายที่ผู้ใช้กรอกเพื่อคำนวณ: เพศ, อายุ, ส่วนสูง, น้ำหนักตัว, แคลอรี่ที่กิน, ค่าตั้งเป้าโภชนาการ | `NSPrivacyCollectedDataTypeHealth` |
+| Health & Fitness | **Health** | ค่าร่างกายที่ผู้ใช้กรอก: ส่วนสูง, น้ำหนักตัว, แคลอรี่ที่กิน (และค่าตั้งเป้าโภชนาการที่คำนวณจากค่าเหล่านี้) | `NSPrivacyCollectedDataTypeHealth` |
 | Health & Fitness | **Fitness** | โปรแกรม routine ท่า เซ็ต น้ำหนักที่ยก ครั้ง เวลาฝึก ความหนัก ระดับกิจกรรม แคลอรี่ที่ใช้ | `NSPrivacyCollectedDataTypeFitness` |
 | Purchases | **Purchase History** | สถานะทดลอง/รายเดือน/ซื้อขาด และวันหมดอายุ ผ่าน RevenueCat | `NSPrivacyCollectedDataTypePurchaseHistory` |
 | Identifiers | **User ID** | id ผู้ใช้ Supabase ซึ่งใช้เป็น app user id ของ RevenueCat ด้วย | `NSPrivacyCollectedDataTypeUserID` |
+| Other Data | **Other Data Types** | เพศ, อายุ (ตัวเลข ไม่บังคับ ข้ามได้) | `NSPrivacyCollectedDataTypeOtherDataTypes` |
 
-**เรื่องเพศและอายุ:** HUMAN_TASKS (ส่วน R) เคยจัดไว้เป็น Other Data แต่ manifest ของรุ่นนี้ไม่มี `OtherDataTypes` ไฟล์นี้จึงรวมไว้ใน **Health** ในฐานะ "ค่าร่างกายที่ผู้ใช้ให้มาเพื่อคำนวณ BMR/TDEE" — ถ้าเจ้าของอยากแยกเป็น **Other Data Types** ต้องให้ผู้พัฒนาเพิ่ม `NSPrivacyCollectedDataTypeOtherDataTypes` ใน manifest ด้วย ให้สองที่ตรงกันเสมอ
+**เรื่องเพศและอายุ:** `app.config.ts` ประกาศเป็น `NSPrivacyCollectedDataTypeOtherDataTypes` (comment ในโค้ด: "เพศ อายุ (ไม่บังคับ)") ตรงกับตาราง R เดิมของ [HUMAN_TASKS.md](../docs/HUMAN_TASKS.md) ที่จัดเป็น Other Data — ใน App Store Connect จึงติ๊ก **Other Data Types** สำหรับเพศ/อายุ และไม่ใส่สองค่านี้ใน Health ถ้าเจ้าของอยากเปลี่ยนไปอยู่ใน Health ต้องให้ผู้พัฒนาแก้ manifest ด้วย ให้สองที่ตรงกันเสมอ
 
-**ไม่ติ๊ก:** Name (ดูข้อ 2.1), Phone Number, Physical Address, Other User Contact Info, Sensitive Info, Financial Info (Payment Info, Credit Info, Other Financial Info — การชำระเงินทำโดย Apple), Location (Precise/Coarse), Contacts, User Content (ทุกข้อ — ชื่อ routine/โน้ตท่าเป็นส่วนหนึ่งของข้อมูล Fitness), Browsing History, Search History (ค้นหาท่าทำในเครื่อง), Device ID, Usage Data (Product Interaction, Advertising Data, Other Usage Data), Diagnostics (Crash Data, Performance Data, Other Diagnostic Data), Surroundings, Body (Hands/Head), Other Data Types
+**ไม่ติ๊ก:** Name (ดูข้อ 2.1), Phone Number, Physical Address, Other User Contact Info, Sensitive Info, Financial Info (Payment Info, Credit Info, Other Financial Info — การชำระเงินทำโดย Apple), Location (Precise/Coarse), Contacts, User Content (ทุกข้อ — ชื่อ routine/โน้ตท่าเป็นส่วนหนึ่งของข้อมูล Fitness), Browsing History, Search History (ค้นหาท่าทำในเครื่อง), Device ID, Usage Data (Product Interaction, Advertising Data, Other Usage Data), Diagnostics (Crash Data, Performance Data, Other Diagnostic Data), Surroundings, Body (Hands/Head)
 
-### 3.3 คำตอบของแต่ละประเภท (เหมือนกันทั้ง 5 ประเภท)
+### 3.3 คำตอบของแต่ละประเภท (เหมือนกันทั้ง 6 ประเภท)
 
 | คำถามในคอนโซล | คำตอบ |
 |---|---|
@@ -72,18 +76,19 @@
 
 ### 3.4 ผลที่หน้าร้านจะแสดง
 - **Data Used to Track You:** ไม่มี
-- **Data Linked to You:** Contact Info (Email Address), Health & Fitness (Health, Fitness), Purchases (Purchase History), Identifiers (User ID)
+- **Data Linked to You:** Contact Info (Email Address), Health & Fitness (Health, Fitness), Purchases (Purchase History), Identifiers (User ID), Other Data (Other Data Types)
 - **Data Not Linked to You:** ไม่มี
 
-### 3.5 Privacy manifest ที่ต้องตรงกัน (`app.config.ts` → `ios.privacyManifests` — ที่ commit `3cb4c4f` ยังไม่ครบ)
+### 3.5 Privacy manifest ที่ต้องตรงกัน (`app.config.ts` → `ios.privacyManifests` — ตรงกับตาราง 3.2 แล้วที่ commit `88bfff2`)
 
-| ค่า | ต้องเป็น |
+| ค่า | ในโค้ดตอนนี้ |
 |---|---|
 | `NSPrivacyTracking` | `false` |
 | `NSPrivacyTrackingDomains` | `[]` |
-| `NSPrivacyCollectedDataTypes` | 5 รายการตามตาราง 3.2 แต่ละรายการ `NSPrivacyCollectedDataTypeLinked: true`, `NSPrivacyCollectedDataTypeTracking: false`, `NSPrivacyCollectedDataTypePurposes: [NSPrivacyCollectedDataTypePurposeAppFunctionality]` |
+| `NSPrivacyCollectedDataTypes` | 6 รายการตามตาราง 3.2 (Email Address, User ID, Health, Fitness, Purchase History, Other Data Types) แต่ละรายการ `NSPrivacyCollectedDataTypeLinked: true`, `NSPrivacyCollectedDataTypeTracking: false`, `NSPrivacyCollectedDataTypePurposes: [NSPrivacyCollectedDataTypePurposeAppFunctionality]` |
+| `NSPrivacyAccessedAPITypes` | `[]` (manifest ของ React Native / Expo / SDK รวมเข้า build เอง — ดูข้อ 2.3 ว่าตรวจอย่างไร) |
 
-ถ้าเปิด `app.config.ts` แล้วยังเห็น `NSPrivacyCollectedDataTypes: []` แปลว่ายังไม่ได้แก้ — **อย่าส่งรีวิว** จนกว่าจะแก้แล้ว (ป้ายใน App Store Connect, manifest ของแอป และ Data safety ต้องตรงกันทั้งสามที่)
+ถ้าแก้ประเภทข้อมูลที่แอปเก็บ ให้แก้ `COLLECTED_DATA_TYPES` ใน `app.config.ts`, ตารางข้อ 3.2 และป้ายใน App Store Connect พร้อมกัน — ป้ายใน App Store Connect, manifest ของแอป, Data safety และ Privacy Policy ในแอปต้องตรงกันทั้งสี่ที่
 
 ## 4. Google Play Console → App content → Data safety
 
@@ -111,7 +116,7 @@
 | Financial info | **Purchase history** | สถานะทดลอง/รายเดือน/ซื้อขาด ผ่าน RevenueCat | Yes | **No** | No | Required | App functionality |
 
 - **Shared = No ทุกข้อ:** Supabase และ RevenueCat เป็นผู้ให้บริการที่ประมวลผลแทนเรา ซึ่ง Google ไม่นับเป็นการ "share"
-- **เพศ/อายุ ฝั่ง Google** ใส่ใน Personal info → Other info (ตรงกับตัวอย่างของ Google เรื่องเพศ/วันเกิด) ส่วนฝั่ง Apple อยู่ใน Health ตามเหตุผลข้อ 3.2 — สองสโตร์มีหมวดต่างกัน จึงไม่ต้องเหมือนกัน
+- **เพศ/อายุ ฝั่ง Google** ใส่ใน Personal info → Other info (ตรงกับตัวอย่างของ Google เรื่องเพศ/วันเกิด) ส่วนฝั่ง Apple อยู่ใน Other Data Types ตามข้อ 3.2 — สองสโตร์มีหมวดต่างกัน จึงไม่ต้องเหมือนกัน
 - ถ้าข้อ 2.1 พบชื่อจาก Google และเลือกทาง (B) ให้ติ๊ก Personal info → **Name** เพิ่ม (Required, App functionality / Account management)
 - ถ้าข้อ 2.2 เพิ่ม Analytics ให้ติ๊ก Analytics เพิ่มที่ Purchase history
 
@@ -125,5 +130,5 @@
 ## 5. ตรวจซ้ำเมื่อไร
 - ทุกครั้งที่เพิ่ม SDK หรือ dependency ใหม่ใน `package.json`
 - ทุกครั้งที่เพิ่มคอลัมน์/ตารางที่ซิงก์ใน `src/db/schema.ts` หรือ `supabase/migrations/`
-- ทุกครั้งที่แก้ `ios.privacyManifests` ใน `app.config.ts` — ป้ายของ Apple, manifest และ Data safety ต้องตรงกันทั้งสามที่
+- ทุกครั้งที่แก้ `ios.privacyManifests` ใน `app.config.ts` — ป้ายของ Apple, manifest, Data safety และ Privacy Policy ในแอปต้องตรงกันทั้งสี่ที่
 - หลังแก้นโยบายความเป็นส่วนตัวใน `src/legal/content.ts` (หัวข้อ "ข้อมูลที่เราเก็บ" ต้องตรงกับไฟล์นี้)

@@ -15,11 +15,11 @@
 | App name with descriptor (optional) | App Store / Play | 30 / 30 | 24 |
 | Subtitle | App Store | 30 | 29 |
 | Promotional text | App Store | 170 | 147 |
-| Description | App Store | 4000 | 3826 |
+| Description | App Store | 4000 | 3854 |
 | Keywords | App Store | 100 | 98 characters / 98 bytes |
 | What's New (1.0) | App Store | 4000 | 315 |
 | Short description | Google Play | 80 | 65 |
-| Full description | Google Play | 4000 | 3724 |
+| Full description | Google Play | 4000 | 3752 |
 | Release notes (1.0) | Google Play | 500 | 315 (same text as What's New) |
 
 ---
@@ -58,7 +58,7 @@ Comma-separated, no spaces after commas. Words already in the name or subtitle (
 strength,lifting,weightlifting,progressive,overload,ppl,split,routine,tracker,1rm,fitness,exercise
 ```
 
-### Description — limit 4000 · count 3826
+### Description — limit 4000 · count 3854
 <!-- id:as_desc -->
 ```text
 Fitnese is a strength-training planner and workout log: open the app, see today's workout, and start in a few taps.
@@ -80,7 +80,7 @@ PROGRAMS AND 143 EXERCISES
 FAST, ONE-HANDED WORKOUTS
 • Last time and today's target side by side for every set
 • Big number pad, haptic set ticks and a rest timer per exercise
-• Add, swap, reorder and remove exercises and sets mid-workout; optional RIR/RPE targets; log a past workout
+• Add, swap, reorder and remove exercises and sets, or edit exercise settings, mid-workout; optional RIR/RPE targets; log a past workout
 
 PROGRESSIVE OVERLOAD YOU CONTROL
 • Per exercise: double progression (default), linear, custom weekly plan, or off
@@ -153,7 +153,7 @@ Same text as the App Store name block above (`Fitnese`, or the optional descript
 Plan your gym week, log sets fast and track progressive overload.
 ```
 
-### Full description — limit 4000 · count 3724
+### Full description — limit 4000 · count 3752
 <!-- id:play_desc -->
 ```text
 Fitnese is a strength-training planner and workout log: open the app, see today's workout, and start in a few taps.
@@ -175,7 +175,7 @@ PROGRAMS AND 143 EXERCISES
 FAST, ONE-HANDED WORKOUTS
 • Last time and today's target side by side for every set
 • Big number pad, haptic set ticks and a rest timer per exercise
-• Add, swap, reorder and remove exercises and sets mid-workout; optional RIR/RPE targets; log a past workout
+• Add, swap, reorder and remove exercises and sets, or edit exercise settings, mid-workout; optional RIR/RPE targets; log a past workout
 
 PROGRESSIVE OVERLOAD YOU CONTROL
 • Per exercise: double progression (default), linear, custom weekly plan, or off
@@ -231,7 +231,7 @@ Use the same text as "What's New" above.
 
 ## Why this text is accurate (checked against the code)
 
-Checked against the repository at commit `3cb4c4f` (HEAD of `claude/clever-bell-dxizpd`). Every claim below exists in that commit. Anything that is not in the code yet is deliberately **not** in the text above; see [README.md](README.md) ("Release scope", in Thai) for what to re-check before submitting.
+Checked against the repository at commit `88bfff2` (HEAD of `claude/clever-bell-dxizpd`, all audit fixes merged). Every claim below exists in that commit. Before submitting, run the short verify list in [README.md](README.md) ("Verify before release", in Thai) against the build you are actually sending.
 
 | Claim | Where it is in the code |
 |---|---|
@@ -242,9 +242,10 @@ Checked against the repository at commit `3cb4c4f` (HEAD of `claude/clever-bell-
 | Rest timer per exercise (default / off / custom) | `src/features/programs/ExerciseSettingsSheet.tsx` (`restSec`) |
 | Progression modes (double is the default, linear, custom weekly, off) and next-target suggestions | `src/domain/progression.ts`, `workout_session.progression` (D53), i18n `programs.modes.*`, `session.nextTargets` |
 | Optional RIR / RPE targets per exercise | `ExerciseSettingsSheet.tsx` (`rir`, `rpe`), i18n `programs.rir`, `programs.rpe` |
-| Add, swap, reorder, remove exercises; add / remove sets mid-workout | i18n `session.addExercise`, `swap`, `moveUp`, `moveDown`, `removeExercise`, `addSet`, `removeSet`, `removeThisSet` |
+| Add, swap, reorder, remove exercises; add / remove sets mid-workout (tap a set number to remove that set) | i18n `session.addExercise`, `swap`, `moveUp`, `moveDown`, `removeExercise`, `addSet`, `removeSet`, `removeThisSet`; `src/app/(app)/session/[id].tsx` (`setMenu`), D70 |
+| Edit exercise settings during a workout | `ExerciseSettingsSheet` opened from `src/app/(app)/session/[id].tsx`, i18n `session.exerciseSettings`, D70 |
 | Change a target for today only / from now on | i18n `session.todayOnly`, `session.fromNowOn`, `src/features/session/TargetSheet.tsx` |
-| Log a past workout (last 7 days, pick a routine or an empty session) | `src/app/(app)/(tabs)/index.tsx` (menu `today.menu.logPast`, `today.menu.pickRoutine`, `startSession({ date })`) |
+| Log a past workout (last 7 days, pick a routine from any program or an empty session) | `src/app/(app)/(tabs)/index.tsx` (menu `today.menu.logPast`, `today.menu.pickRoutine`, `startSession({ date })`) |
 | Muscle-group icons | `src/components/MuscleIcon.tsx`, `src/data/muscleIcons.ts` (used in the exercise library, exercise detail and the session screen) |
 | Create and edit your own exercises | `src/app/(app)/exercises/new.tsx` (`?editId` edit mode), `src/app/(app)/exercises/[id].tsx` |
 | Stats: day / week / month / year; % by program, routine type and muscle; sets, volume or workouts; sum = 100 | `src/domain/stats.ts` (largest remainder, D27), i18n `stats.*` |

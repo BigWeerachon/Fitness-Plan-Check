@@ -2,7 +2,7 @@
 
 > Written in English because App Review and Play review read English. Replace every `<PLACEHOLDER>` before submitting (list in [README.md](README.md)). Where to paste: App Store Connect → version page → **App Review Information**; Play Console → Policy and programs → App content → **App access**. Background: SPEC N1, HUMAN_TASKS items 71 and 76.
 >
-> Checked against commit `3cb4c4f` (paywall upgrade mode, "Get lifetime" row, "fix payment" prompt and the "you were not charged" message are in that commit). The disclaimer sentence below lists only the screens that have the disclaimer in that commit; if more screens get it (and a "Sources" link) before release, extend the sentence using the snippet in [README.md](README.md) "Release scope" — do not claim screens that do not have it. Re-check every menu path on the real build before pasting.
+> Checked against commit `88bfff2` (all audit fixes merged): paywall upgrade mode, "Get lifetime" row, "Fix payment" prompt, the "you were not charged" message, and the disclaimer with a "Sources" link on Today, Stats, the strength chart, Profile & targets, the session summary, History detail and Settings (the References screen shows the disclaimer without the link). Re-check every menu path on the real build before pasting.
 
 ## 1. App Store Connect → App Review Information
 
@@ -14,7 +14,7 @@
 | Contact first / last name | `<CONTACT_NAME>` |
 | Contact phone | `<CONTACT_PHONE>` |
 | Contact email | `<CONTACT_EMAIL>` |
-| Notes | The block below (count 3798; App Store Connect shows its own limit for this field — about 4000 characters) |
+| Notes | The block below (count 3937; App Store Connect shows its own limit for this field — about 4000 characters) |
 | Attachment (optional, recommended) | A short screen recording of: setup → paywall → sign-in → back to paywall → sandbox purchase → Today → Settings > Account > Delete account and data |
 
 ### Notes — paste this block
@@ -37,14 +37,14 @@ HOW TO TEST THE PURCHASE FLOW
 You can also sign in first from setup step 1 ("I already have an account — sign in").
 
 WHERE THINGS ARE
-- Paywall: after setup and whenever there is no active membership (features locked, data kept). With an active Monthly plan or trial: Settings > Membership > Get lifetime opens the paywall in upgrade mode, warning that the monthly subscription/trial is not cancelled automatically.
+- Paywall: after setup and whenever there is no active membership (features locked, data kept). With an active Monthly plan or trial: Settings > Membership > Get lifetime opens the paywall in upgrade mode, warning that the monthly subscription/trial is not cancelled automatically. After a failed renewal payment it offers "Fix payment" (opens App Store subscriptions).
 - Restore Purchases: on the paywall, in Settings > Membership, and in the Account screen (gear icon on the paywall). Restore asks the user to sign in first because purchases belong to the account.
 - Manage/cancel subscription: Settings > Membership > Manage subscription (opens App Store subscriptions); also on the paywall and in Account.
 - Delete account: Settings > Account > Delete account and data. Without a membership: paywall gear icon (Account & settings) > Information > Delete account and data. It explains that deleting the account does not cancel the App Store subscription and links to subscription settings. For Sign in with Apple users, Apple asks for one more confirmation so the server can revoke the Apple token.
 - Privacy Policy and Terms of Use: on the paywall, in Settings > About and in Account.
 
 HEALTH INFORMATION (Guideline 1.4.1)
-- BMR/TDEE, calorie and macro targets, workout calories and estimated 1RM are estimates. A "not medical advice" disclaimer is shown on Stats, Profile & targets, the session summary, History detail, Settings and the References screen.
+- BMR/TDEE, calorie and macro targets, workout calories and estimated 1RM are estimates. A "not medical advice" disclaimer with a "Sources" link to the References screen is shown on Today, Stats, the strength chart, Profile & targets, the session summary, History detail and Settings.
 - References (Settings > About > References, Account > References, and the paywall footer) cite and link Mifflin et al. 1990 (BMR), ISSN protein position stand 2017, 2024 Adult Compendium of Physical Activities (MET) and the Epley 1RM formula.
 - Fitnese is not a medical device and does not diagnose or treat any condition. Weight-loss targets are not shown to users under 18.
 
@@ -92,3 +92,5 @@ Everything needs a Fitnese Pro membership; sign-in (Google or Apple) comes befor
 - **"Health claims?"** No diagnosis or treatment; disclaimer and References screen with links (SPEC H5, H6, N1).
 - **"Does the app track users?"** No. `app.config.ts` sets `NSPrivacyTracking: false`; there are no ads, analytics or attribution SDKs in `package.json`.
 - **"Trial shown to someone who already used it?"** No. Eligibility comes from the store via RevenueCat; ineligible users see "Subscribe" wording without a trial (SPEC B6).
+- **"What happens on a reinstall or a new phone?"** Sign in with the same account: the membership comes from the store/RevenueCat, the app pulls the cloud data first and skips the setup steps whose data is already there (D68, SPEC C, B11).
+- **"What if the renewal payment fails?"** During the store's grace/billing-retry period access continues and the app shows a "Payment issue" badge (Today, Settings, Account) and the date to update by; once access has ended the paywall shows a "There's a problem with your payment" headline and a primary "Fix payment" button that opens the store's subscription page instead of selling again (D62).

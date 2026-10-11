@@ -2,7 +2,7 @@
 
 > ใช้ทำตอนท้ายสุด หลังทำ [HUMAN_TASKS.md](HUMAN_TASKS.md) ส่วน A–R ครบแล้ว (HUMAN_TASKS ข้อ 80 ชี้มาที่ไฟล์นี้) ไฟล์นี้ **ไม่ทำซ้ำขั้นตอน** ของ HUMAN_TASKS แต่ระบุว่า "ต้องเห็นอะไร" ก่อนกดส่ง พร้อมคำสั่งตรวจ และอ้างข้อของ HUMAN_TASKS ที่ต้องกลับไปทำถ้ายังไม่ผ่าน การทดสอบบนเครื่องจริงทำตาม [TEST_PLAN.md](TEST_PLAN.md) ข้อความหน้าร้านอยู่ใน [../store-metadata/README.md](../store-metadata/README.md)
 >
-> ตรวจกับโค้ดที่ commit `3cb4c4f` สถานะ "รอรวม" ในเอกสารนี้หมายถึงการแก้ที่ยังไม่อยู่ใน commit นั้น ให้รันคำสั่งตรวจที่ระบุซ้ำก่อนส่งทุกครั้ง
+> ตรวจกับโค้ดที่ commit `88bfff2` (HEAD ของ `claude/clever-bell-dxizpd` — การแก้จากการตรวจสเปคทุกรอบรวมแล้ว) คำสั่งตรวจที่ระบุในแต่ละข้อควรให้ผลตามที่เขียนที่ commit นี้ ให้รันซ้ำกับโค้ดที่จะ build ก่อนส่งทุกครั้ง ถ้าผลต่างไปแปลว่าโค้ดเปลี่ยนหลังเอกสารนี้ — แก้เอกสารหรือโค้ดให้ตรงกัน
 >
 > **ระยะเวลาที่ต้องเผื่อ (ไม่ใช่งานโค้ด):** สมัคร Apple Developer (หลายวัน ถ้าเป็นองค์กรนานกว่า) · สิทธิ์ service account ของ Google Play ที่ RevenueCat ใช้ (หลายชั่วโมงถึง 1–2 วัน, HUMAN_TASKS ข้อ 60) · บัญชี Play ส่วนบุคคลใหม่ต้องผ่าน Closed testing ตามเงื่อนไขของ Google ก่อนขอ Production (HUMAN_TASKS ข้อ 6 — ตรวจตัวเลขปัจจุบันในคอนโซล) · Apple/Google ตรวจแอปและสินค้า in-app
 
@@ -18,7 +18,7 @@
 |---|---|---|---|
 | N1.1 | Sign in with Apple เท่าเทียมกับ Google (Guideline 4.8) | `src/features/auth/SignInButtons.tsx` (ปุ่มสองปุ่มสูง 52 เท่ากัน สไตล์เดียวกัน D51) · `ios.usesAppleSignIn: true` ใน `app.config.ts` · `src/services/auth/supabaseAuth.ts` | [ ] เปิด capability Sign in with Apple ที่ App ID, สร้างคีย์ `.p8`, ตั้ง Apple provider ใน Supabase (HUMAN_TASKS ข้อ 24–29) · [ ] ทดสอบ P-13 บน iPhone จริง · [ ] จดวันหมดอายุ Apple OAuth secret (≤ 6 เดือน) ลงปฏิทิน (ข้อ 82) |
 | N1.2 | ปุ่มลบบัญชีในแอป (5.1.1(v)) + แจ้งว่าไม่ยกเลิกสมาชิกในสโตร์ (B12) | `src/app/delete-account.tsx` (ตั้งค่า → ส่วน "บัญชี"/Account → ลบบัญชีและข้อมูล; ไม่มีสิทธิ์ใช้งาน: Paywall → ไอคอนเฟือง → ส่วน "ข้อมูล"/Information) · Edge Function `delete-account` เพิกถอนโทเค็น Apple, ลบข้อมูลทุกตารางและลูกค้า RevenueCat (D40, D52) | [ ] deploy `delete-account` พร้อม secret `APPLE_*` และ `REVENUECAT_SECRET_API_KEY` (ข้อ 18, 29, 63) · [ ] ทดสอบ P-14 อย่างน้อย 1 ครั้งด้วยบัญชี Apple บน iPhone แล้วดู log ว่าไม่มี error ตอนเพิกถอน (ข้อ 70) |
-| N1.3 | ข้อมูลสุขภาพ/การคำนวณมีลิงก์แหล่งอ้างอิง (1.4.1) + disclaimer "ไม่ใช่การแพทย์" ในคำอธิบายแอป | หน้า `/references` (`src/app/references.tsx`, `REFERENCES` ใน `src/legal/content.ts`: Mifflin 1990, ISSN 2017, Compendium 2024, Epley) เข้าถึงได้จากตั้งค่า → เกี่ยวกับ, หน้าบัญชี, Paywall · คอมโพเนนต์ `Disclaimer` ในสถิติ โปรไฟล์ สรุปเซสชัน ประวัติ ตั้งค่า · ย่อหน้า "HEALTH DISCLAIMER"/"คำเตือนด้านสุขภาพ" ใน `store-metadata/listing.*.md` | [ ] วางคำอธิบายที่มีย่อหน้า disclaimer ลงสโตร์ (ข้อ 77) · [ ] ตรวจว่าคำเตือน "ทุกหน้าผลลัพธ์" ตาม SPEC H5 ครบใน build ที่จะส่ง: `grep -rn "<Disclaimer" src/app` ต้องเห็นอย่างน้อยหน้าวันนี้ สถิติ กราฟความแข็งแรง (`stats/exercise`) โปรไฟล์ สรุปเซสชัน ประวัติ — **ที่ `3cb4c4f` ยังไม่มีหน้าวันนี้และกราฟความแข็งแรง (รอรวม)** ถ้ายังไม่รวม ให้ผู้พัฒนาเพิ่มก่อนส่ง |
+| N1.3 | ข้อมูลสุขภาพ/การคำนวณมีลิงก์แหล่งอ้างอิง (1.4.1) + disclaimer "ไม่ใช่การแพทย์" ในคำอธิบายแอป | หน้า `/references` (`src/app/references.tsx`, `REFERENCES` ใน `src/legal/content.ts`: Mifflin 1990, ISSN 2017, Compendium 2024, Epley) เข้าถึงได้จากตั้งค่า → เกี่ยวกับ, หน้าบัญชี, Paywall · คอมโพเนนต์ `Disclaimer` (คำเตือน + ลิงก์ "แหล่งอ้างอิง") อยู่ในหน้าวันนี้ สถิติ กราฟความแข็งแรง (`stats/exercise`) โปรไฟล์ สรุปเซสชัน รายละเอียดประวัติ ตั้งค่า และหน้าแหล่งอ้างอิง (หน้านี้ไม่มีลิงก์วนกลับ `showSources={false}`) · ย่อหน้า "HEALTH DISCLAIMER"/"คำเตือนด้านสุขภาพ" ใน `store-metadata/listing.*.md` | [ ] วางคำอธิบายที่มีย่อหน้า disclaimer ลงสโตร์ (ข้อ 77) · [ ] ตรวจว่าคำเตือน "ทุกหน้าผลลัพธ์" ตาม SPEC H5 ครบใน build ที่จะส่ง: `grep -rn "<Disclaimer" src/app` ต้องเห็น 8 ไฟล์: `(tabs)/index.tsx` (วันนี้), `(tabs)/stats.tsx`, `stats/exercise/[id].tsx` (กราฟความแข็งแรง), `profile.tsx`, `session/summary/[id].tsx`, `history/[id].tsx`, `(tabs)/settings.tsx`, `references.tsx` |
 | N1.4 | Privacy Nutrition Labels ตรงกับข้อมูลจริง | ตารางข้อมูลที่เก็บจริงและคำตอบทุกข้อใน `store-metadata/privacy-labels.md` (ตรวจกับ `src/db/schema.ts`, `supabase/migrations/`, `package.json` — ไม่มี SDK โฆษณา/analytics/crash) · `NSPrivacyTracking: false` | [ ] กรอกฟอร์ม (ข้อ 72) · [ ] ทำหัวข้อ 8 ด้านล่าง (privacy manifest ต้องตรงกับป้าย) · [ ] ตัดสินใจเรื่อง Name จาก Google/Apple บน Android (`privacy-labels.md` ข้อ 2.1) |
 | N1.5 | Restore Purchases | ปุ่มบน Paywall, ตั้งค่า → สมาชิก, หน้าบัญชี · ต้องล็อกอินก่อน (D04) | [ ] ทดสอบ P-07 ทั้งสองแพลตฟอร์ม |
 | N1.6 | ข้อมูลช่วงทดลองและราคาบน Paywall ตรงตามข้อกำหนด subscription (3.1.2) | `src/app/paywall.tsx` + `src/domain/entitlement/paywall.ts`: ราคาจากสโตร์ (ไม่ฮาร์ดโค้ด) ติดปุ่มซื้อ · ทดลอง 7 วัน → ราคา/เดือน · ต่ออายุอัตโนมัติ · วิธียกเลิก · ซื้อขาดไม่มีทดลอง · ลิงก์ Terms/Privacy/References · ไม่โฆษณาทดลองกับผู้ไม่มีสิทธิ์ (B6) | [ ] ตั้ง intro offer ฟรี 1 สัปดาห์ (ข้อ 43) · [ ] ตั้ง Subscription Group Display Name / รายละเอียด / ภาพตัวอย่างสำหรับสินค้า (ข้อ 42, 44) · [ ] ตรวจราคาที่ Paywall แสดงใน sandbox ตรงกับที่ตั้ง แล้วกรอกตารางข้อ 58 · [ ] มีลิงก์ Terms of Use ในคำอธิบาย (ใน `listing.*.md` แล้ว ต้องแทน `<TERMS_URL>`) |
@@ -74,7 +74,7 @@
 
 ## 2. โปรไฟล์ EAS และคำสั่ง build / submit
 
-อ่านจาก `eas.json` (ที่ commit `3cb4c4f`) ทุกโปรไฟล์ `extends: base` (Node `22.22.0`) และ `cli.appVersionSource: remote` (EAS เก็บเลข build เอง)
+อ่านจาก `eas.json` (ที่ commit `88bfff2`) ทุกโปรไฟล์ `extends: base` (Node `22.22.0`) และ `cli.appVersionSource: remote` (EAS เก็บเลข build เอง)
 
 | โปรไฟล์ | ใช้ทำอะไร | ค่าสำคัญ | EAS environment |
 |---|---|---|---|
@@ -129,7 +129,7 @@ eas submit --platform android --profile production --latest
 - ทุกครั้งที่ส่งสโตร์ใหม่: เลข build ต้องสูงกว่าที่เคยอัปโหลดทุกครั้ง · ถ้าเวอร์ชันก่อนหน้าผ่านรีวิวหรือขึ้นสโตร์แล้ว ต้องเพิ่ม `version` ด้วย (เช่น `1.0.1`)
 - [ ] `version` ใน `app.config.ts` = `package.json` = เวอร์ชันที่เขียนใน "What's New"/release notes (`store-metadata/listing.*.md`)
 - [ ] ไม่ต้องตั้ง `ios.buildNumber` / `android.versionCode` ใน `app.config.ts` (ปล่อยให้ EAS จัดการ ไม่งั้นขัดกับ remote versioning)
-- [ ] `extra.eas.projectId` ใน `app.config.ts` ถูกเพิ่มแล้ว (HUMAN_TASKS ข้อ 21) — ที่ `3cb4c4f` ยังไม่มี `extra` ใน `app.config.ts`
+- [ ] `extra.eas.projectId` ใน `app.config.ts` ถูกเพิ่มแล้ว (HUMAN_TASKS ข้อ 21) — ที่ `88bfff2` ยังไม่มี `extra` ใน `app.config.ts` (เป็นขั้นของเจ้าของที่ต้องทำหลังสร้างโปรเจกต์ EAS ไม่ใช่ช่องโหว่ของโค้ด) ตรวจ: `grep -n projectId app.config.ts` ต้องเห็นบรรทัด
 
 ---
 
@@ -163,20 +163,20 @@ eas submit --platform android --profile production --latest
 
 ขั้นตอนเต็มอยู่ที่ HUMAN_TASKS ข้อ 12–14 ที่นี่คือสิ่งที่ต้องเห็นก่อนส่ง
 
-**สถานะโค้ด:** ที่ `3cb4c4f` ป้าย `legal.templateNotice` ("Template — the developer must review…" / "เทมเพลต — ผู้พัฒนาต้องตรวจ…") ใน `src/app/legal/[doc].tsx` แสดงเสมอ **มีการแก้ที่รอรวม** ให้ป้ายแสดงเฉพาะตอนที่ `PLACEHOLDERS` ใน `src/legal/content.ts` ยังเป็นค่าเดิม และเพิ่มเทสต์ guard ที่ล้มเมื่อรันด้วย `RELEASE=1` ขณะที่ยังมี placeholder เหลือ (เทสต์ข้อ 5.1 ใน `TEST_PLAN.md`) ถ้าการแก้นี้ยังไม่รวม ผู้พัฒนาต้องรวมก่อน ไม่งั้นป้ายเทมเพลตจะติดไปกับแอปที่ส่งสโตร์
+**สถานะโค้ด (ที่ `88bfff2`):** ป้าย `legal.templateNotice` ("Template — the developer must review…" / "เทมเพลต — ผู้พัฒนาต้องตรวจ…") ใน `src/app/legal/[doc].tsx` แสดงเฉพาะเมื่อ `hasPlaceholders(content)` (`src/legal/content.ts`) พบค่า `PLACEHOLDERS` ตัวใดตัวหนึ่งในเอกสาร และมีเทสต์ guard ใน `__tests__/legal.test.ts` ที่ทำงานเฉพาะเมื่อ `RELEASE=1` (ถ้าไม่ตั้ง จะแสดงเป็นเทสต์ที่ถูกข้าม) แล้วล้มจนกว่าจะกรอก placeholder ครบทุกเอกสารทุกภาษา (เทสต์ข้อ 5.1 ใน `TEST_PLAN.md`) ดังนั้นแอปที่ส่งสโตร์จะไม่มีป้ายเทมเพลตก็ต่อเมื่อกรอกครบแล้ว
 
 - [ ] แทนค่าทั้ง 5 ตัวใน `PLACEHOLDERS` (`developer`, `contact`, `address`, `effective`, `law`) ด้วยข้อมูลจริง และอ่านทุกหัวข้อทั้งไทย/อังกฤษให้ตรงกับธุรกิจจริง · ตรวจเอง: คำสั่งนี้ต้องไม่พิมพ์อะไรออกมา
   ```bash
   grep -nE "/ (Developer name|Contact email|Address|Effective date|Governing law)\]" src/legal/content.ts
   ```
-- [ ] `RELEASE=1 npm test` ผ่าน (guard ของเทมเพลต) · ถ้าไม่มีเทสต์ guard ใน repo ให้ถือว่าการแก้ที่รอรวมยังไม่เสร็จ ห้ามข้ามขั้นนี้
+- [ ] `RELEASE=1 npm test` ผ่าน (guard ของเทมเพลต: ตัวเทสต์ "has no placeholders left in any legal document" ต้องไม่ถูกข้าม) · ห้ามข้ามขั้นนี้
 - [ ] เปิดแอป (build `preview`) → Paywall → Privacy Policy และ Terms ทั้งภาษาไทยและอังกฤษ: ไม่เห็นป้ายเทมเพลต ไม่มีวงเล็บเหลี่ยม `[…]` ค้างในหัวข้อ "ติดต่อ"/"Contact" และวันที่มีผล
 - [ ] `npm run legal:export` แล้ว **ลบบรรทัดหมายเหตุ `> เทมเพลต —` / `> Template —`** ออกจากสำเนาที่จะเผยแพร่ (สคริปต์ใส่ให้ทุกครั้ง, HUMAN_TASKS ข้อ 13)
 - [ ] โฮสต์ Privacy + Terms เป็นหน้าเว็บสาธารณะ (ไทยและอังกฤษ) เปิดได้โดยไม่ล็อกอิน · หน้า Privacy มีหัวข้อวิธีลบบัญชีและอีเมลติดต่อ (Google Play ต้องการลิงก์ขอลบข้อมูลบนเว็บ)
 - [ ] ตั้ง `EXPO_PUBLIC_PRIVACY_URL` และ `EXPO_PUBLIC_TERMS_URL` ใน EAS `production` และ `preview` แล้ว build ใหม่ — ปุ่ม "Open web version" ในหน้า `/legal/[doc]` ต้องเปิดหน้าเว็บนั้นได้
 - [ ] URL เดียวกันนี้ใส่ใน App Store Connect (App Information → Privacy Policy URL), Play Console (App content → Privacy policy), Google OAuth consent screen (HUMAN_TASKS ข้อ 30) และแทน `<PRIVACY_URL>` / `<TERMS_URL>` ใน `store-metadata/`
 - [ ] ชื่อผู้พัฒนาและอีเมลติดต่อใน Privacy/Terms ตรงกับชื่อบัญชีนักพัฒนาในสโตร์และ `<CONTACT_EMAIL>` ใน `store-metadata/`
-- [ ] เนื้อหาหัวข้อ "ข้อมูลที่เราเก็บ" และ "การเก็บรักษาและการลบข้อมูล" ใน `src/legal/content.ts` ตรงกับ `store-metadata/privacy-labels.md` (เช่น ถ้าเพิ่มการลบ `revenuecat_events` อัตโนมัติ ต้องแก้ทั้งสองที่)
+- [ ] เนื้อหาหัวข้อ "ข้อมูลที่เราเก็บ" และ "การเก็บรักษาและการลบข้อมูล" ใน `src/legal/content.ts` ตรงกับ `store-metadata/privacy-labels.md` · **จุดเปิดที่รู้อยู่แล้ว:** โค้ดลบ `revenuecat_events` ที่เก่ากว่า 90 วันอัตโนมัติแล้ว (migration `20261011000000`) แต่ข้อความ "การเก็บรักษาและการลบข้อมูล" ในแอปยังไม่พูดถึง (ไม่ขัดแย้ง เพราะเก็บสั้นกว่าที่บอก) ให้เจ้าของตัดสินว่าจะให้ผู้พัฒนาเพิ่มประโยคนี้ทั้งไทย/อังกฤษหรือไม่ — ดู `privacy-labels.md` ข้อ 2.5
 
 ---
 
@@ -186,11 +186,11 @@ eas submit --platform android --profile production --latest
 
 - [ ] `npm run supabase:verify` ผ่าน และ `deno check supabase/functions/revenuecat-webhook/index.ts supabase/functions/delete-account/index.ts` ผ่าน (ข้อ 16)
 - [ ] `node scripts/sync-shared.js` แล้ว `__tests__/shared.test.ts` ผ่าน (สำเนา state machine ใน `supabase/functions/_shared/` ตรงกับ `src/domain/entitlement/machine.ts`)
-- [ ] **migration ครบทุกไฟล์** ใน `supabase/migrations/` ถูก push แล้ว: ที่ `3cb4c4f` มี `20261009000000_init.sql` และ `20261010000000_session_progression.sql` (เพิ่มคอลัมน์ `workout_session.progression` — แอปรุ่นนี้เขียนคอลัมน์นี้ ถ้าไม่ push การซิงก์เซสชันจะล้ม) ตรวจด้วย
+- [ ] **migration ครบทุกไฟล์** ใน `supabase/migrations/` ถูก push แล้ว: ที่ `88bfff2` มี 3 ไฟล์ — `20261009000000_init.sql`, `20261010000000_session_progression.sql` (คอลัมน์ `workout_session.progression` — แอปเขียนคอลัมน์นี้ ถ้าไม่ push การซิงก์เซสชันจะล้ม) และ `20261011000000_revenuecat_events_retention.sql` (ฟังก์ชัน `purge_revenuecat_events` ที่ Edge Function `revenuecat-webhook` เรียกหลังบันทึกเหตุการณ์ — ถ้าไม่ push จะมีแต่ log ข้อผิดพลาด `revenuecat_events purge failed` และแถวเก่าไม่ถูกลบ) ตรวจด้วย
   ```bash
   npx supabase migration list      # ทุกแถวต้องมีทั้งคอลัมน์ Local และ Remote
   ```
-  (ข้อ 17 ใน HUMAN_TASKS พูดถึงแค่ไฟล์ init แต่ `db push` รันทุกไฟล์ที่ค้าง) ถ้ารุ่นนี้เพิ่ม migration ใหม่ (เช่น ลบ `revenuecat_events` เก่า) ให้ `npm run supabase:verify` ก่อน push
+  (ข้อ 17 ใน HUMAN_TASKS พูดถึงแค่ไฟล์ init แต่ `db push` รันทุกไฟล์ที่ค้าง) `npm run supabase:verify` ก่อน push · **deploy Edge Function `revenuecat-webhook` ใหม่หลัง push migration** เพื่อให้เวอร์ชันที่เรียก purge ขึ้นระบบ
 - [ ] Table Editor: ทั้ง 13 ตาราง (`user_entitlements`, `revenuecat_events`, `profile`, `custom_exercise`, `program`, `routine`, `routine_exercise`, `week_plan`, `day_override`, `workout_session`, `session_exercise`, `session_set`, `daily_log`) มีป้าย RLS enabled
 - [ ] Edge Functions deploy แล้ว และตั้ง JWT ถูกต้อง: `revenuecat-webhook` **ปิด** Enforce JWT (`--no-verify-jwt`), `delete-account` **เปิด** (ข้อ 18) ตรวจด้วย `npx supabase functions list`
 - [ ] Secrets ตั้งครบ ตรวจชื่อด้วย `npx supabase secrets list`: `REVENUECAT_WEBHOOK_SECRET`, `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`, `APPLE_CLIENT_ID` (= bundle id), `REVENUECAT_SECRET_API_KEY` (แนะนำ) — `APPLE_CLIENT_ID` ต้องตรงกับ `<BUNDLE_ID>` ที่ส่งสโตร์จริง (ข้อ 29, 38, 63)
@@ -224,12 +224,12 @@ eas submit --platform android --profile production --latest
 
 **iOS** — `app.config.ts` → `ios.privacyManifests` · `ITSAppUsesNonExemptEncryption: false` (ไม่ต้องตอบ export compliance ทุกครั้งที่อัปโหลด)
 
-- [ ] `NSPrivacyTracking: false` และ `NSPrivacyTrackingDomains: []` ✓ (มีแล้วที่ `3cb4c4f`)
-- [ ] **`NSPrivacyCollectedDataTypes` ต้องระบุ 5 ประเภทตาม `store-metadata/privacy-labels.md` ข้อ 3.5** (Email Address, User ID, Fitness, Health, Purchase History — linked = true, tracking = false, purpose = App Functionality) — **ที่ `3cb4c4f` ยังเป็น `[]` (รอแก้)** จึงยังไม่ตรงกับป้ายที่ต้องตอบ "Yes, we collect data" ตรวจหลังแก้:
+- [ ] `NSPrivacyTracking: false` และ `NSPrivacyTrackingDomains: []` ✓ (มีแล้วที่ `88bfff2`)
+- [ ] **`NSPrivacyCollectedDataTypes` ต้องระบุ 6 ประเภทตาม `COLLECTED_DATA_TYPES` ใน `app.config.ts` และ `store-metadata/privacy-labels.md` ข้อ 3.2/3.5:** Email Address, User ID, Health (ส่วนสูง น้ำหนักตัว แคลอรี่ที่กิน), Fitness, Purchase History, Other Data Types (เพศ อายุ) — ทุกรายการ `Linked = true`, `Tracking = false`, purpose = App Functionality (ที่ `88bfff2` ตรงกันแล้ว) ตรวจกับ build ที่จะส่ง:
   ```bash
-  npx expo config --type introspect | grep -A40 privacyManifests
+  npx expo config --type introspect | grep -A60 privacyManifests
   ```
-- [ ] ป้ายใน App Store Connect (ข้อ 72) ตรงกับ manifest ตรงกับ Data safety (ข้อ 73) ตรงกับ Privacy Policy ในแอป — สี่ที่ต้องเหมือนกัน
+- [ ] ป้ายใน App Store Connect (ข้อ 72: ติ๊ก Email Address, Health, Fitness, Purchase History, User ID, **Other Data Types**) ตรงกับ manifest ตรงกับ Data safety (ข้อ 73: เพศ/อายุอยู่ใน Personal info → Other info) ตรงกับ Privacy Policy ในแอป — สี่ที่ต้องเหมือนกัน
 - [ ] `NSPrivacyAccessedAPITypes: []` ในแอป: manifest ของ React Native / Expo / SDK ที่ใช้ถูกรวมเข้า build เอง ตรวจให้แน่ใจโดยอย่างใดอย่างหนึ่ง: (ก) Xcode → Archive → Generate Privacy Report (ต้องใช้ Mac) หรือ (ข) หลังอัปโหลดขึ้น TestFlight ดูอีเมลจาก App Store Connect ว่ามีคำเตือน "Missing privacy manifest / API usage" หรือไม่ ถ้ามี ให้ผู้พัฒนาเพิ่ม reason ใน `NSPrivacyAccessedAPITypes` แล้ว build ใหม่
 - [ ] ไม่มีหน้าขอ App Tracking Transparency (ไม่ใช้ IDFA) และ `Info.plist` ไม่มี `NSFaceIDUsageDescription` (D46) · `NSLocalNetworkUsageDescription` ที่มาจาก `expo-dev-client` อาจยังอยู่ใน `Info.plist` (D46) — ถ้าผู้รีวิวถาม ตอบว่ามาจากเครื่องมือพัฒนา ไม่ได้ใช้ในแอปที่ปล่อย
 
@@ -246,7 +246,7 @@ eas submit --platform android --profile production --latest
 
 - [ ] เลือกชื่อแอปจริง (HUMAN_TASKS ข้อ 1) และจองด้วยการสร้าง app record · ถ้าเปลี่ยนจาก "Fitnese" แก้ตามข้อ 1 (โค้ด + `store-metadata/`) แล้ว `npm run check`
 - [ ] กรอก placeholder ครบ แล้ว `node store-metadata/check-limits.js --release` ผ่าน (ตรวจขีดจำกัด: ชื่อ ≤ 30, subtitle ≤ 30, promo ≤ 170, description ≤ 4000, keywords ≤ 100; Play short ≤ 80, full ≤ 4000, release notes ≤ 500) และตัวนับของคอนโซลไม่ขัดกัน
-- [ ] ตาราง "ขอบเขตของรุ่นนี้" ใน `store-metadata/README.md` ตรวจแล้ว: ข้อความไม่อ้างฟีเจอร์ที่ build ที่ส่งยังไม่มี
+- [ ] รายการ "ตรวจก่อนปล่อย" ใน `store-metadata/README.md` รันครบกับ build ที่จะส่ง: ข้อความไม่อ้างฟีเจอร์ที่ build นั้นไม่มี
 - [ ] ข้อความหน้าร้านทั้งไทยและอังกฤษใส่ครบใน App Store Connect (Name, Subtitle, Promotional Text, Description, Keywords, Support URL, Marketing URL ถ้ามี, Copyright, Category = Health & Fitness) และ Play (App name, Short/Full description, Category, อีเมลติดต่อ) — ช่อง "What's New" ของ App Store ปกติไม่มีให้กรอกในเวอร์ชันแรก
 - [ ] ภาพหน้าจอ 5 ภาพ × ไทย/อังกฤษ **ถ่ายจาก build จริง** (ไม่ใช่ภาพใน `docs/screenshots/`) ขนาดตามที่คอนโซลแจ้ง (iPhone 6.9" เป็นชุดหลัก; แอปตั้ง `supportsTablet: false` จึงไม่ต้องมีภาพ iPad; Play 2–8 ภาพ ด้านยาวไม่เกิน 2 เท่าของด้านสั้น) ไม่มีราคา อีเมลจริง หรือป้ายโหมดพัฒนา — ภาพ Paywall ถ้าจะใช้ต้องถ่ายจากสโตร์จริงเท่านั้น (`screenshots.md`)
 - [ ] ไอคอน: `assets/icon.png` (1024², ไม่มีโปร่งใส) ยืนยันแล้ว · ไอคอน Play 512² + feature graphic 1024×500 อัปโหลดแล้ว (ข้อ 78)
@@ -261,13 +261,13 @@ eas submit --platform android --profile production --latest
 - [ ] บัญชี Google ของผู้รีวิว: บัญชีใหม่ ปิด 2-Step Verification ล็อกอินครั้งแรกบนเครื่องใหม่ให้ผ่านแล้ว เป็น Play license tester **ยังไม่เคยซื้อหรือเริ่มทดลองด้วยบัญชีนี้** (ให้ผู้รีวิวเห็น flow ทดลองฟรี) (ข้อ 69, 71)
 - [ ] ทดสอบล็อกอินด้วยบัญชีผู้รีวิวบน build ที่จะส่ง 1 ครั้ง **เฉพาะขั้นล็อกอิน ห้ามกดซื้อหรือเริ่มทดลอง** (การล็อกอินอย่างเดียวไม่ใช้สิทธิ์ทดลองของสโตร์) แล้วออกจากระบบ ส่วนการทดสอบซื้อ/ทดลองให้ใช้บัญชีทดสอบอีกบัญชีหนึ่ง เพราะสิทธิ์ทดลองฟรีของสโตร์ที่ใช้ไปแล้วกลับคืนไม่ได้
 - [ ] แนบวิดีโอสั้น (ไม่บังคับแต่แนะนำ) ตั้งค่าเริ่มต้น → Paywall → ล็อกอิน → ซื้อ sandbox → วันนี้ → ลบบัญชี
-- [ ] ข้อความโน้ตกล่าวถึงเฉพาะสิ่งที่ build นี้มีจริง (ดูตาราง "ขอบเขตของรุ่นนี้" ใน `store-metadata/README.md`)
+- [ ] ข้อความโน้ตกล่าวถึงเฉพาะสิ่งที่ build นี้มีจริง (รันรายการ "ตรวจก่อนปล่อย" ใน `store-metadata/README.md`)
 
 ---
 
 ## 11. ทดสอบก่อนส่ง (สรุป — รายละเอียดใน TEST_PLAN)
 
-- [ ] `npm ci && npm run check` ผ่าน จดจำนวนชุด/ข้อทดสอบ (ปัจจุบัน 34 ชุด / 487 ข้อ ตาม `PROGRESS.md` — ตัวเลขจะเพิ่มเมื่อรวมโค้ดใหม่)
+- [ ] `npm ci && npm run check` ผ่าน จดจำนวนชุด/ข้อทดสอบ (ตาม `PROGRESS.md` ที่ปิดงานล่าสุด: 55 ชุด / 682 ข้อผ่าน + 1 ข้ามโดยตั้งใจ ซึ่งคือ guard `RELEASE` ของเอกสารกฎหมาย — เอกสารนี้ไม่ได้รันชุดเทสต์ทั้งหมดซ้ำ)
 - [ ] `npx expo export` (iOS/Android) และ `npx expo prebuild --clean --no-install` ผ่าน แล้วลบโฟลเดอร์ `ios/` `android/` (ถูก `.gitignore` อยู่แล้ว)
 - [ ] `TEST_PLAN.md` ส่วน 5 (regression ก่อนทุก release) ทำครบ ส่วน 2 (P-01…P-20) ทำครบบนเครื่องจริงทั้ง iOS และ Android จาก build `production` ผ่าน TestFlight / Internal testing
 - [ ] `grep -rn "TODO\|FIXME" src supabase scripts` ว่าง หรือทุกรายการบันทึกใน `docs/PROGRESS.md`
@@ -287,7 +287,7 @@ eas submit --platform android --profile production --latest
 | 4 | Supabase: migration ครบ, Edge Functions deploy พร้อม JWT ถูกต้องและ secrets ครบ, Apple/Google provider ตั้งแล้ว, Email provider ปิด, smoke test ผ่าน | หัวข้อ 6 |
 | 5 | RevenueCat: 4 products, entitlement `pro`, offering `default` เป็น Current, webhook ทดสอบ 200, credential Valid; สินค้าในสโตร์สถานะพร้อม; ทดลอง 7 วันตั้งตรงตาม SPEC B1 | หัวข้อ 7 |
 | 6 | ตารางราคา "ราคาที่ตั้งได้จริง" (HUMAN_TASKS ข้อ 58) กรอกครบ และราคาที่ Paywall ตรงกับสโตร์ | หัวข้อ 7 |
-| 7 | Privacy manifest ระบุ 5 ประเภทข้อมูล ตรงกับป้าย App Store, Data safety และ Privacy Policy; `.aab` ไม่มี AD_ID | หัวข้อ 8 |
+| 7 | Privacy manifest ระบุ 6 ประเภทข้อมูล (รวม Other Data Types) ตรงกับป้าย App Store, Data safety และ Privacy Policy; `.aab` ไม่มี AD_ID | หัวข้อ 8 |
 | 8 | ทดสอบ P-01…P-14 ผ่านบนทั้ง iOS และ Android เป็นอย่างน้อย (รวมลบบัญชีด้วยบัญชี Apple บน iPhone); P-15…P-20 ทำตามที่เกี่ยวกับรุ่นนี้ (P-19 เฉพาะ Android) | หัวข้อ 11, `TEST_PLAN.md` |
 | 9 | คำเตือนสุขภาพ + ลิงก์แหล่งอ้างอิงครบตาม SPEC H5/H6 ใน build ที่ส่ง; ปุ่ม Restore / จัดการสมาชิก / Privacy / Terms / แหล่งอ้างอิง / ลบบัญชี ใช้ได้ | N1.3, หัวข้อ 11 |
 | 10 | ภาพหน้าจอจาก build จริง ข้อความหน้าร้านไม่อ้างฟีเจอร์ที่ไม่มี; App Review Notes ตรงกับเมนูจริง; บัญชีผู้รีวิวยังไม่เคยซื้อ | หัวข้อ 9, 10 |
@@ -299,7 +299,7 @@ eas submit --platform android --profile production --latest
 - Paywall โฆษณาทดลองฟรีกับบัญชีที่เคยใช้แล้ว (P-09 ไม่ผ่าน) หรือข้อความทดลอง/ราคาไม่ตรงกับหน้าต่างซื้อของสโตร์
 - สามารถเริ่มซื้อหรือทดลองก่อนล็อกอินได้ (B4)
 - ป้ายเทมเพลตกฎหมายหรือ `[…]` ยังอยู่ในแอป/หน้าเว็บ
-- ป้ายความเป็นส่วนตัวกับ privacy manifest/ข้อมูลจริงไม่ตรงกัน (เช่น manifest ยังว่าง, พบ Name จาก Google/Apple แต่ไม่ได้ประกาศ)
+- ป้ายความเป็นส่วนตัวกับ privacy manifest/ข้อมูลจริงไม่ตรงกัน (เช่น manifest ไม่ตรงกับป้าย, พบ Name จาก Google/Apple แต่ไม่ได้ประกาศ)
 - ลบบัญชีล้มเหลว หรือ log ของ `delete-account` มี error ตอนเพิกถอน Apple
 - webhook ล้ม (ซิงก์ค้างที่ "รอยืนยันสมาชิก" เป็นเวลานาน)
 - ผู้ใช้ไม่มีสิทธิ์แล้วข้อมูลเดิมหาย (ต้องไม่หาย — B3)
