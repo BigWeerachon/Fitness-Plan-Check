@@ -49,6 +49,7 @@ export default function TodayScreen() {
   const sub = describeSubscription(user ? cached : null, t);
   const [menu, setMenu] = useState(false);
   const [entry, setEntry] = useState<Entry>(null);
+  const [pastDate, setPastDate] = useState<string | null>(null);
   const today = parseLocalDate(model.date);
 
   const open = (routineId: string | null, date?: string) => {
@@ -364,12 +365,48 @@ export default function TodayScreen() {
                 value={t('today.menu.daysAgo', { count: n })}
                 onPress={() => {
                   setMenu(false);
-                  open(null, date);
+                  setPastDate(date);
                 }}
                 testID={`log-past-${n}`}
               />
             );
           })}
+        </CardGroup>
+      </Sheet>
+
+      <Sheet
+        visible={pastDate !== null}
+        onClose={() => setPastDate(null)}
+        title={
+          pastDate
+            ? `${t('today.menu.pickRoutine')} · ${formatDateShort(parseLocalDate(pastDate), today)}`
+            : ''
+        }
+      >
+        <CardGroup>
+          {[...model.routines, ...model.others].map((r) => (
+            <ListRow
+              key={r.routine.id}
+              title={r.routine.name}
+              value={r.programName}
+              onPress={() => {
+                const date = pastDate;
+                setPastDate(null);
+                if (date) open(r.routine.id, date);
+              }}
+              testID={`log-past-routine-${r.routine.id}`}
+            />
+          ))}
+          <ListRow
+            title={t('today.menu.emptySession')}
+            icon="add-circle-outline"
+            onPress={() => {
+              const date = pastDate;
+              setPastDate(null);
+              if (date) open(null, date);
+            }}
+            testID="log-past-empty"
+          />
         </CardGroup>
       </Sheet>
     </Screen>

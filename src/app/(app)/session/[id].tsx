@@ -20,12 +20,16 @@ import {
 } from '../../../components';
 import { routineExerciseRepo } from '../../../db/repos/routineExerciseRepo';
 import { sessionRepo } from '../../../db/repos/sessionRepo';
-import type { SessionSet } from '../../../db/schema';
+import type { RoutineExercise, SessionSet } from '../../../db/schema';
 import { parseLocalDate } from '../../../domain/dates';
 import { adjustTarget } from '../../../domain/progression';
 import { isExerciseComplete, restSecondsFor, sessionDurationSec } from '../../../domain/sessionSummary';
 import { displayWeight, formatWeight, weightToKg } from '../../../domain/units';
 import { useRepoQuery } from '../../../features/data/useRepoQuery';
+import {
+  ExerciseSettingsSheet,
+  type ExerciseSettingsPatch,
+} from '../../../features/programs/ExerciseSettingsSheet';
 import { formatSet, isBodyweightExercise } from '../../../features/session/formatSet';
 import { RestTimerBar } from '../../../features/session/RestTimerBar';
 import { SetTick } from '../../../features/session/SetTick';
@@ -53,6 +57,13 @@ export default function SessionScreen() {
   const [targetFor, setTargetFor] = useState<SessionExerciseView | null>(null);
   const [menuFor, setMenuFor] = useState<SessionExerciseView | null>(null);
   const [sessionMenu, setSessionMenu] = useState(false);
+  const [setMenu, setSetMenu] = useState<{ view: SessionExerciseView; set: SessionSet; n: number } | null>(
+    null,
+  );
+  const [settingsFor, setSettingsFor] = useState<{
+    view: SessionExerciseView;
+    config: RoutineExercise;
+  } | null>(null);
   const [nowMs, setNowMs] = useState(now);
 
   useEffect(() => {
@@ -102,17 +113,40 @@ export default function SessionScreen() {
     const result = config
       ? adjustTarget(config, target, scope, now())
       : { session: { targetWeightKg: target.weightKg, targetReps: target.reps }, routineExercise: null };
-    for (const s of view.sets) {
-      if (s.done) continue;
-      sessionRepo.updateSet(s.id, {
-        targetWeightKg: result.session.targetWeightKg,
-        targetReps: result.session.targetReps,
-        weightKg: result.session.targetWeightKg,
-        reps: result.session.targetReps,
-      });
-    }
+    // เซ็ตที่ผู้ใช้พิมพ์น้ำหนัก/ครั้งไว้เองแล้วไม่ถูกทับ (retargetSet)
+    sessionRepo.retargetPending(view.exercise.id, {
+      targetWeightKg: result.session.targetWeightKg,
+      targetReps: result.session.targetReps,
+    });
     if (config && result.routineExercise) routineExerciseRepo.update(config.id, result.routineExercise);
     setTargetFor(null);
+  };
+
+  const saveSettings = (
+    target: { view: SessionExerciseView; config: RoutineExercise },
+    patch: ExerciseSettingsPatch,
+  ) => {
+    routineExerciseRepo.update(target.config.id, patch);
+    // สะท้อนค่าที่เปลี่ยนมายังเซสชันนี้ด้วย: จำนวนเซ็ตและเวลาพักของท่า
+    sessionRepo.resizeSets(target.view.exercise.id, patch.sets);
+    if (patch.restSec !== target.config.restSec)
+      sessionRepo.setExerciseRest(target.view.exercise.id, patch.restSec);
+    setSettingsFor(null);
+  };
+
+  const removeExercise = (view: SessionExerciseView) => {
+    if (!view.sets.some((s) => s.done)) {
+      sessionRepo.removeExercise(view.exercise.id);
+      return;
+    }
+    Alert.alert(t('session.removeExercise'), t('session.removeExerciseConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('session.removeExercise'),
+        style: 'destructive',
+        onPress: () => sessionRepo.removeExercise(view.exercise.id),
+      },
+    ]);
   };
 
   const move = (index: number, delta: number) => {
@@ -211,6 +245,16 @@ export default function SessionScreen() {
                         ? t('session.exerciseDone')
                         : t(`exercises.muscles.${view.exercise.muscleGroup}`)}
                     </AppText>
+                    {view.config && (view.config.rir != null || view.config.rpe != null) ? (
+                      <AppText variant="caption" secondary testID={`effort-${view.exercise.exerciseId}`}>
+                        {[
+                          view.config.rir != null ? t('session.targetRir', { value: view.config.rir }) : null,
+                          view.config.rpe != null ? t('session.targetRpe', { value: view.config.rpe }) : null,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </AppText>
+                    ) : null}
                   </View>
                   <IconButton
                     icon="ellipsis-horizontal"
@@ -236,9 +280,16 @@ export default function SessionScreen() {
                 </View>
                 {view.sets.map((set, i) => (
                   <View key={set.id} style={styles.setRow}>
-                    <AppText variant="tabular" style={styles.cSet}>
-                      {i + 1}
-                    </AppText>
+                    <Pressable
+                      onPress={() => setSetMenu({ view, set, n: i + 1 })}
+                      style={styles.cSetTouch}
+                      hitSlop={{ left: 10, right: 10 }}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('session.setOptions', { n: i + 1 })}
+                      testID={`set-menu-${view.exercise.exerciseId}-${i}`}
+                    >
+                      <AppText variant="tabular">{i + 1}</AppText>
+                    </Pressable>
                     <AppText variant="callout" secondary style={styles.cPrev} numberOfLines={2}>
                       {fmt(set.exerciseId, set.prevWeightKg, set.prevReps)}
                     </AppText>
@@ -380,6 +431,17 @@ export default function SessionScreen() {
         {menuFor ? (
           <>
             <CardGroup>
+              {menuFor.config ? (
+                <ListRow
+                  title={t('session.exerciseSettings')}
+                  icon="settings-outline"
+                  onPress={() => {
+                    if (menuFor.config) setSettingsFor({ view: menuFor, config: menuFor.config });
+                    setMenuFor(null);
+                  }}
+                  testID="ex-settings"
+                />
+              ) : null}
               <ListRow
                 title={t('session.swap')}
                 icon="swap-horizontal-outline"
@@ -416,9 +478,11 @@ export default function SessionScreen() {
                 icon="trash-outline"
                 danger
                 onPress={() => {
-                  sessionRepo.removeExercise(menuFor.exercise.id);
+                  const view = menuFor;
                   setMenuFor(null);
+                  removeExercise(view);
                 }}
+                testID="ex-remove"
               />
             </CardGroup>
             <AppText variant="caption" secondary>
@@ -457,6 +521,41 @@ export default function SessionScreen() {
         ) : null}
       </Sheet>
 
+      <ExerciseSettingsSheet
+        visible={!!settingsFor}
+        title={settingsFor?.view.exercise.exerciseName ?? ''}
+        value={settingsFor?.config ?? null}
+        unit={unit}
+        defaultRestSec={data.restDefaultSec}
+        onClose={() => setSettingsFor(null)}
+        onSave={(patch) => settingsFor && saveSettings(settingsFor, patch)}
+      />
+
+      <Sheet
+        visible={!!setMenu}
+        onClose={() => setSetMenu(null)}
+        title={
+          setMenu ? `${setMenu.view.exercise.exerciseName} · ${t('session.setN', { n: setMenu.n })}` : ''
+        }
+      >
+        {setMenu ? (
+          <CardGroup>
+            <ListRow
+              title={t('session.removeThisSet')}
+              icon="trash-outline"
+              danger
+              onPress={() => {
+                const { set, view } = setMenu;
+                setSetMenu(null);
+                if (view.sets.length > 1) sessionRepo.removeSet(set.id);
+              }}
+              disabled={setMenu.view.sets.length <= 1}
+              testID="set-remove"
+            />
+          </CardGroup>
+        ) : null}
+      </Sheet>
+
       <Sheet visible={sessionMenu} onClose={() => setSessionMenu(false)} title={title}>
         <CardGroup>
           <ListRow
@@ -491,6 +590,7 @@ const styles = StyleSheet.create({
   headRow: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm, gap: spacing.xs },
   setRow: { flexDirection: 'row', alignItems: 'center', minHeight: MIN_TOUCH + 8, gap: spacing.xs },
   cSet: { width: 28, textAlign: 'center' },
+  cSetTouch: { width: 28, minHeight: MIN_TOUCH, alignItems: 'center', justifyContent: 'center' },
   cPrev: { flex: 1.1 },
   cTarget: { flex: 1.1, minHeight: MIN_TOUCH, justifyContent: 'center' },
   cTargetHead: { flex: 1.1 },

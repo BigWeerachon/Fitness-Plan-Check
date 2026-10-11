@@ -41,6 +41,8 @@ const today = {
     weekPlan: 'Weekly schedule',
     logPast: 'Log a past workout',
     pickDate: 'Which day?',
+    pickRoutine: 'Which workout?',
+    emptySession: 'Empty session',
     daysAgo_one: '{{count}} day ago',
     daysAgo_other: '{{count}} days ago',
   },

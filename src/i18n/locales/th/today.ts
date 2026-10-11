@@ -44,6 +44,8 @@ const today: LocaleShape<typeof en> = {
     weekPlan: 'ตารางประจำสัปดาห์',
     logPast: 'บันทึกการฝึกย้อนหลัง',
     pickDate: 'วันไหน?',
+    pickRoutine: 'ฝึกชุดไหน?',
+    emptySession: 'เซสชันเปล่า',
     daysAgo_one: '{{count}} วันที่แล้ว',
     daysAgo_other: '{{count}} วันที่แล้ว',
   },

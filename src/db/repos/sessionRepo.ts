@@ -1,7 +1,8 @@
 import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import { now } from '../../utils/clock';
 import { getDb, transaction } from '../client';
-import { createRow, softDeleteRow, updateRow } from '../mutations';
+import { resizeSets, retargetSet, type SetTarget } from '../../domain/sessionEdit';
+import { createRow, getRow, softDeleteRow, updateRow } from '../mutations';
 import {
   program,
   routine,
@@ -349,8 +350,35 @@ export const sessionRepo = {
     });
   },
 
+  /** ลบเซ็ตใดก็ได้ แล้วเรียงเลขเซ็ตที่เหลือของท่านั้นใหม่ให้ต่อเนื่อง (ประวัติ/CSV ไม่มีเลขเซ็ตข้าม) */
   removeSet(setId: string): void {
-    softDeleteRow('session_set', setId);
+    transaction(() => {
+      const row = getRow('session_set', setId);
+      if (!row) return;
+      softDeleteRow('session_set', setId);
+      sessionRepo.setsOf(row.sessionExerciseId).forEach((s, i) => {
+        if (s.setIndex !== i) updateRow('session_set', s.id, { setIndex: i });
+      });
+    });
+  },
+
+  /** ปรับเป้าของเซ็ตที่ยังไม่เสร็จ — ค่าที่ผู้ใช้พิมพ์เองไม่ถูกทับ (G2, ดู retargetSet) */
+  retargetPending(sessionExerciseId: string, target: SetTarget): void {
+    transaction(() => {
+      for (const s of sessionRepo.setsOf(sessionExerciseId)) {
+        const patch = retargetSet(s, target);
+        if (patch) updateRow('session_set', s.id, patch);
+      }
+    });
+  },
+
+  /** ตั้งจำนวนเซ็ตของท่าใหม่ระหว่างฝึก (เพิ่มต่อท้าย / ลบเซ็ตที่ยังไม่ทำจากท้าย ไม่ลบเซ็ตที่ทำแล้ว) */
+  resizeSets(sessionExerciseId: string, wanted: number): void {
+    transaction(() => {
+      const plan = resizeSets(sessionRepo.setsOf(sessionExerciseId), wanted);
+      for (const id of plan.removeIds) sessionRepo.removeSet(id);
+      for (let i = 0; i < plan.add; i++) sessionRepo.addSet(sessionExerciseId);
+    });
   },
 
   updateSet(

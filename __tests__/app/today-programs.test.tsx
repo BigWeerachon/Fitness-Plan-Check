@@ -168,6 +168,39 @@ describe('Programs, routines and the weekly plan (SPEC E, F)', () => {
     expect(loadToday().program?.id).toBe(fb.id);
   });
 
+  it('back-fills a past day with a routine (snapshots group/routine) or an empty session', async () => {
+    await entitledApp(); // ศุกร์ 9 ต.ค.
+    const program = instantiateTemplate('ppl3', 'en')!;
+    const pull = routineRepo.listByProgram(program.id).find((r) => r.type === 'pull')!;
+    renderRouter('./src/app', { initialUrl: '/' });
+    fireEvent.press(await screen.findByTestId('today-menu'));
+    fireEvent.press(await screen.findByTestId('log-past-1'));
+    // เลือก routine ของวันที่ย้อนหลัง
+    fireEvent.press(await screen.findByTestId(`log-past-routine-${pull.id}`));
+    await flush();
+    const active = sessionRepo.getActive()!;
+    expect(active).toMatchObject({
+      date: '2026-10-08',
+      backfilled: true,
+      routineId: pull.id,
+      routineName: 'Pull',
+      programName: 'Push / Pull / Legs (3 days)',
+      routineType: 'pull',
+    });
+    expect(sessionRepo.exercises(active.id).length).toBeGreaterThan(0);
+  });
+
+  it('back-fill offers an empty session too', async () => {
+    await entitledApp();
+    instantiateTemplate('ppl3', 'en');
+    renderRouter('./src/app', { initialUrl: '/' });
+    fireEvent.press(await screen.findByTestId('today-menu'));
+    fireEvent.press(await screen.findByTestId('log-past-2'));
+    fireEvent.press(await screen.findByTestId('log-past-empty'));
+    await flush();
+    expect(sessionRepo.getActive()).toMatchObject({ date: '2026-10-07', backfilled: true, routineId: null });
+  });
+
   it('routine editor: adds exercises from the library and edits progression settings', async () => {
     await entitledApp();
     const p = programRepo.create('Mine');

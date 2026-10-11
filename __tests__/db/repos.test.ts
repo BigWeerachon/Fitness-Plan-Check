@@ -255,6 +255,38 @@ describe('repositories (T06)', () => {
     expect(sessionRepo.exercises(s.id).map((e) => e.id)).toEqual([bench.id, newId, after.id]);
   });
 
+  it('removes any set and renumbers the rest; retargets without overwriting typed values; resizes sets', () => {
+    const s = sessionRepo.start({ date: '2026-10-09', resolve });
+    const bench = sessionRepo.addExercise(s.id, 'barbell_bench_press', resolve, {
+      sets: 4,
+      targetWeightKg: 60,
+      targetReps: 8,
+    });
+    const [a, b, c, d] = sessionRepo.setsOf(bench.id);
+    // ลบเซ็ตกลางท่า → เลขเซ็ตที่เหลือต่อเนื่อง
+    sessionRepo.removeSet(b.id);
+    expect(sessionRepo.setsOf(bench.id).map((x) => [x.id, x.setIndex])).toEqual([
+      [a.id, 0],
+      [c.id, 1],
+      [d.id, 2],
+    ]);
+
+    // ปรับเป้า: เซ็ตที่ผู้ใช้พิมพ์น้ำหนักเองไม่ถูกทับ, เซ็ตที่เสร็จแล้วไม่เปลี่ยน
+    sessionRepo.setDone(a.id, true);
+    sessionRepo.updateSet(c.id, { weightKg: 62.5 });
+    sessionRepo.retargetPending(bench.id, { targetWeightKg: 65, targetReps: 6 });
+    const byId = new Map(sessionRepo.setsOf(bench.id).map((x) => [x.id, x]));
+    expect(byId.get(a.id)).toMatchObject({ targetWeightKg: 60, weightKg: 60, reps: 8, done: true });
+    expect(byId.get(c.id)).toMatchObject({ targetWeightKg: 65, targetReps: 6, weightKg: 62.5, reps: 6 });
+    expect(byId.get(d.id)).toMatchObject({ targetWeightKg: 65, targetReps: 6, weightKg: 65, reps: 6 });
+
+    // เปลี่ยนจำนวนเซ็ต: เพิ่มต่อท้าย / ลดโดยไม่ลบเซ็ตที่ทำแล้ว
+    sessionRepo.resizeSets(bench.id, 5);
+    expect(sessionRepo.setsOf(bench.id).map((x) => x.setIndex)).toEqual([0, 1, 2, 3, 4]);
+    sessionRepo.resizeSets(bench.id, 1);
+    expect(sessionRepo.setsOf(bench.id).map((x) => x.id)).toEqual([a.id]);
+  });
+
   it('daily log upserts one row per date', () => {
     dailyLogRepo.upsert('2026-10-09', { kcalIntake: 2000 });
     dailyLogRepo.upsert('2026-10-09', { bodyWeightKg: 70.5 });
