@@ -63,6 +63,8 @@ export default function RoutineScreen() {
     );
   }
   const { routine, exercises, unit } = data;
+  // ย้ายได้เฉพาะกรุ๊ปอื่น ส่วนคัดลอกไปกรุ๊ปเดิมก็ได้
+  const targets = data.programs.filter((p) => move === 'copy' || p.id !== routine.programId);
 
   const reorder = (index: number, delta: number) => {
     const ids = exercises.map((e) => e.id);
@@ -213,6 +215,7 @@ export default function RoutineScreen() {
           />
           <ListRow
             title={t('programs.copyTo')}
+            testID="routine-copy"
             icon="copy-outline"
             onPress={() => {
               setMenu(false);
@@ -221,6 +224,7 @@ export default function RoutineScreen() {
           />
           <ListRow
             title={t('programs.moveTo')}
+            testID="routine-move"
             icon="arrow-redo-outline"
             onPress={() => {
               setMenu(false);
@@ -252,13 +256,19 @@ export default function RoutineScreen() {
       </Sheet>
 
       <Sheet visible={move !== null} onClose={() => setMove(null)} title={t('programs.pickProgram')}>
-        <CardGroup>
-          {data.programs
-            .filter((p) => move === 'copy' || p.id !== routine.programId)
-            .map((p) => (
+        {targets.length === 0 ? (
+          <EmptyState
+            icon="folder-open-outline"
+            title={t('programs.noOtherPrograms')}
+            body={t('programs.noOtherProgramsBody')}
+          />
+        ) : (
+          <CardGroup>
+            {targets.map((p) => (
               <ListRow
                 key={p.id}
                 title={p.name}
+                testID={`move-target-${p.id}`}
                 onPress={() => {
                   if (move === 'copy') {
                     const copy = routineRepo.copyTo(id, p.id);
@@ -274,7 +284,8 @@ export default function RoutineScreen() {
                 }}
               />
             ))}
-        </CardGroup>
+          </CardGroup>
+        )}
         <AppText variant="caption" secondary>
           {move === 'copy' ? t('programs.copyTo') : t('programs.moveTo')}
         </AppText>

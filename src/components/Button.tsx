@@ -17,6 +17,7 @@ export function Button({
   icon,
   style,
   accessibilityHint,
+  expanded,
   testID,
 }: {
   title: string;
@@ -27,6 +28,8 @@ export function Button({
   icon?: IconName;
   style?: StyleProp<ViewStyle>;
   accessibilityHint?: string;
+  /** ปุ่มที่ยุบ/ขยายเนื้อหา (เช่น "เพิ่มเติม") — แจ้งสถานะให้ screen reader */
+  expanded?: boolean;
   testID?: string;
 }) {
   const p = usePalette();
@@ -40,7 +43,7 @@ export function Button({
       disabled={inactive}
       accessibilityRole="button"
       accessibilityLabel={title}
-      accessibilityState={{ disabled: !!inactive, busy: !!loading }}
+      accessibilityState={{ disabled: !!inactive, busy: !!loading, expanded }}
       accessibilityHint={accessibilityHint}
       testID={testID}
       style={({ pressed }) => [

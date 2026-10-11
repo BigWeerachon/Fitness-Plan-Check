@@ -41,6 +41,8 @@ const exercises: LocaleShape<typeof en> = {
   namePlaceholder: 'เช่น ดันเลื่อน (Sled push)',
   notes: 'โน้ตสั้นๆ (ไม่บังคับ)',
   saveExercise: 'บันทึกท่า',
+  editTitle: 'แก้ไขท่า',
+  editExercise: 'แก้ไขท่า',
   deleteExercise: 'ลบท่า',
   deleteConfirm: 'ลบท่านี้ไหม? ประวัติการฝึกเดิมยังอยู่',
   noResults: 'ไม่พบท่าที่ตรงกัน ลองคำอื่นหรือสร้างท่าเอง',

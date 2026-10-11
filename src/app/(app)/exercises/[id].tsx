@@ -2,7 +2,16 @@ import { router, useLocalSearchParams } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, StyleSheet, View } from 'react-native';
-import { AppText, Button, Card, ErrorState, HeroTitle, Screen, StackHeader } from '../../../components';
+import {
+  AppText,
+  Button,
+  Card,
+  ErrorState,
+  HeroTitle,
+  MuscleIcon,
+  Screen,
+  StackHeader,
+} from '../../../components';
 import { customExerciseRepo } from '../../../db/repos/customExerciseRepo';
 import { exerciseName, localized } from '../../../data/exerciseLibrary';
 import { useRepoQuery } from '../../../features/data/useRepoQuery';
@@ -32,9 +41,12 @@ export default function ExerciseDetailScreen() {
           <AppText variant="caption" secondary>
             {t('exercises.primary')}
           </AppText>
-          <AppText variant="headline" accent>
-            {t(`exercises.muscles.${ex.primary}`)}
-          </AppText>
+          <View style={styles.muscleRow}>
+            <MuscleIcon muscle={ex.primary} size={32} />
+            <AppText variant="headline" accent>
+              {t(`exercises.muscles.${ex.primary}`)}
+            </AppText>
+          </View>
           {ex.secondary.length > 0 ? (
             <>
               <AppText variant="caption" secondary style={styles.top}>
@@ -58,6 +70,15 @@ export default function ExerciseDetailScreen() {
           icon="trending-up-outline"
           onPress={() => router.push({ pathname: '/stats/exercise/[id]', params: { id } })}
         />
+        {ex.isCustom ? (
+          <Button
+            title={t('exercises.editExercise')}
+            kind="secondary"
+            icon="create-outline"
+            onPress={() => router.push({ pathname: '/exercises/new', params: { editId: id } })}
+            testID="exercise-edit"
+          />
+        ) : null}
         {ex.isCustom ? (
           <Button
             title={t('exercises.deleteExercise')}
@@ -85,4 +106,5 @@ export default function ExerciseDetailScreen() {
 const styles = StyleSheet.create({
   gap: { gap: spacing.md },
   top: { marginTop: spacing.sm },
+  muscleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
 });

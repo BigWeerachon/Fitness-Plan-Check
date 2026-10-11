@@ -11,26 +11,36 @@ import { EQUIPMENT, MUSCLE_GROUPS } from '../../../data/exerciseLibrary';
 import { preferredWeightStepKg } from '../../../domain/progression';
 import { spacing } from '../../../theme/tokens';
 
-/** สร้างท่าเอง (SPEC F7): ต้องมีกลุ่มกล้ามเนื้อหลัก 1 กลุ่ม + กลุ่มรอง/อุปกรณ์/โน้ต */
+/**
+ * สร้างท่าเอง (SPEC F7): ต้องมีกลุ่มกล้ามเนื้อหลัก 1 กลุ่ม + กลุ่มรอง/อุปกรณ์/โน้ต
+ * ถ้ามี ?editId จะเป็นโหมดแก้ไขท่าที่สร้างเองเดิม (ฟอร์มเดียวกัน)
+ */
 export default function NewExerciseScreen() {
   const { t } = useTranslation();
-  const { routineId } = useLocalSearchParams<{ routineId?: string }>();
-  const [name, setName] = useState('');
-  const [primary, setPrimary] = useState<MuscleGroup | null>(null);
-  const [secondary, setSecondary] = useState<MuscleGroup[]>([]);
-  const [equipment, setEquipment] = useState<Equipment>('other');
-  const [notes, setNotes] = useState('');
+  const { routineId, editId } = useLocalSearchParams<{ routineId?: string; editId?: string }>();
+  const existing = editId ? customExerciseRepo.get(editId) : undefined;
+  const [name, setName] = useState(existing?.name ?? '');
+  const [primary, setPrimary] = useState<MuscleGroup | null>(existing?.primaryMuscle ?? null);
+  const [secondary, setSecondary] = useState<MuscleGroup[]>(existing?.secondaryMuscles ?? []);
+  const [equipment, setEquipment] = useState<Equipment>(existing?.equipment ?? 'other');
+  const [notes, setNotes] = useState(existing?.notes ?? '');
   const valid = name.trim().length > 0 && primary !== null;
 
   const save = () => {
     if (!valid || !primary) return;
-    const ex = customExerciseRepo.create({
-      name,
+    const values = {
+      name: name.trim(),
       primaryMuscle: primary,
       secondaryMuscles: secondary.filter((m) => m !== primary),
       equipment,
       notes: notes.trim() || null,
-    });
+    };
+    if (existing) {
+      customExerciseRepo.update(existing.id, values);
+      router.back();
+      return;
+    }
+    const ex = customExerciseRepo.create(values);
     if (routineId) {
       const profile = profileRepo.get();
       routineExerciseRepo.add(routineId, ex.id, {
@@ -42,8 +52,11 @@ export default function NewExerciseScreen() {
   };
 
   return (
-    <Screen header={<StackHeader title={t('exercises.newTitle')} />} testID="exercise-new">
-      <HeroTitle title={t('exercises.createCustom')} compact />
+    <Screen
+      header={<StackHeader title={existing ? t('exercises.editTitle') : t('exercises.newTitle')} />}
+      testID="exercise-new"
+    >
+      <HeroTitle title={existing ? t('exercises.editExercise') : t('exercises.createCustom')} compact />
       <View style={styles.gap}>
         <TextField
           label={t('exercises.name')}

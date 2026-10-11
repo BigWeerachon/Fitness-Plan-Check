@@ -1,5 +1,6 @@
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 import { getDb } from '../client';
+import { getOwner } from '../owner';
 import { createRow, softDeleteRow, updateRow, type CreateInput, type PatchInput } from '../mutations';
 import { customExercise, type CustomExercise } from '../schema';
 import { live } from './query';
@@ -21,9 +22,13 @@ export const customExerciseRepo = {
       .where(live(customExercise, eq(customExercise.id, id)))
       .get();
   },
-  /** รวมท่าที่ถูกลบแล้ว (ใช้แสดงชื่อในประวัติ) */
+  /** รวมท่าที่ถูกลบแล้ว (ใช้แสดงชื่อในประวัติ) แต่ยังกรองเจ้าของ */
   getAny(id: string): CustomExercise | undefined {
-    return getDb().select().from(customExercise).where(eq(customExercise.id, id)).get();
+    return getDb()
+      .select()
+      .from(customExercise)
+      .where(and(eq(customExercise.ownerId, getOwner()), eq(customExercise.id, id)))
+      .get();
   },
   create(values: CreateInput<'custom_exercise'>): CustomExercise {
     return createRow('custom_exercise', { ...values, name: values.name.trim() });

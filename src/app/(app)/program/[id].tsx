@@ -49,6 +49,7 @@ export default function ProgramScreen() {
   const [renaming, setRenaming] = useState(false);
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
+  const [renameValue, setRenameValue] = useState('');
   const [type, setType] = useState<RoutineType>('other');
 
   if (!data) {
@@ -171,15 +172,20 @@ export default function ProgramScreen() {
       </Sheet>
 
       <Sheet visible={renaming} onClose={() => setRenaming(false)} title={t('programs.rename')}>
-        <TextField label={t('programs.newProgramName')} value={name} onChangeText={setName} />
+        <TextField
+          label={t('programs.newProgramName')}
+          value={renameValue}
+          onChangeText={setRenameValue}
+          testID="program-rename-input"
+        />
         <Button
           title={t('common.save')}
-          disabled={!name.trim()}
+          disabled={!renameValue.trim()}
           onPress={() => {
-            programRepo.rename(id, name);
+            programRepo.rename(id, renameValue);
             setRenaming(false);
-            setName('');
           }}
+          testID="program-rename-save"
         />
       </Sheet>
 
@@ -188,9 +194,10 @@ export default function ProgramScreen() {
           <ListRow
             title={t('programs.rename')}
             icon="create-outline"
+            testID="program-rename"
             onPress={() => {
               setMenu(false);
-              setName(data.program.name);
+              setRenameValue(data.program.name);
               setRenaming(true);
             }}
           />
