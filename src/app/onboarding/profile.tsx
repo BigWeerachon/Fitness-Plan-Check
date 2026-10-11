@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formFromValues, parseProfileForm } from '../../domain/profileInput';
-import { draftRepo } from '../../features/onboarding/draft';
+import { draftRepo, skippedProfileDraft } from '../../features/onboarding/draft';
 import { OnboardingFrame } from '../../features/onboarding/OnboardingFrame';
 import { ProfileFormView } from '../../features/profile/ProfileFormView';
 
@@ -20,7 +20,7 @@ export default function OnboardingProfile() {
   };
 
   const skip = () => {
-    draftRepo.save({ weightUnit: form.weightUnit, lengthUnit: form.lengthUnit, profileSkipped: true });
+    draftRepo.save(skippedProfileDraft(form));
     router.push('/onboarding/program');
   };
 

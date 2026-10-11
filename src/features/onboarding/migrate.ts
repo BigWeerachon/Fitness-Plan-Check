@@ -22,12 +22,15 @@ export function migrateDraftToAccount(userId: string): 'migrated' | 'nothing' {
     const current = existing?.[key as keyof typeof existing];
     if (current === undefined || current === null) patch[key] = value;
   };
-  fill('sex', d.sex);
-  fill('age', d.age);
-  fill('heightCm', d.heightCm);
-  fill('weightKg', d.weightKg);
-  fill('activityLevel', d.activityLevel);
-  fill('goal', d.goal);
+  // กด "ข้ามไปก่อน" = ไม่ให้ข้อมูลร่างกาย แม้เคยกรอกไว้ก่อนย้อนกลับมากดข้าม (เหลือแค่หน่วย)
+  if (!d.profileSkipped) {
+    fill('sex', d.sex);
+    fill('age', d.age);
+    fill('heightCm', d.heightCm);
+    fill('weightKg', d.weightKg);
+    fill('activityLevel', d.activityLevel);
+    fill('goal', d.goal);
+  }
   if (!existing) {
     if (d.weightUnit) patch.weightUnit = d.weightUnit;
     if (d.lengthUnit) patch.lengthUnit = d.lengthUnit;

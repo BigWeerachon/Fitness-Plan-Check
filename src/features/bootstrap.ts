@@ -6,7 +6,7 @@ import { notifyDataChanged } from '../stores/dataVersion';
 import { onLocalWrite } from '../db/mutations';
 import { onOwnerChange } from '../db/owner';
 import { draftRepo } from './onboarding/draft';
-import { migrateDraftToAccount } from './onboarding/migrate';
+import { migrateDraftWhenReady } from './onboarding/resume';
 
 /**
  * ลงทะเบียนงานที่ต้องเกิดตามเหตุการณ์ของบัญชี (เรียกครั้งเดียวตอนเปิดแอป)
@@ -23,7 +23,6 @@ export function addEntitledTask(task: (userId: string) => void | Promise<void>):
 }
 
 const SIGN_OUT_FLUSH_TIMEOUT_MS = 5_000;
-const FIRST_PULL_TIMEOUT_MS = 8_000;
 
 export function registerAppHooks(): void {
   if (registered) return;
@@ -38,10 +37,8 @@ export function registerAppHooks(): void {
   onEntitled(async (userId) => {
     claimLocalRows(userId);
     // ดึงข้อมูลจากคลาวด์ก่อน (เครื่องใหม่ B11) แล้วค่อยย้ายข้อมูลตั้งค่าเริ่มต้น เพื่อไม่สร้างโปรแกรมซ้ำ
-    if (draftRepo.get() && !draftRepo.get()?.migratedAt) {
-      await Promise.race([syncNow(), new Promise((r) => setTimeout(r, FIRST_PULL_TIMEOUT_MS))]);
-      migrateDraftToAccount(userId);
-    }
+    // ย้ายเฉพาะเมื่อผู้ใช้ทำตั้งค่าเริ่มต้นครบแล้ว ไม่งั้นร่างที่ยังไม่ครบถูกตีว่าย้ายแล้วและโปรแกรมที่เลือกทีหลังหาย
+    await migrateDraftWhenReady(userId);
     for (const task of extraEntitledHooks) await task(userId);
     requestSync(0);
   });

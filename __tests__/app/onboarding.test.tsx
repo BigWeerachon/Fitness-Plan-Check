@@ -7,6 +7,7 @@ import { profileRepo } from '@/db/repos/profileRepo';
 import { programRepo, routineRepo } from '@/db/repos/programRepo';
 import { weekPlanRepo } from '@/db/repos/weekPlanRepo';
 import { useSettings } from '@/stores/settings';
+import { entitledApp } from '../helpers/app';
 import { freshEnv } from '../helpers/env';
 
 jest.setTimeout(60_000);
@@ -66,6 +67,65 @@ describe('onboarding (SPEC C) → paywall (B4)', () => {
     expect(await screen.findByText('Quick start')).toBeTruthy();
     expect(draftRepo.get()?.data.profileSkipped).toBe(true);
   });
+
+  it('Next → Back → Skip on step 2 drops the values typed earlier (C-2)', async () => {
+    freshEnv('new');
+    renderRouter('./src/app', { initialUrl: '/onboarding/profile' });
+    fireEvent.press(await screen.findByTestId('sex-female'));
+    fireEvent.changeText(screen.getByTestId('field-age'), '29');
+    fireEvent.changeText(screen.getByTestId('field-weight'), '61');
+    fireEvent.press(screen.getByTestId('goal-lose'));
+    fireEvent.press(screen.getByTestId('onboarding-next'));
+    expect(await screen.findByText('Quick start')).toBeTruthy();
+    expect(draftRepo.get()?.data).toMatchObject({ age: 29, weightKg: 61 });
+    fireEvent.press(screen.getByTestId('header-back'));
+    fireEvent.press(await screen.findByTestId('onboarding-skip'));
+    expect(await screen.findByText('Quick start')).toBeTruthy();
+    expect(draftRepo.get()?.data).toMatchObject({
+      profileSkipped: true,
+      sex: null,
+      age: null,
+      heightCm: null,
+      weightKg: null,
+      activityLevel: null,
+      goal: null,
+    });
+    // ย้ายเข้าบัญชีแล้วไม่มีข้อมูลร่างกายหลุดเข้าไป
+    setOwner('u1');
+    migrateDraftToAccount('u1');
+    expect(profileRepo.get()).toMatchObject({ sex: null, age: null, weightKg: null, goal: null });
+  });
+});
+
+describe('Edit setup from the account page while locked (B3, C)', () => {
+  it('a locked user can reopen the profile and starting-program steps without losing onboardingDone', async () => {
+    freshEnv('new');
+    useSettings.getState().set('onboardingDone', true);
+    draftRepo.save({ age: 33, quickStart: { kind: 'skip' } });
+    renderRouter('./src/app', { initialUrl: '/account' });
+    fireEvent.press(await screen.findByTestId('account-edit-setup'));
+    expect(await screen.findByTestId('onboarding-step-2')).toBeTruthy();
+    expect(screen.getByTestId('field-age').props.value).toBe('33');
+    fireEvent.changeText(screen.getByTestId('field-age'), '34');
+    fireEvent.press(screen.getByTestId('onboarding-next'));
+    expect(await screen.findByTestId('onboarding-step-3')).toBeTruthy();
+    expect(draftRepo.get()?.data.age).toBe(34);
+    expect(useSettings.getState().onboardingDone).toBe(true);
+    fireEvent.press(screen.getByTestId('template-custom'));
+    fireEvent.press(screen.getByTestId('onboarding-next'));
+    await flush();
+    // ยังไม่มีสิทธิ์ → ประตูพาไป Paywall ตามปกติ ไม่วนกลับไปตั้งค่าเริ่มต้น
+    expect(await screen.findByTestId('paywall')).toBeTruthy();
+    expect(useSettings.getState().onboardingDone).toBe(true);
+    expect(draftRepo.get()?.data.quickStart).toEqual({ kind: 'custom' });
+  });
+
+  it('the row is hidden for entitled users', async () => {
+    await entitledApp();
+    renderRouter('./src/app', { initialUrl: '/account' });
+    expect(await screen.findByTestId('account')).toBeTruthy();
+    expect(screen.queryByTestId('account-edit-setup')).toBeNull();
+  });
 });
 
 describe('draft migration into the account (B4 last step)', () => {
@@ -89,6 +149,14 @@ describe('draft migration into the account (B4 last step)', () => {
     expect(weekPlanRepo.listForProgram(p.id).map((e) => e.days)).toEqual([[1], [3], [5]]);
     expect(migrateDraftToAccount('u1')).toBe('nothing');
     expect(programRepo.list()).toHaveLength(1);
+  });
+
+  it('ignores body fields when the profile step was skipped (C-2)', () => {
+    freshEnv();
+    setOwner('u1');
+    draftRepo.save({ age: 35, weightKg: 80, goal: 'gain', weightUnit: 'lb', profileSkipped: true });
+    migrateDraftToAccount('u1');
+    expect(profileRepo.get()).toMatchObject({ age: null, weightKg: null, goal: null, weightUnit: 'lb' });
   });
 
   it('does not overwrite data that already came from the cloud (B11)', () => {
