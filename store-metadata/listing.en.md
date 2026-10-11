@@ -15,11 +15,11 @@
 | App name with descriptor (optional) | App Store / Play | 30 / 30 | 24 |
 | Subtitle | App Store | 30 | 29 |
 | Promotional text | App Store | 170 | 147 |
-| Description | App Store | 4000 | 3793 |
+| Description | App Store | 4000 | 3826 |
 | Keywords | App Store | 100 | 98 characters / 98 bytes |
 | What's New (1.0) | App Store | 4000 | 315 |
 | Short description | Google Play | 80 | 65 |
-| Full description | Google Play | 4000 | 3691 |
+| Full description | Google Play | 4000 | 3724 |
 | Release notes (1.0) | Google Play | 500 | 315 (same text as What's New) |
 
 ---
@@ -58,7 +58,7 @@ Comma-separated, no spaces after commas. Words already in the name or subtitle (
 strength,lifting,weightlifting,progressive,overload,ppl,split,routine,tracker,1rm,fitness,exercise
 ```
 
-### Description — limit 4000 · count 3793
+### Description — limit 4000 · count 3826
 <!-- id:as_desc -->
 ```text
 Fitnese is a strength-training planner and workout log: open the app, see today's workout, and start in a few taps.
@@ -75,7 +75,7 @@ YOUR WEEK, YOUR WAY
 PROGRAMS AND 143 EXERCISES
 • Editable templates: Push/Pull/Legs (3 or 6 days), Upper/Lower, Full Body, Bro Split, 5×5 Beginner
 • Your own programs and routines; copy or move routines between programs
-• English/Thai library of 143 exercises, including bodyweight moves like push-ups and pull-ups. Add your own.
+• English/Thai library of 143 exercises with muscle-group icons, including bodyweight moves like push-ups and pull-ups. Add and edit your own.
 
 FAST, ONE-HANDED WORKOUTS
 • Last time and today's target side by side for every set
@@ -153,7 +153,7 @@ Same text as the App Store name block above (`Fitnese`, or the optional descript
 Plan your gym week, log sets fast and track progressive overload.
 ```
 
-### Full description — limit 4000 · count 3691
+### Full description — limit 4000 · count 3724
 <!-- id:play_desc -->
 ```text
 Fitnese is a strength-training planner and workout log: open the app, see today's workout, and start in a few taps.
@@ -170,7 +170,7 @@ YOUR WEEK, YOUR WAY
 PROGRAMS AND 143 EXERCISES
 • Editable templates: Push/Pull/Legs (3 or 6 days), Upper/Lower, Full Body, Bro Split, 5×5 Beginner
 • Your own programs and routines; copy or move routines between programs
-• English/Thai library of 143 exercises, including bodyweight moves like push-ups and pull-ups. Add your own.
+• English/Thai library of 143 exercises with muscle-group icons, including bodyweight moves like push-ups and pull-ups. Add and edit your own.
 
 FAST, ONE-HANDED WORKOUTS
 • Last time and today's target side by side for every set
@@ -244,7 +244,9 @@ Checked against the repository at commit `c7f2171` (HEAD of `claude/clever-bell-
 | Optional RIR / RPE targets per exercise | `ExerciseSettingsSheet.tsx` (`rir`, `rpe`), i18n `programs.rir`, `programs.rpe` |
 | Add, swap, reorder, remove exercises; add / remove sets mid-workout | i18n `session.addExercise`, `swap`, `moveUp`, `moveDown`, `removeExercise`, `addSet`, `removeSet` |
 | Change a target for today only / from now on | i18n `session.todayOnly`, `session.fromNowOn`, `src/features/session/TargetSheet.tsx` |
-| Log a past workout (last 7 days) | `src/app/(app)/(tabs)/index.tsx` (menu `today.menu.logPast`, `startSession({ date })`) |
+| Log a past workout (last 7 days, pick a routine or an empty session) | `src/app/(app)/(tabs)/index.tsx` (menu `today.menu.logPast`, `today.menu.pickRoutine`, `startSession({ date })`) |
+| Muscle-group icons | `src/components/MuscleIcon.tsx`, `src/data/muscleIcons.ts` (used in the exercise library, exercise detail and the session screen) |
+| Create and edit your own exercises | `src/app/(app)/exercises/new.tsx` (`?editId` edit mode), `src/app/(app)/exercises/[id].tsx` |
 | Stats: day / week / month / year; % by program, routine type and muscle; sets, volume or workouts; sum = 100 | `src/domain/stats.ts` (largest remainder, D27), i18n `stats.*` |
 | Estimated 1RM (Epley), body-weight trend | `src/domain/stats.ts` (`epley1RM`), `src/features/stats/bodyWeight.ts` |
 | BMR / TDEE / targets / MET; no weight-loss target under 18 | `src/domain/nutrition.ts` (`ADULT_AGE`, D28), i18n `onboarding.under18` |
