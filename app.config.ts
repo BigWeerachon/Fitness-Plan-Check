@@ -3,6 +3,8 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
 // ค่าที่ต้องเปลี่ยนก่อน build จริง อ่านจาก .env (ดู docs/HUMAN_TASKS.md)
 const BUNDLE_ID = process.env.APP_BUNDLE_ID || 'com.example.fitnese';
 // ปลั๊กอิน Google Sign-In บังคับให้มี iosUrlScheme ตอน prebuild ถ้ายังไม่มีคีย์จริงใช้ค่าชั่วคราวไปก่อน
+// รหัสโปรเจกต์ EAS: ได้จาก `eas init` — ตั้งเป็นตัวแปร EAS_PROJECT_ID (EAS environment variable) หรือวางค่าแทน '' ตรงนี้
+const EAS_PROJECT_ID = process.env.EAS_PROJECT_ID || '';
 const GOOGLE_IOS_URL_SCHEME = process.env.GOOGLE_IOS_URL_SCHEME || 'com.googleusercontent.apps.placeholder';
 
 /**
@@ -90,4 +92,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   experiments: {
     typedRoutes: true,
   },
+  // ไม่ใส่ extra.eas ถ้ายังไม่มีรหัส (eas init จะถามหา/แจ้งให้เพิ่มเอง เพราะไฟล์นี้เป็นแบบเขียนโค้ด)
+  ...(EAS_PROJECT_ID ? { extra: { eas: { projectId: EAS_PROJECT_ID } } } : {}),
 });

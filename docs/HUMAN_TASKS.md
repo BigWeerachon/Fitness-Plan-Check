@@ -51,7 +51,7 @@
 | `<SUPABASE_URL>` | `https://<PROJECT_REF>.supabase.co` | 15 | `EXPO_PUBLIC_SUPABASE_URL` | |
 | `<SUPABASE_ANON_KEY>` | `eyJ...` หรือ `sb_publishable_...` | 15 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | |
 | `<WEBHOOK_SECRET>` | สตริงสุ่ม 64 ตัว (hex) | 18 | secret `REVENUECAT_WEBHOOK_SECRET` + RevenueCat webhook Authorization | |
-| `<EAS_PROJECT_ID>` | UUID | 21 | `app.config.ts` → `extra.eas.projectId` | |
+| `<EAS_PROJECT_ID>` | UUID | 21 | `app.config.ts` → ค่าคงที่ `EAS_PROJECT_ID` (หรือ EAS environment variable ชื่อเดียวกัน) → `extra.eas.projectId` | |
 | `<ANDROID_SHA1_EAS>` | `AA:BB:...` (20 ไบต์) | 23 | Google Android OAuth client #1 | |
 | `<SERVICES_ID>` | `<BUNDLE_ID>.signin` | 25 | Supabase Apple Client IDs, JWT ของ Apple | |
 | `<SIWA_KEY_ID>` | 10 ตัวอักษร | 26 | secret `APPLE_KEY_ID`, JWT ของ Apple | |
@@ -260,10 +260,7 @@
     eas login
     eas init        # สร้างโปรเจกต์ @<บัญชี Expo>/fitnese และแสดง project ID
     ```
-  - **ใส่ค่า:** `app.config.ts` เป็น config แบบ dynamic ซึ่ง `eas init` แก้ให้อัตโนมัติไม่ได้ CLI จะบอกให้เพิ่มค่าเอง — ให้เพิ่มในออบเจ็กต์ที่ return:
-    ```ts
-    extra: { eas: { projectId: '<EAS_PROJECT_ID>' } },
-    ```
+  - **ใส่ค่า:** `app.config.ts` เป็น config แบบ dynamic ซึ่ง `eas init` แก้ให้อัตโนมัติไม่ได้ CLI จะบอก project ID ให้ — ให้ตั้ง **EAS environment variable ชื่อ `EAS_PROJECT_ID`** (หรือวางค่าใน `const EAS_PROJECT_ID = '<EAS_PROJECT_ID>'` ที่ต้นไฟล์ `app.config.ts`) ไฟล์จะเพิ่ม `extra.eas.projectId` ให้เอง
     (ถ้าใช้บัญชีองค์กรของ Expo ให้เพิ่ม `owner: '<ชื่อองค์กร>'` ด้วย) แล้วรัน `npm run check` และ `eas project:info` ต้องแสดงโปรเจกต์ที่ถูกต้อง
   - **ผลลัพธ์ →** `<EAS_PROJECT_ID>` ใน `app.config.ts`
 
