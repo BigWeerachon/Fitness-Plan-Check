@@ -1,8 +1,6 @@
 # Privacy Policy
 
-> Template — the owner must replace [วันที่มีผล / Effective date] and have it reviewed by a legal professional before publishing.
-
-_Effective [วันที่มีผล / Effective date]_
+_Effective 15 October 2026_
 
 ## In short
 

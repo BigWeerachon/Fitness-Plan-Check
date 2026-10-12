@@ -165,9 +165,9 @@ eas submit --platform android --profile production --latest
 
 **สถานะโค้ด (ที่ `88bfff2`):** ป้าย `legal.templateNotice` ("Template — the developer must review…" / "เทมเพลต — ผู้พัฒนาต้องตรวจ…") ใน `src/app/legal/[doc].tsx` แสดงเฉพาะเมื่อ `hasPlaceholders(content)` (`src/legal/content.ts`) พบค่า `PLACEHOLDERS` ตัวใดตัวหนึ่งในเอกสาร และมีเทสต์ guard ใน `__tests__/legal.test.ts` ที่ทำงานเฉพาะเมื่อ `RELEASE=1` (ถ้าไม่ตั้ง จะแสดงเป็นเทสต์ที่ถูกข้าม) แล้วล้มจนกว่าจะกรอก placeholder ครบทุกเอกสารทุกภาษา (เทสต์ข้อ 5.1 ใน `TEST_PLAN.md`) ดังนั้นแอปที่ส่งสโตร์จะไม่มีป้ายเทมเพลตก็ต่อเมื่อกรอกครบแล้ว
 
-- [ ] กรอกค่าใน `PLACEHOLDERS` ครบแล้ว 3 ตัว (`developer`, `contact`, `address`) เหลือ `effective` (วันที่มีผล) กรอกวันที่เผยแพร่จริง — กฎหมายที่ใช้บังคับตัดสินใจแล้ว: กฎหมายไทย ศาลที่มีเขตอำนาจในกรุงเทพมหานคร (D78) ด้วยข้อมูลจริง และอ่านทุกหัวข้อทั้งไทย/อังกฤษให้ตรงกับธุรกิจจริง · ตรวจเอง: คำสั่งนี้ต้องไม่พิมพ์อะไรออกมา
+- [ ] ค่าใน `PLACEHOLDERS` ครบแล้ว (`developer`, `contact`, `address`) และวันที่มีผลตั้งไว้ที่ 15 ตุลาคม 2569 (`EFFECTIVE`; แก้ถ้าวันเผยแพร่จริงต่างไป) — กฎหมายที่ใช้บังคับตัดสินใจแล้ว: กฎหมายไทย ศาลที่มีเขตอำนาจในกรุงเทพมหานคร (D78) ด้วยข้อมูลจริง และอ่านทุกหัวข้อทั้งไทย/อังกฤษให้ตรงกับธุรกิจจริง · ตรวจเอง: คำสั่งนี้ต้องไม่พิมพ์อะไรออกมา
   ```bash
-  grep -nE "/ (Developer name|Contact email|Address|Effective date)\]" src/legal/content.ts
+  grep -nE "/ (Developer name|Contact email|Address)\]" src/legal/content.ts
   ```
 - [ ] `RELEASE=1 npm test` ผ่าน (guard ของเทมเพลต: ตัวเทสต์ "has no placeholders left in any legal document" ต้องไม่ถูกข้าม) · ห้ามข้ามขั้นนี้
 - [ ] เปิดแอป (build `preview`) → Paywall → Privacy Policy และ Terms ทั้งภาษาไทยและอังกฤษ: ไม่เห็นป้ายเทมเพลต ไม่มีวงเล็บเหลี่ยม `[…]` ค้างในหัวข้อ "ติดต่อ"/"Contact" และวันที่มีผล

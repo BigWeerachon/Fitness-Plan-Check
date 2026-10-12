@@ -4,7 +4,7 @@ import { LEGAL, LEGAL_KEYS, MARKERS, PLACEHOLDERS, hasPlaceholders, type LegalDo
 // เอกสารสังเคราะห์จากข้อความตัวแทนต้นฉบับ (MARKERS) เพื่อให้เทสต์ไม่ขึ้นกับว่าเจ้าของกรอก PLACEHOLDERS ไปแล้วหรือยัง
 const templateDoc = (): LegalDoc => ({
   title: 'T',
-  updated: `Effective ${MARKERS.effective}`,
+  updated: 'Effective date',
   sections: [{ heading: 'H', body: Object.values(MARKERS).join(' · ') }],
 });
 
@@ -23,7 +23,7 @@ describe('legal documents (SPEC N4)', () => {
     ).toBe(false);
   });
 
-  it('every document uses all of the placeholders somewhere (so a filled value reaches the text)', () => {
+  it('every document uses all three placeholders somewhere (so a filled value reaches the text)', () => {
     const text = LEGAL_KEYS.flatMap((k) =>
       (['en', 'th'] as const).map((l) => JSON.stringify(LEGAL[k][l])),
     ).join('\n');

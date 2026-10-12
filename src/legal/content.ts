@@ -22,7 +22,6 @@ export const MARKERS = Object.freeze({
   developer: '[ชื่อผู้พัฒนา / Developer name]',
   contact: '[อีเมลติดต่อ / Contact email]',
   address: '[ที่อยู่ / Address]',
-  effective: '[วันที่มีผล / Effective date]',
 });
 
 /** เจ้าของโปรเจกต์แทนที่ MARKERS.xxx แต่ละบรรทัดด้วยค่าจริง */
@@ -30,7 +29,12 @@ export const PLACEHOLDERS: Record<keyof typeof MARKERS, string> = {
   developer: 'Weerachon Kammoon',
   contact: 'weerachon.work@gmail.com',
   address: '79 ซ.4 ม.2 ต.หัวทุ่ง อ.ลอง จ.แพร่ 54150 ประเทศไทย (Thailand)',
-  effective: MARKERS.effective,
+};
+
+/** วันที่เอกสารมีผล (เจ้าของกำหนด: 15 ตุลาคม 2569) แยกภาษา — ไทยใช้ พ.ศ. อังกฤษใช้ ค.ศ. */
+const EFFECTIVE = {
+  th: '15 ตุลาคม 2569',
+  en: '15 October 2026',
 };
 
 const P = PLACEHOLDERS;
@@ -45,7 +49,7 @@ export const LEGAL: Record<LegalKey, Record<Language, LegalDoc>> = {
   privacy: {
     th: {
       title: 'นโยบายความเป็นส่วนตัว',
-      updated: `มีผลตั้งแต่ ${P.effective}`,
+      updated: `มีผลตั้งแต่ ${EFFECTIVE.th}`,
       sections: [
         {
           heading: 'สรุปสั้นๆ',
@@ -107,7 +111,7 @@ export const LEGAL: Record<LegalKey, Record<Language, LegalDoc>> = {
     },
     en: {
       title: 'Privacy Policy',
-      updated: `Effective ${P.effective}`,
+      updated: `Effective ${EFFECTIVE.en}`,
       sections: [
         {
           heading: 'In short',
@@ -171,7 +175,7 @@ export const LEGAL: Record<LegalKey, Record<Language, LegalDoc>> = {
   terms: {
     th: {
       title: 'ข้อกำหนดการใช้งาน',
-      updated: `มีผลตั้งแต่ ${P.effective}`,
+      updated: `มีผลตั้งแต่ ${EFFECTIVE.th}`,
       sections: [
         {
           heading: 'การยอมรับข้อกำหนด',
@@ -229,7 +233,7 @@ export const LEGAL: Record<LegalKey, Record<Language, LegalDoc>> = {
     },
     en: {
       title: 'Terms of Use',
-      updated: `Effective ${P.effective}`,
+      updated: `Effective ${EFFECTIVE.en}`,
       sections: [
         {
           heading: 'Agreement',
