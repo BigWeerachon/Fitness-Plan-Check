@@ -27,9 +27,9 @@ export const MARKERS = Object.freeze({
 
 /** เจ้าของโปรเจกต์แทนที่ MARKERS.xxx แต่ละบรรทัดด้วยค่าจริง */
 export const PLACEHOLDERS: Record<keyof typeof MARKERS, string> = {
-  developer: MARKERS.developer,
-  contact: MARKERS.contact,
-  address: MARKERS.address,
+  developer: 'Weerachon Kammoon',
+  contact: 'weerachon.work@gmail.com',
+  address: '79 ซ.4 ม.2 ต.หัวทุ่ง อ.ลอง จ.แพร่ 54150 ประเทศไทย (Thailand)',
   effective: MARKERS.effective,
 };
 

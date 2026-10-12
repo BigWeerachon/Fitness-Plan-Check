@@ -1,6 +1,6 @@
 # Terms of Use
 
-> Template — the owner must replace [ชื่อผู้พัฒนา / Developer name], [อีเมลติดต่อ / Contact email], [ที่อยู่ / Address], [วันที่มีผล / Effective date] and have it reviewed by a legal professional before publishing.
+> Template — the owner must replace [วันที่มีผล / Effective date] and have it reviewed by a legal professional before publishing.
 
 _Effective [วันที่มีผล / Effective date]_
 
@@ -61,7 +61,7 @@ These Terms are governed by the laws of Thailand, and any related dispute falls 
 
 ## Contact
 
-[ชื่อผู้พัฒนา / Developer name]  
-[ที่อยู่ / Address]  
-[อีเมลติดต่อ / Contact email]  
+Weerachon Kammoon  
+79 ซ.4 ม.2 ต.หัวทุ่ง อ.ลอง จ.แพร่ 54150 ประเทศไทย (Thailand)  
+weerachon.work@gmail.com  
 For app or account problems, email us above. For billing and refunds, contact Apple or Google.

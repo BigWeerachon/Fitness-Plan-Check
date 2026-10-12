@@ -13,7 +13,13 @@ mkdirSync(out, { recursive: true });
 const stillTemplate = LEGAL_KEYS.some((k) =>
   (['th', 'en'] as const).some((l) => hasPlaceholders(LEGAL[k][l])),
 );
-const markers = Object.values(MARKERS).join(', ');
+const allText = LEGAL_KEYS.flatMap((k) =>
+  (['th', 'en'] as const).map((l) => JSON.stringify(LEGAL[k][l])),
+).join('\n');
+// แสดงเฉพาะค่าตัวแทนที่ยังไม่ได้กรอก
+const markers = Object.values(MARKERS)
+  .filter((m) => allText.includes(JSON.stringify(m).slice(1, -1)))
+  .join(', ');
 const note = stillTemplate
   ? {
       th: `> เทมเพลต — เจ้าของโปรเจกต์ต้องแทนที่ ${markers} และให้ผู้เชี่ยวชาญกฎหมายตรวจทานก่อนเผยแพร่\n\n`,

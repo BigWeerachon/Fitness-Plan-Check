@@ -23,7 +23,7 @@ describe('legal documents (SPEC N4)', () => {
     ).toBe(false);
   });
 
-  it('every document uses all four placeholders somewhere (so a filled value reaches the text)', () => {
+  it('every document uses all of the placeholders somewhere (so a filled value reaches the text)', () => {
     const text = LEGAL_KEYS.flatMap((k) =>
       (['en', 'th'] as const).map((l) => JSON.stringify(LEGAL[k][l])),
     ).join('\n');

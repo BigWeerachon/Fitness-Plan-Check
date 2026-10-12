@@ -165,7 +165,7 @@ eas submit --platform android --profile production --latest
 
 **สถานะโค้ด (ที่ `88bfff2`):** ป้าย `legal.templateNotice` ("Template — the developer must review…" / "เทมเพลต — ผู้พัฒนาต้องตรวจ…") ใน `src/app/legal/[doc].tsx` แสดงเฉพาะเมื่อ `hasPlaceholders(content)` (`src/legal/content.ts`) พบค่า `PLACEHOLDERS` ตัวใดตัวหนึ่งในเอกสาร และมีเทสต์ guard ใน `__tests__/legal.test.ts` ที่ทำงานเฉพาะเมื่อ `RELEASE=1` (ถ้าไม่ตั้ง จะแสดงเป็นเทสต์ที่ถูกข้าม) แล้วล้มจนกว่าจะกรอก placeholder ครบทุกเอกสารทุกภาษา (เทสต์ข้อ 5.1 ใน `TEST_PLAN.md`) ดังนั้นแอปที่ส่งสโตร์จะไม่มีป้ายเทมเพลตก็ต่อเมื่อกรอกครบแล้ว
 
-- [ ] แทนค่าทั้ง 4 ตัวใน `PLACEHOLDERS` (`developer`, `contact`, `address`, `effective`) — กฎหมายที่ใช้บังคับตัดสินใจแล้ว: กฎหมายไทย ศาลที่มีเขตอำนาจในกรุงเทพมหานคร (D78) ด้วยข้อมูลจริง และอ่านทุกหัวข้อทั้งไทย/อังกฤษให้ตรงกับธุรกิจจริง · ตรวจเอง: คำสั่งนี้ต้องไม่พิมพ์อะไรออกมา
+- [ ] กรอกค่าใน `PLACEHOLDERS` ครบแล้ว 3 ตัว (`developer`, `contact`, `address`) เหลือ `effective` (วันที่มีผล) กรอกวันที่เผยแพร่จริง — กฎหมายที่ใช้บังคับตัดสินใจแล้ว: กฎหมายไทย ศาลที่มีเขตอำนาจในกรุงเทพมหานคร (D78) ด้วยข้อมูลจริง และอ่านทุกหัวข้อทั้งไทย/อังกฤษให้ตรงกับธุรกิจจริง · ตรวจเอง: คำสั่งนี้ต้องไม่พิมพ์อะไรออกมา
   ```bash
   grep -nE "/ (Developer name|Contact email|Address|Effective date)\]" src/legal/content.ts
   ```
