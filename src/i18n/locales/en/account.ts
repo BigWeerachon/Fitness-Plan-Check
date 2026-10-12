@@ -32,7 +32,7 @@ const account = {
     renews: 'Renews {{date}}',
     endsOn: 'Access until {{date}}',
     expiredOn: 'Ended {{date}}',
-    lifetime: 'Unlocked forever',
+    lifetime: 'Lifetime access',
     billing: 'Update your payment by {{date}} to keep access',
   },
   badge: {
@@ -65,7 +65,7 @@ const account = {
     confirmCheck: 'I understand that all my data will be deleted',
     confirm: 'Delete my account',
     confirmTitle: 'Delete account permanently?',
-    confirmBody: 'Your data will be removed from all devices.',
+    confirmBody: 'Your data will be removed from the cloud and from this device.',
     working: 'Deleting…',
     done: 'Your account has been deleted.',
     failed: 'We couldn’t delete your account. Check your connection and try again.',

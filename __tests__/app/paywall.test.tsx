@@ -84,7 +84,7 @@ describe('paywall → login → purchase (SPEC B4–B6, J2)', () => {
       screen.getByText('The subscription renews automatically each month until you cancel.'),
     ).toBeTruthy();
     expect(
-      screen.getByText(/Cancel anytime before the trial ends in your App Store account settings/),
+      screen.getByText(/cancel at least 24 hours before the trial ends in your App Store account settings/),
     ).toBeTruthy();
     expect(
       screen.getByText('Lifetime is a one-time purchase and does not include a free trial.'),
@@ -231,7 +231,7 @@ describe('lifetime upgrade from settings (SPEC J5)', () => {
     const s = await signedIn('monthly');
     renderRouter('./src/app', { initialUrl: '/settings' });
     fireEvent.press(await screen.findByTestId('settings-lifetime'));
-    expect(await screen.findByText('Keep Fitnese Pro forever')).toBeTruthy();
+    expect(await screen.findByText('Get Fitnese Pro with one payment')).toBeTruthy();
     // มีสิทธิ์อยู่แล้วแต่ไม่ถูกพากลับหน้าแรก และเห็นเฉพาะซื้อขาดในราคาจากสโตร์
     expect(await screen.findByTestId('plan-lifetime')).toBeTruthy();
     expect(screen.queryByTestId('plan-monthly')).toBeNull();

@@ -162,7 +162,7 @@
 
 - [ ] **13. ส่งออกเป็นหน้าเว็บ**
   - **คำสั่ง:** `npm run legal:export` → เขียนทับ `docs/legal/privacy.th.md`, `docs/legal/privacy.en.md`, `docs/legal/terms.th.md`, `docs/legal/terms.en.md`, `docs/legal/references.md`
-  - **ใส่ค่า:** ไฟล์ที่ส่งออกอาจมีบรรทัดหมายเหตุ "> เทมเพลต —/ > Template —" ที่ต้นไฟล์ (ตรวจหลังส่งออก) ถ้ามี ให้ลบบรรทัดนั้นออกจากสำเนาที่จะเผยแพร่
+  - **ใส่ค่า:** สคริปต์ใส่บรรทัดหมายเหตุ "> เทมเพลต — / > Template —" เฉพาะตอนที่ยังมี placeholder เหลือ เมื่อกรอกครบ (ข้อ 12) ไฟล์ที่ส่งออกจะไม่มีหมายเหตุ พร้อมโฮสต์ทันที ตรวจ `head -3 docs/legal/privacy.en.md` ก่อนเผยแพร่
   - **ผลลัพธ์ →** ไฟล์ Markdown พร้อมโฮสต์
 
 - [ ] **14. โฮสต์หน้า Privacy / Terms และจด URL**
@@ -773,7 +773,7 @@
 
 - [ ] **80. ไล่เช็กลิสต์ก่อนส่ง**
   - **ที่ไหน:** `docs/RELEASE_CHECKLIST.md` — ทำครบทุกข้อ และตรวจว่าตารางในข้อ 58 กรอกครบแล้ว
-  - **ตรวจซ้ำสั้นๆ:** EAS production env มี `EXPO_PUBLIC_USE_MOCKS=0` · `npm run check` ผ่าน และ `RELEASE=1 npm test` ผ่าน (ยืนยันว่าไม่เหลือ placeholder กฎหมาย — ข้อ 12; ป้ายเทมเพลตในหน้ากฎหมายต้องหายเองแล้ว) · ทุก migration ใน `supabase/migrations/` ถูก push แล้ว (ข้อ 17) และทั้งสองฟังก์ชัน deploy แล้ว (ข้อ 18) · ทดลองฟรีและราคาบน Paywall ตรงกับที่ตั้งในสโตร์ · เส้นทาง "Get lifetime" ผ่าน (ข้อ 64) · privacy manifest ประกาศ 5 ประเภทข้อมูลตรงกับป้ายสโตร์ (ข้อ 72) · ปุ่ม Restore / จัดการสมาชิก / Privacy / Terms / แหล่งอ้างอิง / ลบบัญชี ใช้ได้
+  - **ตรวจซ้ำสั้นๆ:** EAS production env มี `EXPO_PUBLIC_USE_MOCKS=0` · `npm run check` ผ่าน และ `RELEASE=1 npm test` ผ่าน (ยืนยันว่าไม่เหลือ placeholder กฎหมาย — ข้อ 12; ป้ายเทมเพลตในหน้ากฎหมายต้องหายเองแล้ว) · ทุก migration ใน `supabase/migrations/` ถูก push แล้ว (ข้อ 17) และทั้งสองฟังก์ชัน deploy แล้ว (ข้อ 18) · ทดลองฟรีและราคาบน Paywall ตรงกับที่ตั้งในสโตร์ · เส้นทาง "Get lifetime" ผ่าน (ข้อ 64) · privacy manifest ประกาศ 6 ประเภทข้อมูลตรงกับป้ายสโตร์ (ข้อ 72) · ปุ่ม Restore / จัดการสมาชิก / Privacy / Terms / แหล่งอ้างอิง / ลบบัญชี ใช้ได้
   - **ผลลัพธ์ →** พร้อมส่ง
 
 - [ ] **81. ส่งรีวิว**

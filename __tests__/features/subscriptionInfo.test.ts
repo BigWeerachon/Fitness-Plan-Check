@@ -136,8 +136,8 @@ const table: Row[] = [
     'LIFETIME',
     cached('LIFETIME'),
     {
-      en: { status: 'Lifetime', detail: 'Unlocked forever', badge: null, notice: null },
-      th: { status: 'ซื้อขาด', detail: 'ปลดล็อกถาวร', badge: null, notice: null },
+      en: { status: 'Lifetime', detail: 'Lifetime access', badge: null, notice: null },
+      th: { status: 'ซื้อขาด', detail: 'ใช้ได้ตลอดอายุการให้บริการ', badge: null, notice: null },
     },
   ],
   [
@@ -146,13 +146,13 @@ const table: Row[] = [
     {
       en: {
         status: 'Lifetime',
-        detail: 'Unlocked forever',
+        detail: 'Lifetime access',
         badge: null,
         notice: 'Your monthly plan is still active — cancel it in App Store to avoid being charged',
       },
       th: {
         status: 'ซื้อขาด',
-        detail: 'ปลดล็อกถาวร',
+        detail: 'ใช้ได้ตลอดอายุการให้บริการ',
         badge: null,
         notice: 'แพ็กเกจรายเดือนของคุณยังใช้งานอยู่ — ยกเลิกใน App Store เพื่อไม่ให้ถูกเรียกเก็บเงิน',
       },

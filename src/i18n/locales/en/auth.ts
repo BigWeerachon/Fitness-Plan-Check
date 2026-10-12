@@ -7,7 +7,8 @@ const auth = {
   working: 'Signing in…',
   failed: 'Sign-in didn’t finish. Please try again.',
   privateRelay: 'Using Apple’s private email relay',
-  terms: 'By continuing you agree to the Terms of Use and Privacy Policy.',
+  terms:
+    'By continuing you accept the Terms of Use and agree to the Privacy Policy, including how the health-related information you choose to enter is processed.',
 } as const;
 
 export default auth;

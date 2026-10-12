@@ -1,25 +1,33 @@
 import { describe, expect, it } from '@jest/globals';
-import { LEGAL, LEGAL_KEYS, PLACEHOLDERS, hasPlaceholders, type LegalDoc } from '@/legal/content';
+import { LEGAL, LEGAL_KEYS, MARKERS, PLACEHOLDERS, hasPlaceholders, type LegalDoc } from '@/legal/content';
 
-const filled = (doc: LegalDoc): LegalDoc => {
-  const fill = (text: string) =>
-    Object.values(PLACEHOLDERS).reduce((acc, value) => acc.split(value).join('Acme Co.'), text);
-  return {
-    title: fill(doc.title),
-    updated: fill(doc.updated),
-    sections: doc.sections.map((s) => ({ heading: fill(s.heading), body: fill(s.body) })),
-  };
-};
+// เอกสารสังเคราะห์จากข้อความตัวแทนต้นฉบับ (MARKERS) เพื่อให้เทสต์ไม่ขึ้นกับว่าเจ้าของกรอก PLACEHOLDERS ไปแล้วหรือยัง
+const templateDoc = (): LegalDoc => ({
+  title: 'T',
+  updated: `Effective ${MARKERS.effective}`,
+  sections: [{ heading: 'H', body: Object.values(MARKERS).join(' · ') }],
+});
 
 describe('legal documents (SPEC N4)', () => {
   it('detects remaining placeholders so the "template" notice disappears once they are filled', () => {
-    for (const key of LEGAL_KEYS) {
-      for (const lang of ['en', 'th'] as const) {
-        const doc = LEGAL[key][lang];
-        expect(hasPlaceholders(doc)).toBe(true);
-        expect(hasPlaceholders(filled(doc))).toBe(false);
-      }
-    }
+    const doc = templateDoc();
+    expect(hasPlaceholders(doc)).toBe(true);
+    const fill = (text: string) =>
+      Object.values(MARKERS).reduce((acc, m) => acc.split(m).join('Acme Co.'), text);
+    expect(
+      hasPlaceholders({
+        title: fill(doc.title),
+        updated: fill(doc.updated),
+        sections: doc.sections.map((x) => ({ heading: fill(x.heading), body: fill(x.body) })),
+      }),
+    ).toBe(false);
+  });
+
+  it('every document uses all five placeholders somewhere (so a filled value reaches the text)', () => {
+    const text = LEGAL_KEYS.flatMap((k) =>
+      (['en', 'th'] as const).map((l) => JSON.stringify(LEGAL[k][l])),
+    ).join('\n');
+    for (const value of Object.values(PLACEHOLDERS)) expect(text).toContain(value);
   });
 
   /**

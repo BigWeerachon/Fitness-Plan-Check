@@ -4,7 +4,7 @@ const paywall = {
     subscribe: 'Unlock your full training plan',
     winback: 'Welcome back — pick up where you left off',
     billing: 'There’s a problem with your payment',
-    upgrade: 'Keep Fitnese Pro forever',
+    upgrade: 'Get Fitnese Pro with one payment',
   },
   sub: {
     subscribe: 'All features, on all your devices.',
@@ -34,7 +34,7 @@ const paywall = {
     oneTimeLabel: 'one-time payment',
     trialBadge: '{{count}}-day free trial',
     monthlyNote: 'Renews monthly. Cancel anytime.',
-    lifetimeNote: 'Unlocks everything forever. No free trial.',
+    lifetimeNote: 'Unlocks everything with a one-time payment. No free trial.',
   },
   cta: {
     trial: 'Start free trial, then {{price}}/month',
@@ -49,9 +49,9 @@ const paywall = {
     monthlyPrice: '{{price}} per month. No free trial.',
     autoRenew: 'The subscription renews automatically each month until you cancel.',
     cancelBeforeTrialEnds:
-      'Cancel anytime before the trial ends in your {{store}} account settings and you won’t be charged.',
+      'To avoid being charged, cancel at least 24 hours before the trial ends in your {{store}} account settings.',
     cancelAnytime:
-      'Cancel anytime in your {{store}} account settings; access continues until the end of the billing period.',
+      'Cancel in your {{store}} account settings at least 24 hours before the renewal date; access continues until the end of the billing period.',
     lifetimeNoTrial: 'Lifetime is a one-time purchase and does not include a free trial.',
   },
   upgrade: {

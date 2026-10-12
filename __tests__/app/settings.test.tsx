@@ -42,7 +42,7 @@ describe('settings tab (SPEC K)', () => {
 
     // สถานะสมาชิก (B7) และซิงก์
     expect(within(screen.getByTestId('settings-membership')).getByText('Lifetime')).toBeTruthy();
-    expect(within(screen.getByTestId('settings-membership')).getByText('Unlocked forever')).toBeTruthy();
+    expect(within(screen.getByTestId('settings-membership')).getByText('Lifetime access')).toBeTruthy();
     expect(within(screen.getByTestId('settings-sync')).getByText('Up to date')).toBeTruthy();
     expect(
       within(screen.getByTestId('settings-sync')).getByText(

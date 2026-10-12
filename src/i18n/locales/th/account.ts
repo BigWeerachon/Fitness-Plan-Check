@@ -35,7 +35,7 @@ const account: LocaleShape<typeof en> = {
     renews: 'ต่ออายุ {{date}}',
     endsOn: 'ใช้ได้ถึง {{date}}',
     expiredOn: 'สิ้นสุดเมื่อ {{date}}',
-    lifetime: 'ปลดล็อกถาวร',
+    lifetime: 'ใช้ได้ตลอดอายุการให้บริการ',
     billing: 'อัปเดตการชำระเงินภายใน {{date}} เพื่อใช้งานต่อ',
   },
   badge: {
@@ -68,7 +68,7 @@ const account: LocaleShape<typeof en> = {
     confirmCheck: 'ฉันเข้าใจว่าข้อมูลทั้งหมดจะถูกลบ',
     confirm: 'ลบบัญชีของฉัน',
     confirmTitle: 'ยืนยันลบบัญชีถาวร?',
-    confirmBody: 'ข้อมูลจะถูกลบออกจากทุกอุปกรณ์',
+    confirmBody: 'ข้อมูลจะถูกลบออกจากคลาวด์และจากเครื่องนี้',
     working: 'กำลังลบ…',
     done: 'ลบบัญชีเรียบร้อยแล้ว',
     failed: 'ลบบัญชีไม่สำเร็จ ตรวจสอบอินเทอร์เน็ตแล้วลองอีกครั้ง',
