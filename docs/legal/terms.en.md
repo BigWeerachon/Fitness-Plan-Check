@@ -1,6 +1,6 @@
 # Terms of Use
 
-> Template — the owner must replace [ชื่อผู้พัฒนา / Developer name], [อีเมลติดต่อ / Contact email], [ที่อยู่ / Address], [วันที่มีผล / Effective date], [ประเทศ/กฎหมายที่ใช้บังคับ / Governing law] and have it reviewed by a legal professional before publishing.
+> Template — the owner must replace [ชื่อผู้พัฒนา / Developer name], [อีเมลติดต่อ / Contact email], [ที่อยู่ / Address], [วันที่มีผล / Effective date] and have it reviewed by a legal professional before publishing.
 
 _Effective [วันที่มีผล / Effective date]_
 
@@ -57,7 +57,7 @@ We may update these Terms. For material changes we will give advance notice in t
 
 ## Governing law
 
-These Terms are governed by the laws of [ประเทศ/กฎหมายที่ใช้บังคับ / Governing law], without affecting any mandatory consumer-protection rights in the country where you live. Please contact us first to try to resolve any dispute.
+These Terms are governed by the laws of Thailand, and any related dispute falls under the jurisdiction of the competent courts in Bangkok, without affecting any mandatory consumer-protection rights in the country where you live (including any right to bring a claim in the courts of your home country where the law gives you one). Please contact us first to try to resolve any dispute.
 
 ## Contact
 

@@ -23,7 +23,6 @@ export const MARKERS = Object.freeze({
   contact: '[อีเมลติดต่อ / Contact email]',
   address: '[ที่อยู่ / Address]',
   effective: '[วันที่มีผล / Effective date]',
-  law: '[ประเทศ/กฎหมายที่ใช้บังคับ / Governing law]',
 });
 
 /** เจ้าของโปรเจกต์แทนที่ MARKERS.xxx แต่ละบรรทัดด้วยค่าจริง */
@@ -32,7 +31,6 @@ export const PLACEHOLDERS: Record<keyof typeof MARKERS, string> = {
   contact: MARKERS.contact,
   address: MARKERS.address,
   effective: MARKERS.effective,
-  law: MARKERS.law,
 };
 
 const P = PLACEHOLDERS;
@@ -221,7 +219,7 @@ export const LEGAL: Record<LegalKey, Record<Language, LegalDoc>> = {
         },
         {
           heading: 'กฎหมายที่ใช้บังคับ',
-          body: `ข้อกำหนดนี้อยู่ภายใต้กฎหมายของ ${P.law} โดยไม่กระทบสิทธิของผู้บริโภคตามกฎหมายคุ้มครองผู้บริโภคที่บังคับใช้ในประเทศที่คุณอาศัยอยู่ ข้อพิพาทให้พยายามเจรจาโดยติดต่อเราก่อน`,
+          body: `ข้อกำหนดนี้อยู่ภายใต้กฎหมายไทย ข้อพิพาทที่เกี่ยวข้องให้อยู่ในเขตอำนาจของศาลที่มีเขตอำนาจในกรุงเทพมหานคร โดยไม่กระทบสิทธิของผู้บริโภคตามกฎหมายคุ้มครองผู้บริโภคที่บังคับใช้ในประเทศที่คุณอาศัยอยู่ (รวมถึงสิทธิฟ้องคดีต่อศาลในภูมิลำเนาของคุณ หากกฎหมายนั้นกำหนด) ข้อพิพาทให้พยายามเจรจาโดยติดต่อเราก่อน`,
         },
         {
           heading: 'ติดต่อ',
@@ -279,7 +277,7 @@ export const LEGAL: Record<LegalKey, Record<Language, LegalDoc>> = {
         },
         {
           heading: 'Governing law',
-          body: `These Terms are governed by the laws of ${P.law}, without affecting any mandatory consumer-protection rights in the country where you live. Please contact us first to try to resolve any dispute.`,
+          body: `These Terms are governed by the laws of Thailand, and any related dispute falls under the jurisdiction of the competent courts in Bangkok, without affecting any mandatory consumer-protection rights in the country where you live (including any right to bring a claim in the courts of your home country where the law gives you one). Please contact us first to try to resolve any dispute.`,
         },
         {
           heading: 'Contact',

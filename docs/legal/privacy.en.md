@@ -1,6 +1,6 @@
 # Privacy Policy
 
-> Template — the owner must replace [ชื่อผู้พัฒนา / Developer name], [อีเมลติดต่อ / Contact email], [ที่อยู่ / Address], [วันที่มีผล / Effective date], [ประเทศ/กฎหมายที่ใช้บังคับ / Governing law] and have it reviewed by a legal professional before publishing.
+> Template — the owner must replace [ชื่อผู้พัฒนา / Developer name], [อีเมลติดต่อ / Contact email], [ที่อยู่ / Address], [วันที่มีผล / Effective date] and have it reviewed by a legal professional before publishing.
 
 _Effective [วันที่มีผล / Effective date]_
 
