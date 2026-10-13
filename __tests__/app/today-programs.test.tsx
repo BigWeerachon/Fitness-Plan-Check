@@ -8,7 +8,7 @@ import { dayOverrideRepo, weekPlanRepo } from '@/db/repos/weekPlanRepo';
 import { dailyLogRepo } from '@/db/repos/dailyLogRepo';
 import { instantiateTemplate } from '@/features/programs/instantiate';
 import { startSession } from '@/features/session/sessionFlow';
-import { loadToday } from '@/features/today/useToday';
+import { loadToday } from '@/features/today/loadToday';
 import { setClockForTests } from '@/utils/clock';
 import { entitledApp, flush } from '../helpers/app';
 

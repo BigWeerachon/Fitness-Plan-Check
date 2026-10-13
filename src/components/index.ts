@@ -11,6 +11,7 @@ export { MuscleIcon } from './MuscleIcon';
 export { NumberPad } from './NumberPad';
 export { PillTabBar, TAB_BAR_SPACE } from './PillTabBar';
 export { ProgressBar } from './ProgressBar';
+export { RadioIndicator } from './RadioIndicator';
 export { Screen, StackHeader } from './Screen';
 export { Sheet } from './Sheet';
 export { EmptyState, ErrorState, LoadingState, LockedState } from './States';

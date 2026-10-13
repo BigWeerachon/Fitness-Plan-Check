@@ -6,7 +6,11 @@ import { AppText, Icon } from '../../components';
 import { BRAND, radius, spacing } from '../../theme/tokens';
 import { usePalette } from '../../theme/useTheme';
 
-const HEIGHT = 52;
+const BUTTON_HEIGHT = 52;
+
+type SignInButtonProps = { label: string; onPress: () => void; busy?: boolean };
+
+type ProviderColors = { background: string; text: string; border?: string };
 
 /** โลโก้ "G" สี่สีตามแนวทางแบรนด์ Google */
 function GoogleLogo() {
@@ -33,35 +37,50 @@ function GoogleLogo() {
   );
 }
 
-export function GoogleButton({
+/** ปุ่มแบบวาดเอง (ไอคอนผู้ให้บริการ + ข้อความ) — Google ทุกแพลตฟอร์ม และ Apple บน Android */
+function ProviderButton({
   label,
   onPress,
   busy,
-}: {
-  label: string;
-  onPress: () => void;
-  busy?: boolean;
-}) {
-  const p = usePalette();
-  // เด่นเท่ากับปุ่ม Apple (Guideline 4.8): พื้นมืดใช้ปุ่ม Google แบบสว่าง พื้นสว่างใช้แบบมืด — ทั้งสองแบบเป็นสไตล์ทางการของ Google
-  const c = BRAND.google[p.mode === 'dark' ? 'light' : 'dark'];
+  colors,
+  icon,
+  testID,
+}: SignInButtonProps & { colors: ProviderColors; icon: React.ReactNode; testID: string }) {
   return (
     <Pressable
       onPress={onPress}
       disabled={busy}
       accessibilityRole="button"
       accessibilityLabel={label}
-      testID="signin-google"
+      testID={testID}
       style={({ pressed }) => [
         styles.button,
-        { backgroundColor: c.background, borderColor: c.border, borderWidth: 1, opacity: pressed ? 0.8 : 1 },
+        { backgroundColor: colors.background, opacity: pressed ? 0.8 : 1 },
+        colors.border ? { borderColor: colors.border, borderWidth: 1 } : null,
       ]}
     >
-      {busy ? <ActivityIndicator color={c.text} /> : <GoogleLogo />}
-      <AppText variant="button" color={c.text}>
+      {busy ? <ActivityIndicator color={colors.text} /> : icon}
+      <AppText variant="button" color={colors.text}>
         {label}
       </AppText>
     </Pressable>
+  );
+}
+
+export function GoogleButton({ label, onPress, busy }: SignInButtonProps) {
+  const p = usePalette();
+  // เด่นเท่ากับปุ่ม Apple (Guideline 4.8): พื้นมืดใช้ปุ่ม Google แบบสว่าง พื้นสว่างใช้แบบมืด — ทั้งสองแบบเป็นสไตล์ทางการของ Google
+  const buttonTone = p.mode === 'dark' ? 'light' : 'dark';
+  const brandColors = BRAND.google[buttonTone];
+  return (
+    <ProviderButton
+      label={label}
+      onPress={onPress}
+      busy={busy}
+      colors={brandColors}
+      icon={<GoogleLogo />}
+      testID="signin-google"
+    />
   );
 }
 
@@ -69,17 +88,8 @@ export function GoogleButton({
  * ปุ่ม Sign in with Apple — iOS ใช้ปุ่มทางการของระบบ (AppleAuthenticationButton) ตาม Guideline 4.8
  * Android วาดปุ่มตามแนวทางเดียวกัน (ขาวบนพื้นมืด / ดำบนพื้นสว่าง) ขนาดเท่าปุ่ม Google
  */
-export function AppleButton({
-  label,
-  onPress,
-  busy,
-}: {
-  label: string;
-  onPress: () => void;
-  busy?: boolean;
-}) {
+export function AppleButton({ label, onPress, busy }: SignInButtonProps) {
   const p = usePalette();
-  const c = BRAND.apple[p.mode];
   if (Platform.OS === 'ios' && !busy) {
     return (
       <View accessible accessibilityRole="button" accessibilityLabel={label} testID="signin-apple">
@@ -97,26 +107,22 @@ export function AppleButton({
       </View>
     );
   }
+  const brandColors = BRAND.apple[p.mode];
   return (
-    <Pressable
+    <ProviderButton
+      label={label}
       onPress={onPress}
-      disabled={busy}
-      accessibilityRole="button"
-      accessibilityLabel={label}
+      busy={busy}
+      colors={brandColors}
+      icon={<Icon name="logo-apple" size={20} color={brandColors.text} />}
       testID="signin-apple"
-      style={({ pressed }) => [styles.button, { backgroundColor: c.background, opacity: pressed ? 0.8 : 1 }]}
-    >
-      {busy ? <ActivityIndicator color={c.text} /> : <Icon name="logo-apple" size={20} color={c.text} />}
-      <AppText variant="button" color={c.text}>
-        {label}
-      </AppText>
-    </Pressable>
+    />
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    height: HEIGHT,
+    height: BUTTON_HEIGHT,
     borderRadius: radius.pill,
     flexDirection: 'row',
     alignItems: 'center',
@@ -124,5 +130,5 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingHorizontal: spacing.xl,
   },
-  appleNative: { height: HEIGHT, width: '100%' },
+  appleNative: { height: BUTTON_HEIGHT, width: '100%' },
 });

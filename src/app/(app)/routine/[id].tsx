@@ -22,6 +22,7 @@ import { programRepo, routineRepo } from '../../../db/repos/programRepo';
 import { routineExerciseRepo } from '../../../db/repos/routineExerciseRepo';
 import { weekPlanRepo } from '../../../db/repos/weekPlanRepo';
 import type { RoutineExercise } from '../../../db/schema';
+import { DEFAULT_REST_SEC } from '../../../domain/schedule';
 import { formatWeight } from '../../../domain/units';
 import { useRepoQuery } from '../../../features/data/useRepoQuery';
 import { exerciseDisplayName, exerciseInfo } from '../../../features/exercises/resolve';
@@ -46,7 +47,7 @@ export default function RoutineScreen() {
       exercises: routineExerciseRepo.listByRoutine(id),
       programs: programRepo.list(),
       unit: profile?.weightUnit ?? 'kg',
-      defaultRest: profile?.restTimerSec ?? 90,
+      defaultRest: profile?.restTimerSec ?? DEFAULT_REST_SEC,
     };
   }, `${id}|${i18n.language}`);
   const [editing, setEditing] = useState<RoutineExercise | null>(null);

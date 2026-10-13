@@ -1,18 +1,21 @@
 import * as Haptics from 'expo-haptics';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText, Button, ProgressBar } from '../../components';
 import { restRemainingSec } from '../../domain/sessionSummary';
+import { useNow } from '../../hooks/useNow';
 import { useRestTimer } from '../../stores/restTimer';
-import { now } from '../../utils/clock';
 import { radius, spacing } from '../../theme/tokens';
 import { usePalette } from '../../theme/useTheme';
 
 function mmss(sec: number): string {
   return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
 }
+
+/** อัปเดตเวลาที่เหลือทุกกี่ ms */
+const REST_TICK_MS = 500;
 
 /** แถบตัวจับเวลาพักลอยด้านล่าง (SPEC G1) — นับจากเวลาสิ้นสุดจริง สั่นเมื่อครบ */
 export function RestTimerBar() {
@@ -21,14 +24,8 @@ export function RestTimerBar() {
   const insets = useSafeAreaInsets();
   const endsAt = useRestTimer((s) => s.endsAt);
   const total = useRestTimer((s) => s.totalSec);
-  const [nowMs, setNowMs] = useState(now);
+  const nowMs = useNow(REST_TICK_MS, endsAt !== null);
   const notified = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (endsAt === null) return;
-    const id = setInterval(() => setNowMs(now()), 500);
-    return () => clearInterval(id);
-  }, [endsAt]);
 
   const remaining = restRemainingSec(endsAt, nowMs);
   useEffect(() => {

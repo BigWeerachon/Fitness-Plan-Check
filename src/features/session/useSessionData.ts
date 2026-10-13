@@ -2,6 +2,7 @@ import { profileRepo } from '../../db/repos/profileRepo';
 import { routineExerciseRepo } from '../../db/repos/routineExerciseRepo';
 import { sessionRepo } from '../../db/repos/sessionRepo';
 import type { RoutineExercise, SessionExercise, SessionSet, WorkoutSession } from '../../db/schema';
+import { DEFAULT_REST_SEC } from '../../domain/schedule';
 import { sessionTotals, type SessionTotals } from '../../domain/sessionSummary';
 
 export interface SessionExerciseView {
@@ -35,7 +36,7 @@ export function loadSession(id: string): SessionData | null {
     exercises,
     totals: sessionTotals(exercises.flatMap((e) => e.sets)),
     unit: profile?.weightUnit ?? 'kg',
-    restDefaultSec: profile?.restTimerSec ?? 90,
+    restDefaultSec: profile?.restTimerSec ?? DEFAULT_REST_SEC,
     restEnabled: profile?.restTimerEnabled ?? true,
     bodyWeightKg: session.bodyWeightKg ?? profile?.weightKg ?? null,
   };

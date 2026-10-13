@@ -20,53 +20,55 @@ export interface SubscriptionInfo {
  * ใช้ร่วมกันทั้งหน้าตั้งค่า/บัญชี และป้ายบนหน้าแรก
  */
 export function describeSubscription(
-  c: CachedEntitlement | null,
+  entitlement: CachedEntitlement | null,
   t: TFunction,
   os: string = Platform.OS,
 ): SubscriptionInfo {
-  const state = c?.state ?? 'NO_ENTITLEMENT';
+  const state = entitlement?.state ?? 'NO_ENTITLEMENT';
   const status = t(`account.status.${state}`);
-  const exp = c?.expirationDate ? new Date(c.expirationDate) : null;
-  const long = exp ? formatDateLong(exp) : '';
-  const short = exp ? formatDateShort(exp, new Date(now())) : '';
+  const expiresAt = entitlement?.expirationDate ? new Date(entitlement.expirationDate) : null;
+  const longDate = expiresAt ? formatDateLong(expiresAt) : '';
+  const shortDate = expiresAt ? formatDateShort(expiresAt, new Date(now())) : '';
   const base = { status, detail: null, badge: null, notice: null };
   switch (state) {
     case 'TRIALING':
       return {
         ...base,
-        detail: exp
-          ? t(c?.willRenew ? 'account.dates.trialEndsThenRenews' : 'account.dates.trialEnds', { date: long })
+        detail: expiresAt
+          ? t(entitlement?.willRenew ? 'account.dates.trialEndsThenRenews' : 'account.dates.trialEnds', {
+              date: longDate,
+            })
           : null,
-        badge: exp ? t('account.badge.trial', { date: short }) : null,
+        badge: expiresAt ? t('account.badge.trial', { date: shortDate }) : null,
       };
     case 'SUBSCRIBED_MONTHLY':
       return {
         ...base,
-        detail: exp
-          ? t(c?.willRenew ? 'account.dates.renews' : 'account.dates.endsOn', { date: long })
+        detail: expiresAt
+          ? t(entitlement?.willRenew ? 'account.dates.renews' : 'account.dates.endsOn', { date: longDate })
           : null,
-        badge: exp
-          ? t(c?.willRenew ? 'account.badge.renews' : 'account.badge.ending', { date: short })
+        badge: expiresAt
+          ? t(entitlement?.willRenew ? 'account.badge.renews' : 'account.badge.ending', { date: shortDate })
           : null,
       };
     case 'BILLING_GRACE':
       return {
         ...base,
-        detail: exp ? t('account.dates.billing', { date: long }) : null,
+        detail: expiresAt ? t('account.dates.billing', { date: longDate }) : null,
         badge: t('account.badge.billing'),
       };
     case 'LIFETIME':
       return {
         ...base,
         detail: t('account.dates.lifetime'),
-        notice: c?.alsoRenewingMonthly
+        notice: entitlement?.alsoRenewingMonthly
           ? t('account.notice.monthlyStillActive', {
               store: os === 'ios' ? t('paywall.store.ios') : t('paywall.store.android'),
             })
           : null,
       };
     case 'EXPIRED':
-      return { ...base, detail: exp ? t('account.dates.expiredOn', { date: long }) : null };
+      return { ...base, detail: expiresAt ? t('account.dates.expiredOn', { date: longDate }) : null };
     default:
       return base;
   }

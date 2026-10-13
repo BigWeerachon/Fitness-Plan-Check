@@ -4,6 +4,8 @@ import { StyleSheet, View } from 'react-native';
 import { AppText, Button, HeroTitle, ProgressBar, Screen, StackHeader } from '../../components';
 import { spacing } from '../../theme/tokens';
 
+const ONBOARDING_STEP_COUNT = 3;
+
 /** โครงหน้าของขั้นตั้งค่าเริ่มต้น 3 ขั้น (SPEC C) — แถบความคืบหน้า + ปุ่มถัดไป/ข้าม */
 export function OnboardingFrame({
   step,
@@ -31,13 +33,14 @@ export function OnboardingFrame({
   footer?: React.ReactNode;
 }) {
   const { t } = useTranslation();
+  const stepLabel = t('onboarding.stepOf', { step, total: ONBOARDING_STEP_COUNT });
   return (
     <Screen header={showBack ? <StackHeader /> : undefined} testID={`onboarding-step-${step}`}>
       <View style={styles.progress}>
         <AppText variant="caption" secondary align="center">
-          {t('onboarding.stepOf', { step, total: 3 })}
+          {stepLabel}
         </AppText>
-        <ProgressBar value={step / 3} label={t('onboarding.stepOf', { step, total: 3 })} />
+        <ProgressBar value={step / ONBOARDING_STEP_COUNT} label={stepLabel} />
       </View>
       <HeroTitle title={title} subtitle={subtitle} compact />
       <View style={styles.body}>{children}</View>

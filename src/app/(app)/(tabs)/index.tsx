@@ -28,7 +28,7 @@ import { addDays, parseLocalDate } from '../../../domain/dates';
 import { describeSubscription } from '../../../features/access/subscriptionInfo';
 import { useRepoQuery } from '../../../features/data/useRepoQuery';
 import { startSession } from '../../../features/session/sessionFlow';
-import { loadToday, type TodayRoutine } from '../../../features/today/useToday';
+import { loadToday, type TodayRoutine } from '../../../features/today/loadToday';
 import { formatDateShort, formatNumber, formatRelativeDay, formatTime } from '../../../i18n/format';
 import { useAuth } from '../../../stores/auth';
 import { useEntitlement } from '../../../stores/entitlement';

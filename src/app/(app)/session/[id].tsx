@@ -1,5 +1,5 @@
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import {
@@ -37,12 +37,16 @@ import { SetTick } from '../../../features/session/SetTick';
 import { TargetSheet } from '../../../features/session/TargetSheet';
 import { loadSession, type SessionExerciseView } from '../../../features/session/useSessionData';
 import { formatDateShort, formatDuration } from '../../../i18n/format';
+import { useNow } from '../../../hooks/useNow';
 import { useRestTimer } from '../../../stores/restTimer';
 import { now } from '../../../utils/clock';
 import { MIN_TOUCH, radius, spacing } from '../../../theme/tokens';
 import { usePalette } from '../../../theme/useTheme';
 
 type Editing = { set: SessionSet; field: 'weight' | 'reps' } | null;
+
+/** รีเฟรชเวลาปัจจุบันของหน้า (ใช้คำนวณระยะเวลาเซสชัน) ทุกกี่ ms */
+const SESSION_CLOCK_REFRESH_MS = 30_000;
 
 /**
  * หน้าเซสชัน (SPEC G1): พื้นดำ ติ๊กเซ็ตสีหลัก — แต่ละท่ามีตาราง "ครั้งก่อน" กับ "เป้าหมายครั้งนี้" ในแถวเดียวกัน
@@ -65,12 +69,7 @@ export default function SessionScreen() {
     view: SessionExerciseView;
     config: RoutineExercise;
   } | null>(null);
-  const [nowMs, setNowMs] = useState(now);
-
-  useEffect(() => {
-    const timer = setInterval(() => setNowMs(now()), 30_000);
-    return () => clearInterval(timer);
-  }, []);
+  const nowMs = useNow(SESSION_CLOCK_REFRESH_MS);
 
   if (!data) {
     return (

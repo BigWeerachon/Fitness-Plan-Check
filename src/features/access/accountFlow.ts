@@ -70,31 +70,37 @@ export function isLiveInfo(info: CustomerInfoLike, nowMs: number): boolean {
 /** รับ CustomerInfo จาก RevenueCat → สถานะ → แคช → แจ้ง hook เมื่อมีสิทธิ์ — คืนว่าเป็นข้อมูลสดหรือไม่ */
 export function applyCustomerInfo(info: CustomerInfoLike, userId: string): boolean {
   if (useAuth.getState().user?.id !== userId) return false;
-  const t = now();
-  const live = isLiveInfo(info, t);
-  const snapshot = deriveSnapshot(info, t);
+  const nowMs = now();
+  const live = isLiveInfo(info, nowMs);
+  const snapshot = deriveSnapshot(info, nowMs);
   // ข้อมูลเก่าจากแคชของ SDK ไม่เขียนทับแคชของเราที่อาจใหม่กว่า
   if (live || !useEntitlement.getState().cached) entitlementRepo.save(userId, snapshot);
-  const cached = live ? { ...snapshot, userId } : (entitlementRepo.get(userId) ?? { ...snapshot, userId });
-  useEntitlement.getState().set({ cached, fresh: live });
-  if (hasAccess(cached.state)) void runHooks(entitledHooks, userId);
+  const effective = live ? { ...snapshot, userId } : (entitlementRepo.get(userId) ?? { ...snapshot, userId });
+  useEntitlement.getState().set({ cached: effective, fresh: live });
+  if (hasAccess(effective.state)) void runHooks(entitledHooks, userId);
   return live;
+}
+
+/** ตรวจสิทธิ์กับ RevenueCat: ดึง CustomerInfo → ใช้ → ตั้งสถานะออนไลน์ (ล้มเหลว = ออฟไลน์) */
+async function checkEntitlementOnline(
+  userId: string,
+  fetchInfo: () => Promise<CustomerInfoLike>,
+): Promise<void> {
+  useEntitlement.getState().set({ checking: true });
+  try {
+    const live = applyCustomerInfo(await fetchInfo(), userId);
+    useEntitlement.getState().set({ online: live });
+  } catch {
+    // ออฟไลน์: ใช้แคช (SPEC B9) แล้วตรวจใหม่เมื่อออนไลน์
+    useEntitlement.getState().set({ online: false });
+  } finally {
+    useEntitlement.getState().set({ checking: false });
+  }
 }
 
 async function linkPurchases(user: AuthUser): Promise<void> {
   const { purchases } = getServices();
-  const store = useEntitlement.getState();
-  store.set({ checking: true });
-  try {
-    const info = await purchases.logIn(user.id);
-    const live = applyCustomerInfo(info, user.id);
-    store.set({ online: live });
-  } catch {
-    // ออฟไลน์: ใช้แคช (SPEC B9) แล้วตรวจใหม่เมื่อออนไลน์
-    store.set({ online: false });
-  } finally {
-    useEntitlement.getState().set({ checking: false });
-  }
+  await checkEntitlementOnline(user.id, () => purchases.logIn(user.id));
 }
 
 function adoptUser(user: AuthUser | null): void {
@@ -102,7 +108,8 @@ function adoptUser(user: AuthUser | null): void {
   useAuth.getState().setUser(user);
   const cached = user ? entitlementRepo.get(user.id) : null;
   useEntitlement.getState().set({ cached, fresh: false });
-  if (user && cached && hasAccess(cached.state) && getAccess().allowed) void runHooks(entitledHooks, user.id);
+  // getAccess() อ่านจาก store ที่เพิ่งตั้งด้านบน (รวมกฎหมดอายุ/ช่วงผ่อนผันแล้ว)
+  if (user && getAccess().allowed) void runHooks(entitledHooks, user.id);
 }
 
 /** เรียกครั้งเดียวตอนเปิดแอป */
@@ -149,16 +156,7 @@ export async function refreshEntitlement(): Promise<void> {
   if (!user) return;
   const { purchases } = getServices();
   if (purchases.currentAppUserId() !== user.id) return linkPurchases(user);
-  const store = useEntitlement.getState();
-  store.set({ checking: true });
-  try {
-    const live = applyCustomerInfo(await purchases.getCustomerInfo(), user.id);
-    store.set({ online: live });
-  } catch {
-    store.set({ online: false });
-  } finally {
-    useEntitlement.getState().set({ checking: false });
-  }
+  await checkEntitlementOnline(user.id, () => purchases.getCustomerInfo());
 }
 
 export type SignInOutcome = 'success' | 'cancelled' | 'error';

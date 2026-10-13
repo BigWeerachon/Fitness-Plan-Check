@@ -160,9 +160,9 @@ function CustomColorBody({ initial, onApply }: { initial: string; onApply: (hex:
   const { t } = useTranslation();
   const p = usePalette();
   const [hex, setHex] = useState(initial);
-  const valid = isHexColor(hex);
-  const preview = valid ? buildPalette(p.mode, normalizeHex(hex)) : null;
-  const adjusted = !!preview && preview.accent.toUpperCase() !== normalizeHex(hex);
+  const normalized = isHexColor(hex) ? normalizeHex(hex) : null;
+  const preview = normalized ? buildPalette(p.mode, normalized) : null;
+  const wasAdjusted = !!preview && preview.accent.toUpperCase() !== normalized;
   return (
     <>
       <View style={styles.grid}>
@@ -172,11 +172,7 @@ function CustomColorBody({ initial, onApply }: { initial: string; onApply: (hex:
             onPress={() => setHex(c)}
             accessibilityRole="button"
             accessibilityLabel={t('appearance.hue', { index: i + 1 })}
-            style={[
-              styles.gridCell,
-              { backgroundColor: c },
-              valid && normalizeHex(hex) === c && { borderColor: p.text },
-            ]}
+            style={[styles.gridCell, { backgroundColor: c }, normalized === c && { borderColor: p.text }]}
           />
         ))}
       </View>
@@ -187,7 +183,7 @@ function CustomColorBody({ initial, onApply }: { initial: string; onApply: (hex:
         autoCapitalize="characters"
         autoCorrect={false}
         placeholder={t('appearance.customHexPlaceholder')}
-        error={valid ? null : t('appearance.customInvalid')}
+        error={normalized ? null : t('appearance.customInvalid')}
         testID="custom-hex"
       />
       {preview ? (
@@ -195,7 +191,7 @@ function CustomColorBody({ initial, onApply }: { initial: string; onApply: (hex:
           <AppText variant="headline" color={preview.accent} align="center">
             {t('appearance.previewTitle')}
           </AppText>
-          {adjusted ? (
+          {wasAdjusted ? (
             <AppText variant="caption" secondary align="center">
               {t('appearance.customAdjusted')}
             </AppText>
@@ -204,8 +200,10 @@ function CustomColorBody({ initial, onApply }: { initial: string; onApply: (hex:
       ) : null}
       <Button
         title={t('appearance.apply')}
-        onPress={() => valid && onApply(normalizeHex(hex))}
-        disabled={!valid}
+        onPress={() => {
+          if (normalized) onApply(normalized);
+        }}
+        disabled={!normalized}
         testID="custom-apply"
       />
     </>

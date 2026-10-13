@@ -15,6 +15,7 @@ import {
   IconButton,
   ListRow,
   LoadingState,
+  RadioIndicator,
   Screen,
   StackHeader,
 } from '../components';
@@ -231,11 +232,7 @@ export default function PaywallScreen() {
               >
                 <View style={styles.planHeader}>
                   <AppText variant="headline">{title}</AppText>
-                  <Icon
-                    name={on ? 'radio-button-on' : 'radio-button-off'}
-                    size={22}
-                    color={on ? p.accent : p.textSecondary}
-                  />
+                  <RadioIndicator selected={on} />
                 </View>
                 {/* ราคาเต็มจากสโตร์ห้ามถูกตัดทอน (B5) — ราคาและรอบการชำระแยกบรรทัด ตัดคำได้ */}
                 <AppText variant="title" color={on ? p.accent : p.text}>

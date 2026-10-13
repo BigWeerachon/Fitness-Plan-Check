@@ -104,6 +104,33 @@ describe('account + entitlement flow (SPEC B4, B9, B11, B12)', () => {
     expect(getAccess().allowed).toBe(false);
   });
 
+  it('runs onEntitled when a restored session has a usable cache, but not once the cache is past expiry and grace', async () => {
+    const t0 = Date.parse('2026-10-09T00:00:00Z');
+    setClockForTests(() => t0);
+    await bootstrapAccount();
+    await signIn('google');
+    await purchasePlan(s.purchases.monthlyPlan);
+
+    s = simulateRestart(s);
+    s.purchases.offline = true;
+    setClockForTests(() => t0 + 3 * DAY);
+    const usable = jest.fn<(userId: string) => void>();
+    let off = onEntitled(usable);
+    await bootstrapAccount();
+    expect(usable).toHaveBeenCalled();
+    off();
+
+    s = simulateRestart(s);
+    s.purchases.offline = true;
+    setClockForTests(() => t0 + 30 * DAY);
+    const expired = jest.fn<(userId: string) => void>();
+    off = onEntitled(expired);
+    await bootstrapAccount();
+    expect(getAccess().allowed).toBe(false);
+    expect(expired).not.toHaveBeenCalled();
+    off();
+  });
+
   it('restore requires sign-in, then restores the account entitlement', async () => {
     await bootstrapAccount();
     expect(await restorePurchases()).toBe('needLogin');

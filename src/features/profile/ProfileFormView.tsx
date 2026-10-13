@@ -1,7 +1,15 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
-import { AppText, CardGroup, Chip, ListRow, SegmentedControl, TextField, Icon } from '../../components';
+import {
+  AppText,
+  CardGroup,
+  Chip,
+  ListRow,
+  RadioIndicator,
+  SegmentedControl,
+  TextField,
+} from '../../components';
 import type { ActivityLevel, Goal, LengthUnit, Sex, WeightUnit } from '../../db/schema';
 import { ACTIVITY_LEVELS, ADULT_AGE, GOALS } from '../../domain/nutrition';
 import { switchFormUnits, type ProfileErrors, type ProfileForm } from '../../domain/profileInput';
@@ -26,9 +34,13 @@ export function ProfileFormView({
   const p = usePalette();
   const set = <K extends keyof ProfileForm>(key: K, value: ProfileForm[K]) =>
     onChange({ ...form, [key]: value });
-  const err = (field: keyof ProfileErrors) =>
-    errors[field] ? t('errors.outOfRange', { min: errors[field]!.min, max: errors[field]!.max }) : null;
+  const fieldError = (field: keyof ProfileErrors) => {
+    const range = errors[field];
+    return range ? t('errors.outOfRange', { min: range.min, max: range.max }) : null;
+  };
   const age = Number(form.age);
+  // Number('') = 0 จึงต้องกันช่องว่างก่อน
+  const isUnderAdultAge = form.age !== '' && Number.isFinite(age) && age < ADULT_AGE;
 
   return (
     <View style={styles.wrap}>
@@ -72,10 +84,10 @@ export function ProfileFormView({
         value={form.age}
         onChangeText={(v) => set('age', v)}
         keyboardType="number-pad"
-        error={err('age')}
+        error={fieldError('age')}
         testID="field-age"
       />
-      {form.age !== '' && Number.isFinite(age) && age < ADULT_AGE ? (
+      {isUnderAdultAge ? (
         <AppText variant="caption" color={p.warning}>
           {t('onboarding.under18')}
         </AppText>
@@ -88,7 +100,7 @@ export function ProfileFormView({
           onChangeText={(v) => set('heightCm', v)}
           keyboardType="decimal-pad"
           suffix={t('common.units.cm')}
-          error={err('height')}
+          error={fieldError('height')}
           testID="field-height"
         />
       ) : (
@@ -100,7 +112,7 @@ export function ProfileFormView({
               onChangeText={(v) => set('heightFt', v)}
               keyboardType="number-pad"
               suffix={t('onboarding.feet')}
-              error={err('height')}
+              error={fieldError('height')}
             />
           </View>
           <View style={styles.flex}>
@@ -121,7 +133,7 @@ export function ProfileFormView({
         onChangeText={(v) => set('weight', v)}
         keyboardType="decimal-pad"
         suffix={t(`common.units.${form.weightUnit}`)}
-        error={err('weight')}
+        error={fieldError('weight')}
         testID="field-weight"
       />
 
@@ -135,13 +147,7 @@ export function ProfileFormView({
               key={level}
               title={t(`onboarding.activities.${level}`)}
               onPress={() => set('activityLevel', level)}
-              right={
-                <Icon
-                  name={form.activityLevel === level ? 'radio-button-on' : 'radio-button-off'}
-                  size={22}
-                  color={form.activityLevel === level ? p.accent : p.textSecondary}
-                />
-              }
+              right={<RadioIndicator selected={form.activityLevel === level} />}
               testID={`activity-${level}`}
             />
           ))}

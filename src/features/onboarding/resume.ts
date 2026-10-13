@@ -46,7 +46,7 @@ export type EntitledResume = 'profile' | 'program' | 'done' | 'unknown';
  * หลังดึงข้อมูลคลาวด์รอบแรก ข้ามขั้นที่มีข้อมูลแล้ว (SPEC C) — ครบทุกขั้นก็ทำเครื่องหมายว่าเสร็จและเข้าแอปได้เลย
  * ดึงข้อมูลไม่สำเร็จ → 'unknown' (ไม่รู้ว่าคลาวด์มีอะไร จึงไม่ข้ามขั้นใด)
  */
-export async function resolveEntitledOnboarding(userId: string): Promise<EntitledResume> {
+export async function resumeEntitledOnboarding(userId: string): Promise<EntitledResume> {
   const outcome = await waitForFirstPull();
   if (outcome !== 'synced') return 'unknown';
   const step = nextOnboardingStep({

@@ -133,6 +133,9 @@ export function weekDates(date: LocalDate, weekStart: number): LocalDate[] {
   return Array.from({ length: DAYS_PER_WEEK }, (_, i) => addDays(start, i));
 }
 
+/** เวลาพักระหว่างเซ็ตเริ่มต้น (วินาที) เมื่อยังไม่มีโปรไฟล์ — ตรงกับค่าเริ่มต้นของ restTimerSec */
+export const DEFAULT_REST_SEC = 90;
+
 /** วินาทีทำงานต่อเซ็ตที่ใช้ประมาณเวลา */
 export const WORK_SEC_PER_SET = 45;
 

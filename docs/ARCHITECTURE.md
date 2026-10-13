@@ -216,7 +216,7 @@
 เครื่องที่ยังไม่เคยผ่านตั้งค่า (`onboardingDone = false`) แต่ล็อกอินและมีสิทธิ์อยู่แล้ว (ติดตั้งใหม่ แล้วเซสชัน Supabase + RevenueCat กลับมา) `AccessGate` → `BeforeOnboarding` ทำดังนี้:
 
 1. ล็อกอินแล้วแต่แคชสิทธิ์ยังไม่มา (`checking`) → แสดง loading รอผลตรวจ ไม่เด้งไปขั้น 1 ทั้งที่มีสิทธิ์ — รอผลตรวจเซสชันได้นานสุด `SESSION_WAIT_MS = 3 วิ` แล้วค่อยเริ่มขั้น 1 ตามปกติ
-2. มีสิทธิ์ → `resolveEntitledOnboarding(userId)` (`src/features/onboarding/resume.ts`): `waitForFirstPull` (`syncNow()` แข่งกับ timeout `FIRST_PULL_TIMEOUT_MS = 8 วิ`) — ถ้าผลไม่ใช่ `synced` → `unknown` = ไม่รู้ว่าคลาวด์มีอะไร ไม่ข้ามขั้นใด (เริ่มขั้น 1)
+2. มีสิทธิ์ → `resumeEntitledOnboarding(userId)` (`src/features/onboarding/resume.ts`): `waitForFirstPull` (`syncNow()` แข่งกับ timeout `FIRST_PULL_TIMEOUT_MS = 8 วิ`) — ถ้าผลไม่ใช่ `synced` → `unknown` = ไม่รู้ว่าคลาวด์มีอะไร ไม่ข้ามขั้นใด (เริ่มขั้น 1)
 3. ดึงสำเร็จ → `nextOnboardingStep` (`src/domain/onboardingResume.ts`, ฟังก์ชันล้วน): ไม่มีข้อมูลร่างกายอย่างน้อยหนึ่งช่อง (`hasBodyData`; หน่วยอย่างเดียวไม่นับ) → `/onboarding/profile`; ไม่มีโปรแกรม → `/onboarding/program`; ครบ → ตั้ง `onboardingDone = true` + `migrateDraftToAccount` แล้วเข้าแอปเอง (ขั้น 1 เป็นค่าของเครื่อง จึงไม่เกี่ยวกับคลาวด์)
 
 การย้ายร่าง (`migrateDraftToAccount`) ทำครั้งเดียวต่อร่าง (`migratedAt`), เติมเฉพาะช่องที่ว่างของโปรไฟล์ที่บัญชีมีอยู่แล้ว, ไม่ใส่ข้อมูลร่างกายถ้ากด "ข้ามไปก่อน" (`profileSkipped`), และสร้างโปรแกรมจากเทมเพลต/โปรแกรมว่างเฉพาะเมื่อบัญชียังไม่มีโปรแกรมเลย `shouldMigrateDraft` กันการย้ายกลางทาง (หลังขั้น 2 ก่อนขั้น 3) ไม่งั้นร่างถูกตีว่าย้ายแล้วและโปรแกรมที่เลือกทีหลังไม่ถูกสร้าง

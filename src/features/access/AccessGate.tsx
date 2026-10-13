@@ -2,7 +2,7 @@ import { Redirect, type Href } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { LoadingState } from '../../components';
 import { Screen } from '../../components/Screen';
-import { resolveEntitledOnboarding, type EntitledResume } from '../onboarding/resume';
+import { resumeEntitledOnboarding, type EntitledResume } from '../onboarding/resume';
 import { useEntitlement } from '../../stores/entitlement';
 import { useSettings } from '../../stores/settings';
 import { useAccess } from './useAccess';
@@ -16,7 +16,7 @@ const RESUME_HREF: Record<Exclude<EntitledResume, 'done'>, Href> = {
   unknown: '/onboarding',
 };
 
-function Loading() {
+function FullScreenLoading() {
   return (
     <Screen scroll={false}>
       <LoadingState />
@@ -45,18 +45,18 @@ function BeforeOnboarding() {
   useEffect(() => {
     if (!resumable || !userId) return;
     let alive = true;
-    void resolveEntitledOnboarding(userId).then((r) => alive && setResume(r));
+    void resumeEntitledOnboarding(userId).then((r) => alive && setResume(r));
     return () => {
       alive = false;
     };
   }, [resumable, userId]);
 
   if (!resumable) {
-    if ((access.pending || (!!access.userId && checking)) && !graceOver) return <Loading />;
-    return <Redirect href="/onboarding" />;
+    const waitingForSession = access.pending || (!!userId && checking);
+    return waitingForSession && !graceOver ? <FullScreenLoading /> : <Redirect href="/onboarding" />;
   }
-  // 'done' → resolveEntitledOnboarding ตั้ง onboardingDone แล้ว AccessGate จะผ่านเอง
-  if (resume === null || resume === 'done') return <Loading />;
+  // 'done' → resumeEntitledOnboarding ตั้ง onboardingDone แล้ว AccessGate จะผ่านเอง
+  if (resume === null || resume === 'done') return <FullScreenLoading />;
   return <Redirect href={RESUME_HREF[resume]} />;
 }
 
@@ -70,7 +70,7 @@ export function AccessGate({ children }: { children: React.ReactNode }) {
   const onboardingDone = useSettings((s) => s.onboardingDone);
   const access = useAccess();
   if (!onboardingDone) return <BeforeOnboarding />;
-  if (access.pending) return <Loading />;
+  if (access.pending) return <FullScreenLoading />;
   if (!access.allowed) return <Redirect href="/paywall" />;
   return <>{children}</>;
 }

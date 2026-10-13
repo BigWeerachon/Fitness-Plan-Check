@@ -7,7 +7,12 @@ import { dayOverrideRepo, weekPlanRepo } from '../../db/repos/weekPlanRepo';
 import type { DayOverride, MuscleGroup, Program, Routine, WorkoutSession } from '../../db/schema';
 import { toLocalDate, type LocalDate } from '../../domain/dates';
 import { dailyExpenditure, nutritionSummary, type DailyExpenditure } from '../../domain/nutrition';
-import { estimateSessionMinutes, resolveDayPlan, type DayPlan } from '../../domain/schedule';
+import {
+  DEFAULT_REST_SEC,
+  estimateSessionMinutes,
+  resolveDayPlan,
+  type DayPlan,
+} from '../../domain/schedule';
 import { MUSCLE_GROUPS } from '../../data/exerciseLibrary';
 import { now } from '../../utils/clock';
 import { exerciseInfo } from '../exercises/resolve';
@@ -65,39 +70,48 @@ function describeRoutine(
   };
 }
 
+/** กลุ่มกล้ามเนื้อที่มีเซ็ตเสร็จแล้ววันนี้ กับที่อยู่ในแผนวันนี้ (เรียงตาม MUSCLE_GROUPS) */
+function summarizeMuscles(todaySessions: WorkoutSession[], routines: TodayRoutine[]) {
+  const doneSets = sessionRepo.setsForSessions(todaySessions.map((s) => s.id)).filter((s) => s.done);
+  return {
+    doneMuscles: MUSCLE_GROUPS.filter((m) => doneSets.some((s) => s.muscleGroup === m)),
+    plannedMuscles: MUSCLE_GROUPS.filter((m) => routines.some((r) => r.muscles.includes(m))),
+  };
+}
+
 /** รวบรวมทุกอย่างที่หน้าแรกต้องใช้ (SPEC D) จากฐานข้อมูลในเครื่อง */
 export function loadToday(date: LocalDate = toLocalDate(now())): TodayModel {
   const profile = profileRepo.get();
   const programs = new Map(programRepo.list().map((p) => [p.id, p]));
   const activeId = profile?.activeProgramId ?? null;
   const program = (activeId && programs.get(activeId)) || null;
-  const defaultRest = profile?.restTimerEnabled === false ? 0 : (profile?.restTimerSec ?? 90);
+  const restTimerOff = profile?.restTimerEnabled === false;
+  const defaultRest = restTimerOff ? 0 : (profile?.restTimerSec ?? DEFAULT_REST_SEC);
   const allRoutines = routineRepo.listAll().filter((r) => programs.has(r.programId));
   const byId = new Map(allRoutines.map((r) => [r.id, r]));
   // override ที่ชี้ไป routine ที่ถูกลบแล้ว (เช่น ลบจากอีกเครื่อง) ไม่มีผล → ใช้ตารางหลักแทน
-  const overrides = dayOverrideRepo
-    .listForDate(date)
-    .filter((o) => o.kind !== 'routine' || (o.routineId !== null && byId.has(o.routineId)));
+  const pointsToExistingRoutine = (o: DayOverride) =>
+    o.kind !== 'routine' || (o.routineId !== null && byId.has(o.routineId));
+  const [activeOverride] = dayOverrideRepo.listForDate(date).filter(pointsToExistingRoutine);
   const plan = resolveDayPlan({
     entries: program ? weekPlanRepo.listByProgram(program.id) : [],
-    overrides: overrides.slice(0, 1),
+    overrides: activeOverride ? [activeOverride] : [],
     date,
   });
-  const override = plan.source === 'override' ? overrides[0] : undefined;
+  const override = plan.source === 'override' ? activeOverride : undefined;
   const routines = plan.routineIds
     .map((id) => byId.get(id))
     .filter((r): r is Routine => !!r)
     .map((r) => describeRoutine(r, programs, defaultRest));
+  const inActiveProgram = (r: Routine) => r.programId === activeId;
   const others = allRoutines
     .filter((r) => !plan.routineIds.includes(r.id))
-    .sort((a, b) => (a.programId === activeId ? -1 : 0) - (b.programId === activeId ? -1 : 0))
+    .sort((a, b) => Number(inActiveProgram(b)) - Number(inActiveProgram(a)))
     .map((r) => describeRoutine(r, programs, defaultRest));
 
   const todaySessions = sessionRepo.listForDate(date);
   const completedToday = todaySessions.filter((s) => s.status === 'completed');
-  const doneSets = sessionRepo.setsForSessions(todaySessions.map((s) => s.id)).filter((s) => s.done);
-  const doneMuscles = MUSCLE_GROUPS.filter((m) => doneSets.some((s) => s.muscleGroup === m));
-  const plannedMuscles = MUSCLE_GROUPS.filter((m) => routines.some((r) => r.muscles.includes(m)));
+  const { doneMuscles, plannedMuscles } = summarizeMuscles(todaySessions, routines);
   const log = dailyLogRepo.get(date);
   const summary = profile ? nutritionSummary(profile) : null;
 

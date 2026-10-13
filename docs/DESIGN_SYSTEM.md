@@ -561,6 +561,7 @@
 - `Icon` — Ionicons (`@expo/vector-icons`) props `name`, `size` (22), `color` (**บังคับ** ส่งจากพาเลต) ใช้แบบเส้น `-outline` เป็นหลัก แบบทึบเฉพาะสถานะเลือก
 - `IconButton` — ปุ่มไอคอนเส้นบางสีหลัก props `icon`, `label` (**บังคับ** จาก i18n), `onPress`, `size` (26), `color?` (ค่าเริ่มต้น `accent`), `disabled?` (ทึบ 0.35), `style`, `testID`; พื้นที่แตะ ≥ 48 × 48 + `hitSlop` 4; role `button` + state disabled — ใช้ที่ ActionBar, ปุ่มย้อนใน `StackHeader`, ✕ ใน `Sheet`, ⋮/⋯ ในเซสชัน, ย้อน/ถัดไปของช่วงเวลาในสถิติ, routine, program, exercises
 - `ActionBar` — แถวปุ่ม "+" "⋯" ชิดขวาเหนือการ์ดแรก (ข้อ 1.7) ใช้ที่ `(tabs)/index`, `(tabs)/programs`, `paywall` (เป็น header)
+- `RadioIndicator` — วงกลมเรดิโอ `radio-button-on/off` ขนาด 22 (เลือก = `accent`, ไม่เลือก = `textSecondary`) prop `selected` วางท้ายแถวที่แตะเพื่อเลือก (`ListRow right`, หัวการ์ดแผนใน `paywall`) — ตัวแถวต้องใส่ role/state เอง ใช้ที่: `ProfileFormView` (ระดับกิจกรรม), `paywall`, `onboarding/program`
 
 ### 3.19 คอมโพเนนต์ระดับฟีเจอร์ที่ยึดตาม DS
 

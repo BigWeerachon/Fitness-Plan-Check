@@ -1,8 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
+import { useNow } from '../../hooks/useNow';
 import { useAuth } from '../../stores/auth';
 import { useEntitlement } from '../../stores/entitlement';
-import { now } from '../../utils/clock';
 import { refreshEntitlement } from './accountFlow';
+
+/** ตรวจว่าแคชถึงวันหมดอายุหรือยังทุกกี่ ms */
+const EXPIRY_RECHECK_INTERVAL_MS = 30_000;
 
 export interface RecheckInput {
   hasUser: boolean;
@@ -32,23 +35,18 @@ export function useEntitlementExpiryRecheck(): void {
   const expirationDate = useEntitlement((s) => s.cached?.expirationDate ?? null);
   const checking = useEntitlement((s) => s.checking);
   const lastCheckedFor = useRef<number | null>(null);
-  const [tick, setTick] = useState(now);
-
-  useEffect(() => {
-    const id = setInterval(() => setTick(now()), 30_000);
-    return () => clearInterval(id);
-  }, []);
+  const nowMs = useNow(EXPIRY_RECHECK_INTERVAL_MS);
 
   useEffect(() => {
     const input = {
       hasUser: !!user,
       expirationDate,
-      now: tick,
+      now: nowMs,
       checking,
       lastCheckedFor: lastCheckedFor.current,
     };
     if (!shouldRecheckExpiry(input)) return;
     lastCheckedFor.current = expirationDate;
     void refreshEntitlement();
-  }, [user, expirationDate, checking, tick]);
+  }, [user, expirationDate, checking, nowMs]);
 }
