@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import {
   AppText,
   Button,
@@ -17,7 +17,9 @@ import { exerciseName, localized } from '../../../data/exerciseLibrary';
 import { useRepoQuery } from '../../../features/data/useRepoQuery';
 import { exerciseInfo } from '../../../features/exercises/resolve';
 import { currentLanguage } from '../../../i18n';
+import { muscleNames } from '../../../i18n/format';
 import { spacing } from '../../../theme/tokens';
+import { confirmDestructive } from '../../../utils/confirmDestructive';
 
 /** รายละเอียดท่า: กลุ่มกล้ามเนื้อหลัก/รอง อุปกรณ์ คำอธิบายสั้นที่เขียนเอง (F7, F9) และลิงก์กราฟความแข็งแรง (I4) */
 export default function ExerciseDetailScreen() {
@@ -52,7 +54,7 @@ export default function ExerciseDetailScreen() {
               <AppText variant="caption" secondary style={styles.top}>
                 {t('exercises.secondary')}
               </AppText>
-              <AppText>{ex.secondary.map((m) => t(`exercises.muscles.${m}`)).join(', ')}</AppText>
+              <AppText>{muscleNames(t, ex.secondary)}</AppText>
             </>
           ) : null}
         </Card>
@@ -84,17 +86,15 @@ export default function ExerciseDetailScreen() {
             title={t('exercises.deleteExercise')}
             kind="danger"
             onPress={() =>
-              Alert.alert(t('exercises.deleteExercise'), t('exercises.deleteConfirm'), [
-                { text: t('common.cancel'), style: 'cancel' },
-                {
-                  text: t('common.delete'),
-                  style: 'destructive',
-                  onPress: () => {
-                    customExerciseRepo.remove(id);
-                    router.back();
-                  },
+              confirmDestructive(t, {
+                title: t('exercises.deleteExercise'),
+                message: t('exercises.deleteConfirm'),
+                confirmLabel: t('common.delete'),
+                onConfirm: () => {
+                  customExerciseRepo.remove(id);
+                  router.back();
                 },
-              ])
+              })
             }
           />
         ) : null}

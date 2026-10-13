@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import {
   AppText,
   BigRow,
@@ -23,12 +23,14 @@ import { profileRepo } from '../../../db/repos/profileRepo';
 import { programRepo, routineRepo } from '../../../db/repos/programRepo';
 import { routineExerciseRepo } from '../../../db/repos/routineExerciseRepo';
 import { weekPlanRepo } from '../../../db/repos/weekPlanRepo';
-import type { RoutineType } from '../../../db/schema';
+import type { MuscleGroup, RoutineType } from '../../../db/schema';
 import { useRepoQuery } from '../../../features/data/useRepoQuery';
 import { exerciseInfo } from '../../../features/exercises/resolve';
 import { RoutineTypePicker } from '../../../features/programs/RoutineTypePicker';
+import { joinDot, muscleNames } from '../../../i18n/format';
 import { spacing } from '../../../theme/tokens';
 import { usePalette } from '../../../theme/useTheme';
+import { confirmDestructive } from '../../../utils/confirmDestructive';
 
 /** รายละเอียดกรุ๊ป: รายการ routine ที่สร้างไว้ เพิ่ม/เปลี่ยนชื่อ/ลบ/ตั้งเป็นโปรแกรมที่ใช้ (SPEC F2, F3) */
 export default function ProgramScreen() {
@@ -40,7 +42,11 @@ export default function ProgramScreen() {
     if (!program) return null;
     const routines = routineRepo.listByProgram(id).map((r) => {
       const exercises = routineExerciseRepo.listByRoutine(r.id);
-      const muscles = [...new Set(exercises.map((e) => exerciseInfo(e.exerciseId)?.primary).filter(Boolean))];
+      const muscles = [
+        ...new Set(
+          exercises.map((e) => exerciseInfo(e.exerciseId)?.primary).filter((m): m is MuscleGroup => !!m),
+        ),
+      ];
       return { routine: r, count: exercises.length, muscles };
     });
     return { program, routines, isActive: profileRepo.get()?.activeProgramId === id };
@@ -48,9 +54,9 @@ export default function ProgramScreen() {
   const [menu, setMenu] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [adding, setAdding] = useState(false);
-  const [name, setName] = useState('');
-  const [renameValue, setRenameValue] = useState('');
-  const [type, setType] = useState<RoutineType>('other');
+  const [newRoutineName, setNewRoutineName] = useState('');
+  const [newRoutineType, setNewRoutineType] = useState<RoutineType>('other');
+  const [programNameDraft, setProgramNameDraft] = useState('');
 
   if (!data) {
     return (
@@ -61,28 +67,25 @@ export default function ProgramScreen() {
   }
 
   const addRoutine = () => {
-    if (!name.trim()) return;
-    const r = routineRepo.create(id, name, type);
-    if (data.isActive) weekPlanRepo.ensureEntry(id, r.id, []);
+    if (!newRoutineName.trim()) return;
+    const createdRoutine = routineRepo.create(id, newRoutineName, newRoutineType);
+    if (data.isActive) weekPlanRepo.ensureEntry(id, createdRoutine.id, []);
     setAdding(false);
-    setName('');
-    router.push({ pathname: '/routine/[id]', params: { id: r.id } });
+    setNewRoutineName('');
+    router.push({ pathname: '/routine/[id]', params: { id: createdRoutine.id } });
   };
 
-  const remove = () => {
-    Alert.alert(t('programs.deleteProgram'), t('programs.deleteProgramConfirm'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('common.delete'),
-        style: 'destructive',
-        onPress: () => {
-          if (data.isActive) weekPlanRepo.setActiveProgram(null);
-          programRepo.remove(id);
-          router.back();
-        },
+  const remove = () =>
+    confirmDestructive(t, {
+      title: t('programs.deleteProgram'),
+      message: t('programs.deleteProgramConfirm'),
+      confirmLabel: t('common.delete'),
+      onConfirm: () => {
+        if (data.isActive) weekPlanRepo.setActiveProgram(null);
+        programRepo.remove(id);
+        router.back();
       },
-    ]);
-  };
+    });
 
   return (
     <Screen
@@ -126,13 +129,11 @@ export default function ProgramScreen() {
               title={routine.name}
               below={
                 <AppText variant="callout" secondary numberOfLines={2}>
-                  {[
+                  {joinDot(
                     t(`programs.types.${routine.type}`),
                     t('today.exercisesCount', { count }),
-                    muscles.map((m) => t(`exercises.muscles.${m}`)).join(', '),
-                  ]
-                    .filter(Boolean)
-                    .join(' · ')}
+                    muscleNames(t, muscles),
+                  )}
                 </AppText>
               }
               right={<Icon name="chevron-forward" size={22} color={p.textSecondary} />}
@@ -155,18 +156,18 @@ export default function ProgramScreen() {
         <TextField
           label={t('programs.routineName')}
           placeholder={t('programs.routineNamePlaceholder')}
-          value={name}
-          onChangeText={setName}
+          value={newRoutineName}
+          onChangeText={setNewRoutineName}
           testID="routine-name"
         />
         <AppText variant="caption" secondary>
           {t('programs.routineType')}
         </AppText>
-        <RoutineTypePicker value={type} onChange={setType} />
+        <RoutineTypePicker value={newRoutineType} onChange={setNewRoutineType} />
         <Button
           title={t('common.create')}
           onPress={addRoutine}
-          disabled={!name.trim()}
+          disabled={!newRoutineName.trim()}
           testID="routine-create"
         />
       </Sheet>
@@ -174,15 +175,15 @@ export default function ProgramScreen() {
       <Sheet visible={renaming} onClose={() => setRenaming(false)} title={t('programs.rename')}>
         <TextField
           label={t('programs.newProgramName')}
-          value={renameValue}
-          onChangeText={setRenameValue}
+          value={programNameDraft}
+          onChangeText={setProgramNameDraft}
           testID="program-rename-input"
         />
         <Button
           title={t('common.save')}
-          disabled={!renameValue.trim()}
+          disabled={!programNameDraft.trim()}
           onPress={() => {
-            programRepo.rename(id, renameValue);
+            programRepo.rename(id, programNameDraft);
             setRenaming(false);
           }}
           testID="program-rename-save"
@@ -197,7 +198,7 @@ export default function ProgramScreen() {
             testID="program-rename"
             onPress={() => {
               setMenu(false);
-              setRenameValue(data.program.name);
+              setProgramNameDraft(data.program.name);
               setRenaming(true);
             }}
           />

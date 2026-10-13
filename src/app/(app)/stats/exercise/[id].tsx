@@ -15,18 +15,15 @@ import {
   StackHeader,
 } from '../../../../components';
 import { parseLocalDate } from '../../../../domain/dates';
-import { PERIODS, type DateRange, type Period } from '../../../../domain/periods';
 import { groupFilterOf, programGroups, strengthSeries } from '../../../../domain/stats';
 import { displayWeight, formatWeight } from '../../../../domain/units';
 import { useRepoQuery } from '../../../../features/data/useRepoQuery';
 import { exerciseDisplayName } from '../../../../features/exercises/resolve';
 import { TrendChart } from '../../../../features/stats/charts';
-import { groupLabels, periodLabel } from '../../../../features/stats/labels';
+import { groupLabels, parseRangeParams, rangeText } from '../../../../features/stats/labels';
 import { loadStats } from '../../../../features/stats/loadStats';
 import { formatDateShort } from '../../../../i18n/format';
 import { spacing } from '../../../../theme/tokens';
-
-const DATE_PARAM = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
  * กราฟความแข็งแรงต่อท่า (SPEC I4): 1RM โดยประมาณด้วยสูตร Epley ต่อวันที่ฝึก
@@ -48,21 +45,12 @@ export default function ExerciseStrengthScreen() {
   const today = parseLocalDate(model.today);
   const groups = programGroups(model.data);
   const group = params.group ? groups.find((g) => g.key === params.group) : undefined;
-  const range: DateRange | null =
-    params.from && params.to && DATE_PARAM.test(params.from) && DATE_PARAM.test(params.to)
-      ? { start: params.from, end: params.to }
-      : null;
-  const period = PERIODS.find((x) => x === params.period) as Period | undefined;
+  const { range, period } = parseRangeParams(params);
   const series = strengthSeries(model.data, id, { range, group: group ? groupFilterOf(group) : null });
   const labels = groupLabels(groups, t('stats.noProgram'), (d) => formatDateShort(parseLocalDate(d), today));
   const groupText = group ? (labels.get(group.key) ?? t('stats.noProgram')) : t('stats.allGroups');
-  const scopeText = range
-    ? `${groupText} · ${
-        period
-          ? periodLabel(period, range, model.today)
-          : `${formatDateShort(parseLocalDate(range.start), today)} – ${formatDateShort(parseLocalDate(range.end), today)}`
-      }`
-    : groupText;
+  const rangeLabel = rangeText(range, period, model.today);
+  const scopeText = rangeLabel ? `${groupText} · ${rangeLabel}` : groupText;
   const best = series.reduce<(typeof series)[number] | null>(
     (a, b) => (!a || b.e1rmKg > a.e1rmKg ? b : a),
     null,

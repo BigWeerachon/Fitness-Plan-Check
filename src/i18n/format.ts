@@ -1,4 +1,6 @@
 /* eslint-disable import/no-named-as-default-member -- ใช้ instance ของ i18next โดยตรง */
+import type { TFunction } from 'i18next';
+import type { MuscleGroup } from '../db/schema';
 import i18n, { currentLanguage } from './index';
 import { now as clockNow } from '../utils/clock';
 
@@ -104,4 +106,14 @@ export function formatRelativeDay(d: Date, now: Date = new Date(clockNow())): st
     return i18n.t('date.weeksAgo', { count: Math.floor(diff / DAYS_PER_WEEK) });
   }
   return formatDateShort(d, now);
+}
+
+/** ต่อส่วนข้อความด้วย " · " โดยข้ามส่วนที่ว่าง (null / undefined / false / สตริงว่าง) */
+export function joinDot(...parts: (string | null | undefined | false)[]): string {
+  return parts.filter(Boolean).join(' · ');
+}
+
+/** ชื่อกลุ่มกล้ามเนื้อตามภาษาปัจจุบัน คั่นด้วยจุลภาค (รายการว่าง = สตริงว่าง) */
+export function muscleNames(t: TFunction, muscles: readonly MuscleGroup[]): string {
+  return muscles.map((m) => t(`exercises.muscles.${m}`)).join(', ');
 }

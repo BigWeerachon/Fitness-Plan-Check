@@ -22,6 +22,7 @@ import { programRepo, routineRepo } from '../../../db/repos/programRepo';
 import { routineExerciseRepo } from '../../../db/repos/routineExerciseRepo';
 import { weekPlanRepo } from '../../../db/repos/weekPlanRepo';
 import type { RoutineExercise } from '../../../db/schema';
+import { moveItem } from '../../../domain/listOrder';
 import { DEFAULT_REST_SEC } from '../../../domain/schedule';
 import { formatWeight } from '../../../domain/units';
 import { useRepoQuery } from '../../../features/data/useRepoQuery';
@@ -30,8 +31,9 @@ import { ExerciseSettingsSheet } from '../../../features/programs/ExerciseSettin
 import { RoutineTypePicker } from '../../../features/programs/RoutineTypePicker';
 import { startSession } from '../../../features/session/sessionFlow';
 import { spacing } from '../../../theme/tokens';
+import { confirmDestructive } from '../../../utils/confirmDestructive';
 
-type Move = 'copy' | 'move' | null;
+type TransferMode = 'copy' | 'move';
 
 /** แก้ไข routine: ชื่อ, แท็กประเภท (F5), ท่า + เซ็ตเป้าหมาย + progression (G2), คัดลอก/ย้ายข้ามกรุ๊ป (F3) */
 export default function RoutineScreen() {
@@ -54,7 +56,7 @@ export default function RoutineScreen() {
   const [menu, setMenu] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [name, setName] = useState('');
-  const [move, setMove] = useState<Move>(null);
+  const [transferMode, setTransferMode] = useState<TransferMode | null>(null);
 
   if (!data) {
     return (
@@ -65,28 +67,44 @@ export default function RoutineScreen() {
   }
   const { routine, exercises, unit } = data;
   // ย้ายได้เฉพาะกรุ๊ปอื่น ส่วนคัดลอกไปกรุ๊ปเดิมก็ได้
-  const targets = data.programs.filter((p) => move === 'copy' || p.id !== routine.programId);
+  const targets = data.programs.filter((p) => transferMode === 'copy' || p.id !== routine.programId);
 
-  const reorder = (index: number, delta: number) => {
-    const ids = exercises.map((e) => e.id);
-    const target = index + delta;
-    if (target < 0 || target >= ids.length) return;
-    [ids[index], ids[target]] = [ids[target], ids[index]];
-    routineExerciseRepo.reorder(id, ids);
+  const reorder = (index: number, delta: -1 | 1) => {
+    const next = moveItem(
+      exercises.map((e) => e.id),
+      index,
+      delta,
+    );
+    if (next) routineExerciseRepo.reorder(id, next);
   };
 
   const remove = () =>
-    Alert.alert(t('programs.deleteRoutine'), t('programs.deleteRoutineConfirm'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('common.delete'),
-        style: 'destructive',
-        onPress: () => {
-          routineRepo.remove(id);
-          router.back();
-        },
+    confirmDestructive(t, {
+      title: t('programs.deleteRoutine'),
+      message: t('programs.deleteRoutineConfirm'),
+      confirmLabel: t('common.delete'),
+      onConfirm: () => {
+        routineRepo.remove(id);
+        router.back();
       },
-    ]);
+    });
+
+  // คัดลอก/ย้ายไปโปรแกรมปลายทาง; ถ้าปลายทางคือโปรแกรมที่ใช้งานอยู่ ต้องมีแถวในตารางสัปดาห์ด้วย
+  // (คัดลอกแล้ว copyTo ไม่คืนค่า = ไม่มี routine ใหม่ให้ใส่ตาราง แต่ยังแจ้งว่าคัดลอกแล้วเหมือนเดิม)
+  const transferRoutine = (mode: TransferMode, targetProgramId: string) => {
+    let routineIdInTarget: string | undefined;
+    if (mode === 'copy') {
+      routineIdInTarget = routineRepo.copyTo(id, targetProgramId)?.id;
+    } else {
+      routineRepo.moveTo(id, targetProgramId);
+      routineIdInTarget = id;
+    }
+    if (routineIdInTarget && profileRepo.get()?.activeProgramId === targetProgramId) {
+      weekPlanRepo.ensureEntry(targetProgramId, routineIdInTarget);
+    }
+    Alert.alert(t(mode === 'copy' ? 'programs.copied' : 'programs.moved'));
+    setTransferMode(null);
+  };
 
   const summary = (e: RoutineExercise) => {
     const reps =
@@ -220,7 +238,7 @@ export default function RoutineScreen() {
             icon="copy-outline"
             onPress={() => {
               setMenu(false);
-              setMove('copy');
+              setTransferMode('copy');
             }}
           />
           <ListRow
@@ -229,7 +247,7 @@ export default function RoutineScreen() {
             icon="arrow-redo-outline"
             onPress={() => {
               setMenu(false);
-              setMove('move');
+              setTransferMode('move');
             }}
           />
           <ListRow
@@ -256,7 +274,11 @@ export default function RoutineScreen() {
         />
       </Sheet>
 
-      <Sheet visible={move !== null} onClose={() => setMove(null)} title={t('programs.pickProgram')}>
+      <Sheet
+        visible={transferMode !== null}
+        onClose={() => setTransferMode(null)}
+        title={t('programs.pickProgram')}
+      >
         {targets.length === 0 ? (
           <EmptyState
             icon="folder-open-outline"
@@ -270,25 +292,13 @@ export default function RoutineScreen() {
                 key={p.id}
                 title={p.name}
                 testID={`move-target-${p.id}`}
-                onPress={() => {
-                  if (move === 'copy') {
-                    const copy = routineRepo.copyTo(id, p.id);
-                    if (copy && profileRepo.get()?.activeProgramId === p.id)
-                      weekPlanRepo.ensureEntry(p.id, copy.id);
-                    Alert.alert(t('programs.copied'));
-                  } else {
-                    routineRepo.moveTo(id, p.id);
-                    if (profileRepo.get()?.activeProgramId === p.id) weekPlanRepo.ensureEntry(p.id, id);
-                    Alert.alert(t('programs.moved'));
-                  }
-                  setMove(null);
-                }}
+                onPress={() => transferMode && transferRoutine(transferMode, p.id)}
               />
             ))}
           </CardGroup>
         )}
         <AppText variant="caption" secondary>
-          {move === 'copy' ? t('programs.copyTo') : t('programs.moveTo')}
+          {transferMode === 'copy' ? t('programs.copyTo') : t('programs.moveTo')}
         </AppText>
       </Sheet>
     </Screen>

@@ -4,11 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { AppText, Button, Chip, Screen, StackHeader, TextField, HeroTitle } from '../../../components';
 import { customExerciseRepo } from '../../../db/repos/customExerciseRepo';
-import { profileRepo } from '../../../db/repos/profileRepo';
-import { routineExerciseRepo } from '../../../db/repos/routineExerciseRepo';
 import type { Equipment, MuscleGroup } from '../../../db/schema';
 import { EQUIPMENT, MUSCLE_GROUPS } from '../../../data/exerciseLibrary';
-import { preferredWeightStepKg } from '../../../domain/progression';
+import { addExerciseToRoutine } from '../../../features/programs/addExerciseToRoutine';
 import { spacing } from '../../../theme/tokens';
 
 /**
@@ -41,13 +39,7 @@ export default function NewExerciseScreen() {
       return;
     }
     const ex = customExerciseRepo.create(values);
-    if (routineId) {
-      const profile = profileRepo.get();
-      routineExerciseRepo.add(routineId, ex.id, {
-        weightStepKg: preferredWeightStepKg(profile?.weightUnit ?? 'kg', profile?.weightStepKg),
-        targetReps: 8,
-      });
-    }
+    if (routineId) addExerciseToRoutine(routineId, ex.id);
     router.back();
   };
 

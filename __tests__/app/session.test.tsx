@@ -243,4 +243,31 @@ describe('workout session (SPEC G1, G2)', () => {
     expect(squat()[1]).toMatchObject({ targetWeightKg: 110, weightKg: 110 });
     expect(squat()[2]).toMatchObject({ targetWeightKg: 110, weightKg: 77 });
   });
+
+  it('moves an exercise down and up from its menu and ignores moves past the ends', async () => {
+    await entitledApp();
+    const program = instantiateTemplate('ppl3', 'en')!;
+    const legs = routineRepo.listByProgram(program.id).find((r) => r.type === 'legs')!;
+    const { session } = startSession({ routineId: legs.id });
+    const order = () => sessionRepo.exercisesInSession(session.id).map((e) => e.exerciseId);
+    const original = order();
+    expect(original.length).toBeGreaterThan(2);
+    renderRouter('./src/app', { initialUrl: `/session/${session.id}` });
+
+    fireEvent.press(await screen.findByTestId(`ex-menu-${original[0]}`));
+    fireEvent.press(await screen.findByText('Move down'));
+    await flush();
+    expect(order()).toEqual([original[1], original[0], ...original.slice(2)]);
+
+    fireEvent.press(screen.getByTestId(`ex-menu-${original[0]}`));
+    fireEvent.press(await screen.findByText('Move up'));
+    await flush();
+    expect(order()).toEqual(original);
+
+    // ท่าแรกเลื่อนขึ้นไม่ได้ — ลำดับไม่เปลี่ยน
+    fireEvent.press(screen.getByTestId(`ex-menu-${original[0]}`));
+    fireEvent.press(await screen.findByText('Move up'));
+    await flush();
+    expect(order()).toEqual(original);
+  });
 });

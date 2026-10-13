@@ -16,16 +16,15 @@ import {
   Toggle,
   AppText,
 } from '../../../components';
-import { profileRepo } from '../../../db/repos/profileRepo';
-import { routineExerciseRepo } from '../../../db/repos/routineExerciseRepo';
 import { sessionRepo } from '../../../db/repos/sessionRepo';
 import type { Equipment, MuscleGroup } from '../../../db/schema';
 import { exerciseName, searchExercises } from '../../../data/exerciseLibrary';
-import { preferredWeightStepKg } from '../../../domain/progression';
 import { useRepoQuery } from '../../../features/data/useRepoQuery';
 import { EquipmentFilter, MuscleFilter } from '../../../features/exercises/ExerciseFilters';
 import { allExercises, resolveExercise } from '../../../features/exercises/resolve';
+import { addExerciseToRoutine } from '../../../features/programs/addExerciseToRoutine';
 import { currentLanguage } from '../../../i18n';
+import { joinDot } from '../../../i18n/format';
 import { spacing } from '../../../theme/tokens';
 import { usePalette } from '../../../theme/useTheme';
 
@@ -38,7 +37,8 @@ export default function ExercisesScreen() {
   const p = usePalette();
   const params = useLocalSearchParams<{ routineId?: string; sessionId?: string; swap?: string }>();
   const picking = !!(params.routineId || params.sessionId || params.swap);
-  const single = !!params.swap;
+  const isSwapMode = !!params.swap;
+  const isMultiPick = picking && !isSwapMode;
   const lang = currentLanguage();
   const [query, setQuery] = useState('');
   const [muscle, setMuscle] = useState<MuscleGroup | null>(null);
@@ -48,16 +48,10 @@ export default function ExercisesScreen() {
   const list = useRepoQuery(allExercises);
   const results = searchExercises(list, query, { muscle, equipment, includeSecondary: secondary }, lang);
 
-  const confirm = (ids: string[]) => {
+  /** บันทึกท่าที่เลือกลง routine / เซสชัน หรือใช้สลับท่า (ตามโหมดจาก params) แล้วย้อนกลับ */
+  const applyPickedExercises = (ids: string[]) => {
     if (params.routineId) {
-      const profile = profileRepo.get();
-      const stepKg = preferredWeightStepKg(profile?.weightUnit ?? 'kg', profile?.weightStepKg);
-      for (const exerciseId of ids) {
-        routineExerciseRepo.add(params.routineId, exerciseId, {
-          weightStepKg: stepKg,
-          targetReps: 8,
-        });
-      }
+      for (const exerciseId of ids) addExerciseToRoutine(params.routineId, exerciseId);
     } else if (params.sessionId) {
       for (const exerciseId of ids) sessionRepo.addExercise(params.sessionId, exerciseId, resolveExercise);
     } else if (params.swap) {
@@ -66,9 +60,15 @@ export default function ExercisesScreen() {
     router.back();
   };
 
+  const openCreateCustom = () =>
+    router.push({
+      pathname: '/exercises/new',
+      params: params.routineId ? { routineId: params.routineId } : {},
+    });
+
   const onPressItem = (id: string) => {
     if (!picking) return router.push({ pathname: '/exercises/[id]', params: { id } });
-    if (single) return confirm([id]);
+    if (isSwapMode) return applyPickedExercises([id]);
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
   };
 
@@ -81,12 +81,7 @@ export default function ExercisesScreen() {
             <IconButton
               icon="add"
               label={t('exercises.createCustom')}
-              onPress={() =>
-                router.push({
-                  pathname: '/exercises/new',
-                  params: params.routineId ? { routineId: params.routineId } : {},
-                })
-              }
+              onPress={openCreateCustom}
               testID="exercises-new"
             />
           }
@@ -118,12 +113,7 @@ export default function ExercisesScreen() {
           icon="search-outline"
           body={t('exercises.noResults')}
           actionLabel={t('exercises.createCustom')}
-          onAction={() =>
-            router.push({
-              pathname: '/exercises/new',
-              params: params.routineId ? { routineId: params.routineId } : {},
-            })
-          }
+          onAction={openCreateCustom}
         />
       ) : (
         <CardGroup>
@@ -134,16 +124,14 @@ export default function ExercisesScreen() {
                 key={ex.id}
                 title={exerciseName(ex, lang)}
                 leading={<MuscleIcon muscle={ex.primary} />}
-                value={[
+                value={joinDot(
                   t(`exercises.muscles.${ex.primary}`),
                   t(`exercises.equipment.${ex.equipment}`),
-                  ex.isCustom ? t('exercises.custom') : null,
-                ]
-                  .filter(Boolean)
-                  .join(' · ')}
+                  ex.isCustom && t('exercises.custom'),
+                )}
                 onPress={() => onPressItem(ex.id)}
                 right={
-                  picking && !single ? (
+                  isMultiPick ? (
                     <Icon
                       name={on ? 'checkmark-circle' : 'ellipse-outline'}
                       size={24}
@@ -158,11 +146,11 @@ export default function ExercisesScreen() {
         </CardGroup>
       )}
 
-      {picking && !single ? (
+      {isMultiPick ? (
         <View style={styles.footer}>
           <Button
             title={`${t('exercises.addSelected')} · ${t('exercises.selected', { count: selected.length })}`}
-            onPress={() => confirm(selected)}
+            onPress={() => applyPickedExercises(selected)}
             disabled={selected.length === 0}
             testID="exercises-add-selected"
           />

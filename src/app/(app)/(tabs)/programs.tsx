@@ -26,7 +26,7 @@ import { weekPlanRepo } from '../../../db/repos/weekPlanRepo';
 import { DEFAULT_WEEK_START, parseLocalDate, toLocalDate } from '../../../domain/dates';
 import { useRepoQuery } from '../../../features/data/useRepoQuery';
 import { loadPrograms } from '../../../features/programs/usePrograms';
-import { formatRelativeDay } from '../../../i18n/format';
+import { formatRelativeDay, joinDot } from '../../../i18n/format';
 import { now } from '../../../utils/clock';
 import { spacing } from '../../../theme/tokens';
 import { usePalette } from '../../../theme/useTheme';
@@ -113,17 +113,14 @@ export default function ProgramsScreen() {
               below={
                 <View style={styles.below}>
                   <AppText variant="callout" secondary>
-                    {[
+                    {joinDot(
                       t('programs.routineCount', { count: c.routineCount }),
                       t('programs.sessionsCount', { count: c.sessionCount }),
-                      c.lastDate
-                        ? t('programs.lastWorkout', {
-                            when: formatRelativeDay(parseLocalDate(c.lastDate), today),
-                          })
-                        : null,
-                    ]
-                      .filter(Boolean)
-                      .join(' · ')}
+                      c.lastDate &&
+                        t('programs.lastWorkout', {
+                          when: formatRelativeDay(parseLocalDate(c.lastDate), today),
+                        }),
+                    )}
                   </AppText>
                   {c.isActive ? (
                     <View style={styles.badge}>

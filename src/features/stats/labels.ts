@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import type { WeightUnit } from '../../db/schema';
 import { parseLocalDate, type LocalDate } from '../../domain/dates';
-import type { DateRange, Period } from '../../domain/periods';
+import { PERIODS, type DateRange, type Period } from '../../domain/periods';
 import type { Metric, ProgramGroup, SessionSummary } from '../../domain/stats';
 import { displayWeight } from '../../domain/units';
 import { formatDateShort, formatMonthYear, formatNumber, formatYear } from '../../i18n/format';
@@ -17,6 +17,34 @@ export function periodLabel(period: Period, range: DateRange, today: LocalDate):
     return `${formatDateShort(start, todayDate)} – ${formatDateShort(parseLocalDate(range.end), todayDate)}`;
   if (period === 'month') return formatMonthYear(start.getFullYear(), start.getMonth());
   return formatYear(start.getFullYear());
+}
+
+const DATE_PARAM = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * อ่านช่วงเวลาที่แท็บสถิติส่งมาทาง query (from/to เป็น YYYY-MM-DD ครบทั้งคู่จึงถือเป็นช่วง, period ต้องเป็นค่าที่รู้จัก)
+ * ค่าที่ไม่ถูกต้อง = ไม่กรองช่วงเวลา
+ */
+export function parseRangeParams(params: { from?: string; to?: string; period?: string }): {
+  range: DateRange | null;
+  period: Period | undefined;
+} {
+  const { from, to } = params;
+  const range = from && to && DATE_PARAM.test(from) && DATE_PARAM.test(to) ? { start: from, end: to } : null;
+  const period = PERIODS.find((x) => x === params.period);
+  return { range, period };
+}
+
+/** ข้อความช่วงเวลาที่กรองอยู่: รู้ period = ป้ายของ period, ไม่รู้ = "วันเริ่ม – วันสิ้นสุด"; ไม่มีช่วง = null */
+export function rangeText(
+  range: DateRange | null,
+  period: Period | undefined,
+  todayKey: LocalDate,
+): string | null {
+  if (!range) return null;
+  if (period) return periodLabel(period, range, todayKey);
+  const today = parseLocalDate(todayKey);
+  return `${formatDateShort(parseLocalDate(range.start), today)} – ${formatDateShort(parseLocalDate(range.end), today)}`;
 }
 
 /** ค่าของตัวชี้วัดในรูปที่อ่านง่าย (ปริมาณรวมแปลงเป็นหน่วยที่ผู้ใช้เลือก) */

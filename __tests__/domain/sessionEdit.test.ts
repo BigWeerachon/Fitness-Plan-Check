@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { previousSetFor, resizeSets, retargetSet } from '@/domain/sessionEdit';
+import { previousSetFor, resizeSets, retargetSet, setCellPatch } from '@/domain/sessionEdit';
 
 const pending = (over: Partial<Parameters<typeof retargetSet>[0]> = {}) => ({
   done: false,
@@ -113,5 +113,23 @@ describe('previousSetFor', () => {
 
   it('returns undefined without history', () => {
     expect(previousSetFor([], 0)).toBeUndefined();
+  });
+});
+
+describe('setCellPatch (G1 big keypad)', () => {
+  it('stores weight in kg, converting from the display unit', () => {
+    expect(setCellPatch('weight', 62.5, 'kg')).toEqual({ weightKg: 62.5 });
+    const lb = setCellPatch('weight', 100, 'lb') as { weightKg: number };
+    expect(lb.weightKg).toBeCloseTo(45.359237, 6);
+  });
+
+  it('rounds reps to a whole number', () => {
+    expect(setCellPatch('reps', 8.4, 'kg')).toEqual({ reps: 8 });
+    expect(setCellPatch('reps', 8.6, 'lb')).toEqual({ reps: 9 });
+  });
+
+  it('clears the cell when the keypad is submitted empty', () => {
+    expect(setCellPatch('weight', null, 'lb')).toEqual({ weightKg: null });
+    expect(setCellPatch('reps', null, 'kg')).toEqual({ reps: null });
   });
 });

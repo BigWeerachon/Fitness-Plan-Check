@@ -4,11 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { Alert, StyleSheet, View } from 'react-native';
 import { AppText, Button, Card, HeroTitle, Screen, StackHeader } from '../../../components';
 import { PROGRAM_TEMPLATES, trainingDaysPerWeek } from '../../../data/templates';
-import { exerciseInfo } from '../../../features/exercises/resolve';
+import { exerciseDisplayName } from '../../../features/exercises/resolve';
 import { instantiateTemplate } from '../../../features/programs/instantiate';
 import { currentLanguage } from '../../../i18n';
 import { weekdayMedium } from '../../../i18n/format';
-import { exerciseName } from '../../../data/exerciseLibrary';
 import { spacing } from '../../../theme/tokens';
 
 /** เทมเพลตโปรแกรม (SPEC F4) — เลือกแล้วสร้างกรุ๊ป + routine + ตารางสัปดาห์ แก้ไขได้ทั้งหมด */
@@ -32,7 +31,7 @@ export default function TemplatesScreen() {
                   {r.name[lang]} · {r.days.map((d) => weekdayMedium(d)).join(' ')}
                 </AppText>
                 <AppText variant="caption" secondary>
-                  {r.exercises.map((e) => exerciseName(exerciseInfo(e.exerciseId)!, lang)).join(', ')}
+                  {r.exercises.map((e) => exerciseDisplayName(e.exerciseId)).join(', ')}
                 </AppText>
               </View>
             ))}

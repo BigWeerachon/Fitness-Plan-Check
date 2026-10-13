@@ -1,5 +1,5 @@
-import type { SessionSet } from '../db/schema';
-import { sameWeight } from './units';
+import type { SessionSet, WeightUnit } from '../db/schema';
+import { sameWeight, weightToKg } from './units';
 
 /** การแก้เซ็ตระหว่างเซสชัน (SPEC G1, G2) — ฟังก์ชันล้วน */
 
@@ -57,4 +57,20 @@ export function resizeSets(
 /** เซ็ตครั้งก่อนที่ตรงลำดับเดียวกัน; ถ้าครั้งก่อนมีเซ็ตน้อยกว่าใช้เซ็ตสุดท้าย; ไม่มีประวัติ → undefined */
 export function previousSetFor<T>(previousSets: readonly T[], index: number): T | undefined {
   return previousSets[index] ?? previousSets[previousSets.length - 1];
+}
+
+/** ช่องที่ผู้ใช้แตะแก้ในตารางเซ็ต */
+export type SetCellField = 'weight' | 'reps';
+
+/**
+ * ค่าที่ผู้ใช้กรอกจากแป้นตัวเลข → patch ของเซ็ต: น้ำหนักแปลงจากหน่วยของผู้ใช้เป็น kg, ครั้งปัดเป็นจำนวนเต็ม
+ * null = ล้างช่อง
+ */
+export function setCellPatch(
+  field: SetCellField,
+  value: number | null,
+  unit: WeightUnit,
+): { weightKg: number | null } | { reps: number | null } {
+  if (field === 'weight') return { weightKg: value === null ? null : weightToKg(value, unit) };
+  return { reps: value === null ? null : Math.round(value) };
 }

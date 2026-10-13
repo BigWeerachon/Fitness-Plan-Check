@@ -30,6 +30,7 @@ import {
   PROTEIN_PER_KG_RANGE,
   SURPLUS_PCT,
   nutritionSummary,
+  type CalorieTarget,
 } from '../../domain/nutrition';
 import { formFromValues, parseProfileForm, type ProfileForm } from '../../domain/profileInput';
 import { useRepoQuery } from '../../features/data/useRepoQuery';
@@ -73,6 +74,12 @@ export default function ProfileScreen() {
   const kcal = (n: number) => `${formatNumber(n)} ${t('common.units.kcal')}`;
   const grams = (n: number) => t('nutrition.grams', { value: formatNumber(n) });
 
+  const targetNote = (target: CalorieTarget) => {
+    if (target.goal === 'lose') return t('nutrition.targetLose', { pct: target.adjustPct });
+    if (target.goal === 'gain') return t('nutrition.targetGain', { pct: target.adjustPct });
+    return t('nutrition.targetMaintain');
+  };
+
   const update = (next: ProfileForm) => {
     setForm(next);
     setSaved(false);
@@ -81,9 +88,11 @@ export default function ProfileScreen() {
   const save = () => {
     if (hasErrors) return;
     const { weightKg, ...rest } = values;
-    profileRepo.update(weightKg === profile.weightKg || weightKg === null ? values : rest);
-    // น้ำหนักเปลี่ยน → บันทึกเป็นจุดแนวโน้มของวันนี้ด้วย (I4, DECISIONS D23)
-    if (weightKg !== null && weightKg !== profile.weightKg) logBodyWeight(weightKg);
+    const weightChanged = weightKg !== null && weightKg !== profile.weightKg;
+    // น้ำหนักเปลี่ยน → logBodyWeight เขียนทั้งบันทึกรายวันและ profile.weightKg ในทรานแซกชันเดียว (I4, DECISIONS D23)
+    // จึงไม่ส่ง weightKg ซ้ำไปกับ update; น้ำหนักว่าง (null) ยังส่งไปเพื่อล้างค่าเดิม
+    profileRepo.update(weightChanged ? rest : values);
+    if (weightChanged) logBodyWeight(weightKg);
     setSaved(true);
   };
 
@@ -133,13 +142,7 @@ export default function ProfileScreen() {
             />
             <ListRow
               title={t('nutrition.target')}
-              value={`${kcal(summary.target.kcal)} · ${
-                summary.target.goal === 'lose'
-                  ? t('nutrition.targetLose', { pct: summary.target.adjustPct })
-                  : summary.target.goal === 'gain'
-                    ? t('nutrition.targetGain', { pct: summary.target.adjustPct })
-                    : t('nutrition.targetMaintain')
-              }`}
+              value={`${kcal(summary.target.kcal)} · ${targetNote(summary.target)}`}
               testID="profile-target"
             />
           </CardGroup>

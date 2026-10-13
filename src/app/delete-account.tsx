@@ -9,6 +9,7 @@ import { useManageSubscriptions } from '../features/access/useManageSubscription
 import { useAuth } from '../stores/auth';
 import { spacing } from '../theme/tokens';
 import { usePalette } from '../theme/useTheme';
+import { confirmDestructive } from '../utils/confirmDestructive';
 
 /**
  * ลบบัญชีและข้อมูลทั้งหมด (SPEC B12): แจ้งก่อนว่าไม่ยกเลิกการสมัครในสโตร์ + ปุ่มลัดไปหน้ายกเลิก
@@ -37,10 +38,12 @@ export default function DeleteAccountScreen() {
   };
 
   const confirm = () => {
-    Alert.alert(t('account.delete.confirmTitle'), t('account.delete.confirmBody'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('account.delete.confirm'), style: 'destructive', onPress: () => void run() },
-    ]);
+    confirmDestructive(t, {
+      title: t('account.delete.confirmTitle'),
+      message: t('account.delete.confirmBody'),
+      confirmLabel: t('account.delete.confirm'),
+      onConfirm: () => void run(),
+    });
   };
 
   return (

@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import {
   AppText,
   Button,
@@ -17,12 +17,14 @@ import {
 } from '../../../components';
 import { sessionRepo } from '../../../db/repos/sessionRepo';
 import { parseLocalDate } from '../../../domain/dates';
-import { displayWeight, formatWeight } from '../../../domain/units';
+import { formatWeight } from '../../../domain/units';
 import { useRepoQuery } from '../../../features/data/useRepoQuery';
 import { exerciseDisplayName } from '../../../features/exercises/resolve';
+import { SessionStatsGrid, sessionFacts } from '../../../features/session/SessionStatsGrid';
 import { loadSession } from '../../../features/session/useSessionData';
-import { formatDateLong, formatDuration, formatNumber, formatTime } from '../../../i18n/format';
+import { formatDateLong, formatTime, muscleNames } from '../../../i18n/format';
 import { spacing } from '../../../theme/tokens';
+import { confirmDestructive } from '../../../utils/confirmDestructive';
 
 /** รายละเอียดเซสชันจากประวัติ (SPEC I1): ท่า เซ็ต น้ำหนัก × ครั้ง ปริมาณรวม แคลอรี่ — ลบเซสชันได้ */
 export default function HistoryDetailScreen() {
@@ -41,34 +43,15 @@ export default function HistoryDetailScreen() {
   const unitLabel = t(`common.units.${unit}`);
 
   const remove = () =>
-    Alert.alert(t('stats.deleteSession'), t('stats.deleteSessionConfirm'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('common.delete'),
-        style: 'destructive',
-        onPress: () => {
-          sessionRepo.remove(id);
-          router.back();
-        },
+    confirmDestructive(t, {
+      title: t('stats.deleteSession'),
+      message: t('stats.deleteSessionConfirm'),
+      confirmLabel: t('common.delete'),
+      onConfirm: () => {
+        sessionRepo.remove(id);
+        router.back();
       },
-    ]);
-
-  const facts: { label: string; value: string }[] = [
-    {
-      label: t('session.duration'),
-      value: formatDuration(session.durationSec ?? 0),
-    },
-    { label: t('session.sets'), value: String(totals.setsDone) },
-    {
-      label: t('session.volume'),
-      value: `${formatNumber(displayWeight(totals.volumeKg, unit))} ${unitLabel}`,
-    },
-    {
-      label: t('session.kcal'),
-      value:
-        session.kcal != null ? `${formatNumber(session.kcal)} ${t('common.units.kcal')}` : t('session.none'),
-    },
-  ];
+    });
 
   return (
     <Screen header={<StackHeader title={t('stats.sessionDetailTitle')} />} testID="history-detail">
@@ -80,23 +63,14 @@ export default function HistoryDetailScreen() {
         ].join(' · ')}
         compact
       />
-      <View style={styles.grid}>
-        {facts.map((f) => (
-          <Card key={f.label} style={styles.stat}>
-            <AppText variant="caption" secondary>
-              {f.label}
-            </AppText>
-            <AppText variant="headline">{f.value}</AppText>
-          </Card>
-        ))}
-      </View>
+      <SessionStatsGrid facts={sessionFacts(t, session, totals, unit)} />
       <CardGroup style={styles.block}>
         {session.intensity ? (
           <ListRow title={t('stats.intensity')} value={t(`session.intensity.${session.intensity}`)} />
         ) : null}
         <ListRow
           title={t('session.muscles')}
-          value={totals.musclesDone.map((m) => t(`exercises.muscles.${m}`)).join(', ') || t('session.none')}
+          value={muscleNames(t, totals.musclesDone) || t('session.none')}
         />
         {session.backfilled ? <ListRow title={t('stats.backfilled')} icon="time-outline" /> : null}
       </CardGroup>
@@ -139,8 +113,6 @@ export default function HistoryDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
-  stat: { flexGrow: 1, flexBasis: '45%' },
   block: { marginTop: spacing.lg },
   list: { gap: spacing.md },
 });

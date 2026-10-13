@@ -23,7 +23,7 @@ import { profileRepo } from '../../db/repos/profileRepo';
 import { programRepo, routineRepo } from '../../db/repos/programRepo';
 import { dayOverrideRepo, weekPlanRepo } from '../../db/repos/weekPlanRepo';
 import { addDays, parseLocalDate, toLocalDate, weekdayOf } from '../../domain/dates';
-import { resolveDayPlan, weekDaysOrdered } from '../../domain/schedule';
+import { resolveDayPlan, weekDaysOrdered, type DayPlan } from '../../domain/schedule';
 import { useRepoQuery } from '../../features/data/useRepoQuery';
 import { formatDateShort, weekdayLong } from '../../i18n/format';
 import { now } from '../../utils/clock';
@@ -53,32 +53,39 @@ export default function WeekScreen() {
     return { profile, programs, program, routines, entries, upcoming, names, allRoutines, today };
   });
   const [copying, setCopying] = useState(false);
-  const [from, setFrom] = useState(1);
-  const [to, setTo] = useState(2);
+  const [copyFromWeekday, setCopyFromWeekday] = useState(1);
+  const [copyToWeekday, setCopyToWeekday] = useState(2);
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const weekStart = data.profile.weekStart;
   const order = weekDaysOrdered(weekStart);
 
   const entryFor = (routineId: string) => data.entries.find((e) => e.routineId === routineId);
 
+  /** แถวตารางของ routine นี้ในโปรแกรมที่ใช้งาน (สร้างให้ถ้ายังไม่มี) — null เมื่อไม่มีโปรแกรมที่ใช้งาน */
+  const entryOrCreate = (routineId: string) =>
+    data.program ? (entryFor(routineId) ?? weekPlanRepo.ensureEntry(data.program.id, routineId, [])) : null;
+
   const toggleDay = (routineId: string, day: number) => {
-    if (!data.program) return;
-    const entry = entryFor(routineId) ?? weekPlanRepo.ensureEntry(data.program.id, routineId, []);
-    weekPlanRepo.toggleDay(entry.id, day);
+    const entry = entryOrCreate(routineId);
+    if (entry) weekPlanRepo.toggleDay(entry.id, day);
   };
 
   const setEnabled = (routineId: string, enabled: boolean) => {
-    if (!data.program) return;
-    const entry = entryFor(routineId) ?? weekPlanRepo.ensureEntry(data.program.id, routineId, []);
-    weekPlanRepo.setEnabled(entry.id, enabled);
+    const entry = entryOrCreate(routineId);
+    if (entry) weekPlanRepo.setEnabled(entry.id, enabled);
   };
 
-  const describe = (plan: (typeof data.upcoming)[number]['plan']) =>
-    plan.kind === 'rest'
-      ? t('week.rest')
-      : plan.kind === 'empty'
-        ? t('week.free')
-        : plan.routineIds.map((id) => data.names.get(id) ?? '').join(' + ');
+  const describeDayPlan = (plan: DayPlan) => {
+    if (plan.kind === 'rest') return t('week.rest');
+    if (plan.kind === 'empty') return t('week.free');
+    return plan.routineIds.map((id) => data.names.get(id) ?? '').join(' + ');
+  };
+
+  /** ทำการกับ override ของวันที่กำลังแก้ แล้วปิดชีต */
+  const applyOverride = (change: () => void) => () => {
+    change();
+    setEditingDate(null);
+  };
 
   return (
     <Screen header={<StackHeader title={t('week.title')} />} testID="week">
@@ -174,7 +181,7 @@ export default function WeekScreen() {
               <ListRow
                 key={date}
                 title={formatDateShort(parseLocalDate(date))}
-                value={`${describe(plan)}${plan.source === 'override' ? ` · ${t('week.changed')}` : ''}`}
+                value={`${describeDayPlan(plan)}${plan.source === 'override' ? ` · ${t('week.changed')}` : ''}`}
                 onPress={() => setEditingDate(date)}
                 testID={`week-day-${date}`}
               />
@@ -192,8 +199,8 @@ export default function WeekScreen() {
             <Chip
               key={d}
               label={weekdayLong(d)}
-              selected={from === d}
-              onPress={() => setFrom(d)}
+              selected={copyFromWeekday === d}
+              onPress={() => setCopyFromWeekday(d)}
               testID={`copy-from-${d}`}
             />
           ))}
@@ -206,20 +213,22 @@ export default function WeekScreen() {
             <Chip
               key={d}
               label={weekdayLong(d)}
-              selected={to === d}
-              onPress={() => setTo(d)}
+              selected={copyToWeekday === d}
+              onPress={() => setCopyToWeekday(d)}
               testID={`copy-to-${d}`}
             />
           ))}
         </View>
         <Button
           title={t('week.copy')}
-          disabled={from === to || !data.program}
+          disabled={copyFromWeekday === copyToWeekday || !data.program}
           onPress={() => {
             if (!data.program) return;
-            weekPlanRepo.copyDay(data.program.id, from, to);
+            weekPlanRepo.copyDay(data.program.id, copyFromWeekday, copyToWeekday);
             setCopying(false);
-            Alert.alert(t('week.copied', { from: weekdayLong(from), to: weekdayLong(to) }));
+            Alert.alert(
+              t('week.copied', { from: weekdayLong(copyFromWeekday), to: weekdayLong(copyToWeekday) }),
+            );
           }}
           testID="copy-confirm"
         />
@@ -236,37 +245,25 @@ export default function WeekScreen() {
               title={t('week.usePlan')}
               value={weekdayLong(weekdayOf(editingDate))}
               icon="calendar-outline"
-              onPress={() => {
-                dayOverrideRepo.clear(editingDate);
-                setEditingDate(null);
-              }}
+              onPress={applyOverride(() => dayOverrideRepo.clear(editingDate))}
             />
             {data.allRoutines.map((r) => (
               <ListRow
                 key={r.id}
                 title={r.name}
                 icon="barbell-outline"
-                onPress={() => {
-                  dayOverrideRepo.set(editingDate, 'routine', r.id);
-                  setEditingDate(null);
-                }}
+                onPress={applyOverride(() => dayOverrideRepo.set(editingDate, 'routine', r.id))}
               />
             ))}
             <ListRow
               title={t('week.free')}
               icon="add-circle-outline"
-              onPress={() => {
-                dayOverrideRepo.set(editingDate, 'empty');
-                setEditingDate(null);
-              }}
+              onPress={applyOverride(() => dayOverrideRepo.set(editingDate, 'empty'))}
             />
             <ListRow
               title={t('week.rest')}
               icon="moon-outline"
-              onPress={() => {
-                dayOverrideRepo.set(editingDate, 'rest');
-                setEditingDate(null);
-              }}
+              onPress={applyOverride(() => dayOverrideRepo.set(editingDate, 'rest'))}
             />
           </CardGroup>
         ) : null}

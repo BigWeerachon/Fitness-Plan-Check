@@ -12,15 +12,12 @@ import {
   StackHeader,
 } from '../../../components';
 import { parseLocalDate } from '../../../domain/dates';
-import { PERIODS, type DateRange, type Period } from '../../../domain/periods';
 import { groupFilterOf, programGroups, sessionSummaries, type SessionSummary } from '../../../domain/stats';
 import { useRepoQuery } from '../../../features/data/useRepoQuery';
-import { groupLabels, periodLabel, sessionLine } from '../../../features/stats/labels';
+import { groupLabels, parseRangeParams, rangeText, sessionLine } from '../../../features/stats/labels';
 import { loadStats } from '../../../features/stats/loadStats';
 import { formatDateShort, formatMonthYear } from '../../../i18n/format';
 import { spacing } from '../../../theme/tokens';
-
-const DATE_PARAM = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
  * ประวัติการฝึก (SPEC I1) เรียงจากใหม่ไปเก่า แบ่งตามเดือน — กรองกรุ๊ปได้ (I5) และแสดงชื่อกรุ๊ปทุกแถว
@@ -35,11 +32,7 @@ export default function HistoryScreen() {
     to?: string;
   }>();
   const groupKey = params.group;
-  const range: DateRange | null =
-    params.from && params.to && DATE_PARAM.test(params.from) && DATE_PARAM.test(params.to)
-      ? { start: params.from, end: params.to }
-      : null;
-  const period = PERIODS.find((x) => x === params.period) as Period | undefined;
+  const { range, period } = parseRangeParams(params);
   const model = useRepoQuery(loadStats, i18n.language);
   const group = groupKey ? programGroups(model.data).find((g) => g.key === groupKey) : undefined;
   const sessions = sessionSummaries(model.data, { range, group: group ? groupFilterOf(group) : null });
@@ -47,11 +40,7 @@ export default function HistoryScreen() {
   const labels = groupLabels(programGroups(model.data), t('stats.noProgram'), (d) =>
     formatDateShort(parseLocalDate(d), today),
   );
-  const rangeText = range
-    ? period
-      ? periodLabel(period, range, model.today)
-      : `${formatDateShort(parseLocalDate(range.start), today)} – ${formatDateShort(parseLocalDate(range.end), today)}`
-    : null;
+  const rangeLabel = rangeText(range, period, model.today);
   const groupText = group
     ? (labels.get(group.key) ?? group.programName ?? t('stats.noProgram'))
     : t('stats.allGroups');
@@ -72,7 +61,7 @@ export default function HistoryScreen() {
     <Screen header={<StackHeader title={t('stats.title')} />} testID="history">
       <HeroTitle
         title={t('stats.historyTitle')}
-        subtitle={rangeText ? `${groupText} · ${rangeText}` : groupText}
+        subtitle={rangeLabel ? `${groupText} · ${rangeLabel}` : groupText}
         compact
       />
       {sessions.length === 0 ? (

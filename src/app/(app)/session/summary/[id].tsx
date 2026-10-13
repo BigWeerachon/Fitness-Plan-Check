@@ -29,11 +29,14 @@ import {
   type ExerciseSuggestion,
 } from '../../../../features/session/finish';
 import { formatSet, isBodyweightExercise } from '../../../../features/session/formatSet';
+import { SessionStatsGrid, sessionFacts } from '../../../../features/session/SessionStatsGrid';
 import { loadSession } from '../../../../features/session/useSessionData';
-import { formatDuration, formatNumber } from '../../../../i18n/format';
+import { muscleNames } from '../../../../i18n/format';
 import { spacing } from '../../../../theme/tokens';
 
 const INTENSITIES: Intensity[] = ['light', 'moderate', 'hard'];
+/** ระยะเวลา (นาที) ของเซสชันย้อนหลังที่ผู้ใช้ต้องกรอกเอง */
+const BACKFILL_MINUTES = { initial: 60, min: 5, max: 300, step: 5 } as const;
 
 /**
  * จบเซสชัน (SPEC G1/G2): เลือกความหนักเพื่อคำนวณแคลอรี่ → สรุปเซสชัน → "เป้าหมายครั้งหน้า" ที่ยอมรับ/ปรับ/ข้ามได้
@@ -42,8 +45,6 @@ export default function SessionSummaryScreen() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const data = useRepoQuery(() => loadSession(id), id);
-  const [intensity, setIntensity] = useState<Intensity>('moderate');
-  const [minutes, setMinutes] = useState(60);
   const [adjusting, setAdjusting] = useState<ExerciseSuggestion | null>(null);
   const suggestions = useRepoQuery(
     () => (data?.session.status === 'completed' ? suggestionsFor(id) : []),
@@ -58,8 +59,8 @@ export default function SessionSummaryScreen() {
     );
   }
   const { session, totals, unit } = data;
-  const unitLabel = t(`common.units.${unit}`);
-  const target = (exerciseId: string, weightKg: number | null, reps: number) => ({
+  // พารามิเตอร์ `{ target }` ของข้อความเหตุผลในใบเสนอเป้าหมายครั้งหน้า (session.reason.*)
+  const suggestionTargetParams = (exerciseId: string, weightKg: number | null, reps: number) => ({
     target: formatSet(t, {
       weightKg,
       reps,
@@ -69,47 +70,8 @@ export default function SessionSummaryScreen() {
     }),
   });
 
-  if (session.status === 'active') {
-    return (
-      <Screen header={<StackHeader title={t('session.summaryTitle')} />} testID="session-finish-form">
-        <HeroTitle title={t('session.finishTitle')} subtitle={t('session.intensityHelp')} compact />
-        <View
-          style={styles.chips}
-          accessibilityRole="radiogroup"
-          accessibilityLabel={t('session.finishTitle')}
-        >
-          {INTENSITIES.map((i) => (
-            <Chip
-              key={i}
-              label={t(`session.intensity.${i}`)}
-              selected={intensity === i}
-              onPress={() => setIntensity(i)}
-              testID={`intensity-${i}`}
-            />
-          ))}
-        </View>
-        {session.backfilled ? (
-          <Card style={styles.block}>
-            <Stepper
-              label={t('session.duration')}
-              value={minutes}
-              onChange={setMinutes}
-              min={5}
-              max={300}
-              step={5}
-              format={(v) => t('session.durationMin', { count: v })}
-            />
-          </Card>
-        ) : null}
-        <Button
-          title={t('session.save')}
-          onPress={() => finishSession(id, intensity, session.backfilled ? minutes * 60 : undefined)}
-          style={styles.block}
-          testID="session-save"
-        />
-      </Screen>
-    );
-  }
+  if (session.status === 'active')
+    return <FinishSessionForm sessionId={id} backfilled={session.backfilled} />;
 
   return (
     <Screen
@@ -121,36 +83,7 @@ export default function SessionSummaryScreen() {
         subtitle={session.programName}
         compact
       />
-      <View style={styles.grid}>
-        <Card style={styles.stat}>
-          <AppText variant="caption" secondary>
-            {t('session.duration')}
-          </AppText>
-          <AppText variant="headline">{formatDuration(session.durationSec ?? 0)}</AppText>
-        </Card>
-        <Card style={styles.stat}>
-          <AppText variant="caption" secondary>
-            {t('session.sets')}
-          </AppText>
-          <AppText variant="headline">{totals.setsDone}</AppText>
-        </Card>
-        <Card style={styles.stat}>
-          <AppText variant="caption" secondary>
-            {t('session.volume')}
-          </AppText>
-          <AppText variant="headline">{`${formatNumber(displayWeight(totals.volumeKg, unit))} ${unitLabel}`}</AppText>
-        </Card>
-        <Card style={styles.stat}>
-          <AppText variant="caption" secondary>
-            {t('session.kcal')}
-          </AppText>
-          <AppText variant="headline" testID="summary-kcal">
-            {session.kcal != null
-              ? `${formatNumber(session.kcal)} ${t('common.units.kcal')}`
-              : t('session.none')}
-          </AppText>
-        </Card>
-      </View>
+      <SessionStatsGrid facts={sessionFacts(t, session, totals, unit, 'summary-kcal')} />
       {session.kcal == null ? (
         <AppText variant="caption" secondary align="center">
           {t('session.kcalUnknown')}
@@ -160,9 +93,7 @@ export default function SessionSummaryScreen() {
         <AppText variant="caption" secondary>
           {t('session.muscles')}
         </AppText>
-        <AppText>
-          {totals.musclesDone.map((m) => t(`exercises.muscles.${m}`)).join(', ') || t('session.none')}
-        </AppText>
+        <AppText>{muscleNames(t, totals.musclesDone) || t('session.none')}</AppText>
       </Card>
       <Disclaimer />
 
@@ -173,18 +104,18 @@ export default function SessionSummaryScreen() {
             {t('session.nextTargetsHint')}
           </AppText>
           <View style={styles.list}>
-            {suggestions.map((s) => {
-              const tg = target(
-                s.routineExercise.exerciseId,
-                s.suggestion.targetWeightKg,
-                s.suggestion.targetReps,
+            {suggestions.map((exerciseSuggestion) => {
+              const targetParams = suggestionTargetParams(
+                exerciseSuggestion.routineExercise.exerciseId,
+                exerciseSuggestion.suggestion.targetWeightKg,
+                exerciseSuggestion.suggestion.targetReps,
               );
-              const decision = s.decision;
+              const decision = exerciseSuggestion.decision;
               return (
-                <Card key={s.sessionExerciseId}>
-                  <AppText variant="headline">{s.exerciseName}</AppText>
-                  <AppText accent testID={`suggestion-${s.routineExercise.exerciseId}`}>
-                    {t(`session.reason.${s.suggestion.reason}`, tg)}
+                <Card key={exerciseSuggestion.sessionExerciseId}>
+                  <AppText variant="headline">{exerciseSuggestion.exerciseName}</AppText>
+                  <AppText accent testID={`suggestion-${exerciseSuggestion.routineExercise.exerciseId}`}>
+                    {t(`session.reason.${exerciseSuggestion.suggestion.reason}`, targetParams)}
                   </AppText>
                   {decision ? (
                     <AppText variant="caption" secondary>
@@ -194,21 +125,21 @@ export default function SessionSummaryScreen() {
                     <View style={styles.row}>
                       <Button
                         title={t('session.accept')}
-                        onPress={() => acceptSuggestion(s)}
+                        onPress={() => acceptSuggestion(exerciseSuggestion)}
                         style={styles.flex}
-                        testID={`accept-${s.routineExercise.exerciseId}`}
+                        testID={`accept-${exerciseSuggestion.routineExercise.exerciseId}`}
                       />
                       <Button
                         title={t('session.adjust')}
                         kind="secondary"
-                        onPress={() => setAdjusting(s)}
+                        onPress={() => setAdjusting(exerciseSuggestion)}
                         style={styles.flex}
                       />
                       <Button
                         title={t('session.skip')}
                         kind="plain"
-                        onPress={() => declineSuggestion(s)}
-                        testID={`skip-${s.routineExercise.exerciseId}`}
+                        onPress={() => declineSuggestion(exerciseSuggestion)}
+                        testID={`skip-${exerciseSuggestion.routineExercise.exerciseId}`}
                       />
                     </View>
                   )}
@@ -238,6 +169,48 @@ export default function SessionSummaryScreen() {
           />
         ) : null}
       </Sheet>
+    </Screen>
+  );
+}
+
+/** ฟอร์มจบเซสชันที่ยังไม่จบ (เลือกความหนัก + ระยะเวลาถ้าเป็นเซสชันย้อนหลัง) — บันทึกแล้วหน้านี้จะเปลี่ยนเป็นหน้าสรุป */
+function FinishSessionForm({ sessionId, backfilled }: { sessionId: string; backfilled: boolean }) {
+  const { t } = useTranslation();
+  const [intensity, setIntensity] = useState<Intensity>('moderate');
+  const [minutes, setMinutes] = useState<number>(BACKFILL_MINUTES.initial);
+  return (
+    <Screen header={<StackHeader title={t('session.summaryTitle')} />} testID="session-finish-form">
+      <HeroTitle title={t('session.finishTitle')} subtitle={t('session.intensityHelp')} compact />
+      <View style={styles.chips} accessibilityRole="radiogroup" accessibilityLabel={t('session.finishTitle')}>
+        {INTENSITIES.map((i) => (
+          <Chip
+            key={i}
+            label={t(`session.intensity.${i}`)}
+            selected={intensity === i}
+            onPress={() => setIntensity(i)}
+            testID={`intensity-${i}`}
+          />
+        ))}
+      </View>
+      {backfilled ? (
+        <Card style={styles.block}>
+          <Stepper
+            label={t('session.duration')}
+            value={minutes}
+            onChange={setMinutes}
+            min={BACKFILL_MINUTES.min}
+            max={BACKFILL_MINUTES.max}
+            step={BACKFILL_MINUTES.step}
+            format={(v) => t('session.durationMin', { count: v })}
+          />
+        </Card>
+      ) : null}
+      <Button
+        title={t('session.save')}
+        onPress={() => finishSession(sessionId, intensity, backfilled ? minutes * 60 : undefined)}
+        style={styles.block}
+        testID="session-save"
+      />
     </Screen>
   );
 }
@@ -284,8 +257,6 @@ function AdjustBody({
 const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, justifyContent: 'center' },
   block: { marginTop: spacing.lg },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
-  stat: { flexGrow: 1, flexBasis: '45%' },
   hint: { marginHorizontal: spacing.xl, marginBottom: spacing.sm },
   list: { gap: spacing.md },
   row: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm, alignItems: 'center' },

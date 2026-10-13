@@ -1,6 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import { setLanguage } from '@/i18n';
-import { formatDateLong, formatDateShort, formatRelativeDay } from '@/i18n/format';
+import { formatDateLong, formatDateShort, formatRelativeDay, joinDot, muscleNames } from '@/i18n/format';
+import i18n from 'i18next';
 import { setClockForTests } from '@/utils/clock';
 
 const TODAY = new Date(2026, 9, 13);
@@ -50,5 +51,24 @@ describe('date formats follow the current language', () => {
     setLanguage('th');
     expect(formatDateLong(TODAY)).toContain('2569');
     expect(formatDateShort(TODAY, TODAY)).not.toContain('2569');
+  });
+});
+
+describe('joinDot', () => {
+  it('joins the parts with a middle dot and skips empty ones', () => {
+    expect(joinDot('a', 'b', 'c')).toBe('a · b · c');
+    expect(joinDot('a', null, undefined, false, '', 'b')).toBe('a · b');
+    expect(joinDot(null, false)).toBe('');
+  });
+});
+
+describe('muscleNames', () => {
+  beforeAll(() => setLanguage('en'));
+
+  it('lists translated muscle groups separated by commas', () => {
+    expect(muscleNames(i18n.t, ['chest', 'quads'])).toBe(
+      `${i18n.t('exercises.muscles.chest')}, ${i18n.t('exercises.muscles.quads')}`,
+    );
+    expect(muscleNames(i18n.t, [])).toBe('');
   });
 });

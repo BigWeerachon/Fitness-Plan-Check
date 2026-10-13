@@ -5,6 +5,7 @@ import { customExerciseRepo } from '@/db/repos/customExerciseRepo';
 import { programRepo, routineRepo } from '@/db/repos/programRepo';
 import { routineExerciseRepo } from '@/db/repos/routineExerciseRepo';
 import { sessionRepo } from '@/db/repos/sessionRepo';
+import { weekPlanRepo } from '@/db/repos/weekPlanRepo';
 import { MUSCLE_GROUPS } from '@/data/exerciseLibrary';
 import { MUSCLE_ICON } from '@/data/muscleIcons';
 import { loadPrograms } from '@/features/programs/usePrograms';
@@ -96,6 +97,36 @@ describe('Routine copy / move (SPEC F3)', () => {
     expect(routineRepo.listByProgram(b.id)).toHaveLength(2);
   });
 
+  it('puts the copied or moved routine on the week plan when the target is the active program', async () => {
+    await entitledApp();
+    jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+    const a = programRepo.create('A');
+    const b = programRepo.create('B');
+    weekPlanRepo.setActiveProgram(b.id);
+    const r = routineRepo.create(a.id, 'Push A', 'push');
+    renderRouter('./src/app', { initialUrl: `/routine/${r.id}` });
+
+    fireEvent.press(await screen.findByTestId('routine-menu'));
+    fireEvent.press(await screen.findByTestId('routine-copy'));
+    fireEvent.press(await screen.findByTestId(`move-target-${b.id}`));
+    await flush();
+    const copy = routineRepo.listByProgram(b.id)[0];
+    expect(copy.name).toBe('Push A');
+    expect(weekPlanRepo.listByProgram(b.id).map((e) => e.routineId)).toEqual([copy.id]);
+    expect(weekPlanRepo.listByProgram(a.id)).toEqual([]);
+
+    fireEvent.press(screen.getByTestId('routine-menu'));
+    fireEvent.press(await screen.findByTestId('routine-move'));
+    fireEvent.press(await screen.findByTestId(`move-target-${b.id}`));
+    await flush();
+    expect(
+      weekPlanRepo
+        .listByProgram(b.id)
+        .map((e) => e.routineId)
+        .sort(),
+    ).toEqual([copy.id, r.id].sort());
+  });
+
   it('explains that there is nowhere to move to when only one program exists', async () => {
     await entitledApp();
     const only = programRepo.create('Only');
@@ -124,6 +155,21 @@ describe('Exercise library (SPEC F7, F9)', () => {
     await flush();
     const custom = customExerciseRepo.list().find((e) => e.name === 'Sled push')!;
     expect(routineExerciseRepo.listByRoutine(r.id).map((e) => e.exerciseId)).toEqual([custom.id]);
+  });
+
+  it('adds the picked exercises to the routine with the default target reps and step', async () => {
+    await entitledApp();
+    const p = programRepo.create('Mine');
+    const r = routineRepo.create(p.id, 'Day', 'other');
+    renderRouter('./src/app', { initialUrl: `/routine/${r.id}` });
+    fireEvent.press(await screen.findByTestId('routine-add-exercise'));
+    fireEvent.press(await screen.findByTestId('ex-barbell_bench_press'));
+    fireEvent.press(screen.getByTestId('ex-back_squat'));
+    fireEvent.press(screen.getByTestId('exercises-add-selected'));
+    await flush();
+    const added = routineExerciseRepo.listByRoutine(r.id);
+    expect(added.map((e) => e.exerciseId)).toEqual(['barbell_bench_press', 'back_squat']);
+    expect(added.every((e) => e.targetReps === 8 && e.weightStepKg === 2.5)).toBe(true);
   });
 
   it('edits a custom exercise with the same form', async () => {

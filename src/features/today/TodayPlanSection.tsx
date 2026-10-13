@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { AppText, BigRow, CardGroup, CircleButton, EmptyState } from '../../components';
 import { parseLocalDate } from '../../domain/dates';
-import { formatRelativeDay } from '../../i18n/format';
+import { formatRelativeDay, muscleNames } from '../../i18n/format';
 import type { TodayModel, TodayRoutine } from './loadToday';
 
 /** การ์ดแผนของวันนี้: ไม่มีโปรแกรม → ว่าง, routine → การ์ดเริ่ม, ฝึกอิสระ → การ์ดเริ่มเซสชันว่าง, พัก → ไม่แสดง */
@@ -87,7 +87,7 @@ function RoutineDetails({ routine: r, today }: { routine: TodayRoutine; today: D
       ) : null}
       {r.muscles.length > 0 ? (
         <AppText variant="callout" secondary numberOfLines={2} testID={`today-card-muscles-${r.routine.id}`}>
-          {r.muscles.map((m) => t(`exercises.muscles.${m}`)).join(', ')}
+          {muscleNames(t, r.muscles)}
         </AppText>
       ) : null}
       <AppText variant="caption" secondary>

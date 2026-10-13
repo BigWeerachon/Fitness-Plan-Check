@@ -1,5 +1,12 @@
 import { afterAll, describe, expect, it } from '@jest/globals';
-import { buildShareItems, groupLabels, sessionLine } from '@/features/stats/labels';
+import {
+  buildShareItems,
+  groupLabels,
+  parseRangeParams,
+  periodLabel,
+  rangeText,
+  sessionLine,
+} from '@/features/stats/labels';
 import type { BreakdownView } from '@/features/stats/statsView';
 import { setLanguage, t } from '@/i18n';
 
@@ -127,5 +134,42 @@ describe('buildShareItems (I2)', () => {
     expect(muscle.items[0].label).toBe(t('exercises.muscles.chest'));
     expect(muscle.items[0].valueLabel).toBe('500 kg lifted');
     expect(muscle.total).toBe(500);
+  });
+});
+
+describe('parseRangeParams (I5)', () => {
+  it('accepts a complete YYYY-MM-DD range and a known period', () => {
+    expect(parseRangeParams({ from: '2026-10-05', to: '2026-10-11', period: 'week' })).toEqual({
+      range: { start: '2026-10-05', end: '2026-10-11' },
+      period: 'week',
+    });
+  });
+
+  it('ignores a missing, half or malformed range and an unknown period', () => {
+    expect(parseRangeParams({})).toEqual({ range: null, period: undefined });
+    expect(parseRangeParams({ from: '2026-10-05' }).range).toBeNull();
+    expect(parseRangeParams({ to: '2026-10-11' }).range).toBeNull();
+    expect(parseRangeParams({ from: '2026-10-05', to: 'yesterday' }).range).toBeNull();
+    expect(parseRangeParams({ from: '10/05/2026', to: '2026-10-11' }).range).toBeNull();
+    expect(parseRangeParams({ period: 'decade' }).period).toBeUndefined();
+  });
+});
+
+describe('rangeText (I5)', () => {
+  const range = { start: '2026-10-05', end: '2026-10-11' };
+
+  it('is null without a range', () => {
+    expect(rangeText(null, 'week', '2026-10-13')).toBeNull();
+  });
+
+  it('uses the period label when the period is known', () => {
+    setLanguage('en');
+    expect(rangeText(range, 'week', '2026-10-13')).toBe(periodLabel('week', range, '2026-10-13'));
+    expect(rangeText(range, 'month', '2026-10-13')).toBe(periodLabel('month', range, '2026-10-13'));
+  });
+
+  it('falls back to "start – end" for a custom range', () => {
+    setLanguage('en');
+    expect(rangeText(range, undefined, '2026-10-13')).toBe('Mon, Oct 5 – Sun, Oct 11');
   });
 });
