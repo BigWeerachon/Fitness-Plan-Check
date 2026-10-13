@@ -31,17 +31,19 @@ const DAYS_PER_UNIT: Record<string, number> = { DAY: 1, WEEK: 7, MONTH: 30, YEAR
  */
 export function trialDaysOf(pkg: PackageLike | null | undefined): number | null {
   if (!pkg) return null;
-  const free = pkg.product.defaultOption?.freePhase;
-  if (free) {
-    const per = DAYS_PER_UNIT[free.billingPeriod.unit.toUpperCase()];
-    if (per) return per * free.billingPeriod.value * Math.max(1, free.billingCycleCount ?? 1);
-  }
+  const freePhase = pkg.product.defaultOption?.freePhase;
+  const fromFreePhase = freePhase
+    ? periodToDays(freePhase.billingPeriod.unit, freePhase.billingPeriod.value, freePhase.billingCycleCount)
+    : null;
+  if (fromFreePhase !== null) return fromFreePhase;
   const intro = pkg.product.introPrice;
-  if (intro && intro.price === 0) {
-    const per = DAYS_PER_UNIT[intro.periodUnit.toUpperCase()];
-    if (per) return per * intro.periodNumberOfUnits * Math.max(1, intro.cycles);
-  }
-  return null;
+  return intro?.price === 0 ? periodToDays(intro.periodUnit, intro.periodNumberOfUnits, intro.cycles) : null;
+}
+
+/** จำนวนวันรวมของช่วงเวลา (null ถ้าไม่รู้จักหน่วย) */
+function periodToDays(unit: string, unitCount: number, cycles: number | null | undefined): number | null {
+  const daysPerUnit = DAYS_PER_UNIT[unit.toUpperCase()];
+  return daysPerUnit ? daysPerUnit * unitCount * Math.max(1, cycles ?? 1) : null;
 }
 
 function toPlan(kind: PlanKind, pkg: PackageLike | null): StorePlan | null {

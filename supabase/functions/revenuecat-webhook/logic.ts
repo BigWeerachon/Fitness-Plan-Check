@@ -103,6 +103,11 @@ const CANCEL_REASONS: readonly CancelReason[] = [
   'UNKNOWN',
 ];
 
+/** ตรวจว่าค่า string อยู่ในรายการค่าคงที่ (type guard ไม่ต้อง cast ที่หน้างาน) */
+function isOneOf<T extends string>(list: readonly T[], value: string): value is T {
+  return (list as readonly string[]).includes(value);
+}
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** เทียบแบบเวลาคงที่ กันการเดาค่าลับทีละตัวอักษรจากเวลาตอบกลับ */
@@ -136,7 +141,7 @@ export function parseEvent(body: unknown): RcWebhookEvent | null {
 
 /** เหตุการณ์ที่เกี่ยวกับสิทธิ์ "pro" (TRANSFER ไม่มี entitlement_ids แต่ย้ายสิทธิ์ทั้งหมด) */
 export function isRelevant(ev: RcWebhookEvent): boolean {
-  if (!(EVENT_TYPES as readonly string[]).includes(ev.type) || ev.type === 'TEST') return false;
+  if (!isOneOf(EVENT_TYPES, ev.type) || ev.type === 'TEST') return false;
   if (ev.type === 'TRANSFER') return true;
   return !ev.entitlement_ids || ev.entitlement_ids.includes(ENTITLEMENT_ID);
 }
@@ -161,23 +166,24 @@ export function targetsOf(ev: RcWebhookEvent): Target[] {
   return [...new Set(ids)].map((userId) => ({ userId }));
 }
 
+/** ว่าง → null, ค่านอกรายการที่รู้จัก → 'UNKNOWN' */
+function normalizeCancelReason(raw: string | null | undefined): CancelReason | null {
+  if (!raw) return null;
+  return isOneOf(CANCEL_REASONS, raw) ? raw : 'UNKNOWN';
+}
+
 export function toEntitlementEvent(
   ev: RcWebhookEvent,
   direction?: 'to' | 'from',
   transferred: EntitlementSnapshot | null = null,
 ): EntitlementEvent {
-  const reason = (CANCEL_REASONS as readonly string[]).includes(ev.cancel_reason ?? '')
-    ? (ev.cancel_reason as CancelReason)
-    : ev.cancel_reason
-      ? 'UNKNOWN'
-      : null;
   return {
     type: ev.type as RcEventType,
     eventAt: ev.event_timestamp_ms ?? 0,
     productId: ev.product_id ?? null,
     periodType: ev.period_type ?? null,
     expirationAt: ev.expiration_at_ms ?? null,
-    cancelReason: reason,
+    cancelReason: normalizeCancelReason(ev.cancel_reason),
     gracePeriodExpirationAt: ev.grace_period_expiration_at_ms ?? null,
     transferDirection: direction,
     transferred: direction === 'to' ? transferred : null,
@@ -190,7 +196,7 @@ const ms = (value: string | null) => (value === null ? null : Date.parse(value))
 export function snapshotFromRow(row: EntitlementRow | null): EntitlementSnapshot {
   if (!row) return EMPTY_SNAPSHOT;
   return {
-    state: (ENTITLEMENT_STATES as readonly string[]).includes(row.state) ? row.state : 'NO_ENTITLEMENT',
+    state: isOneOf(ENTITLEMENT_STATES, row.state) ? row.state : 'NO_ENTITLEMENT',
     productId: row.product_id,
     periodType: (row.period_type as PeriodType | null) ?? null,
     expirationDate: ms(row.expiration_at),
@@ -222,6 +228,39 @@ export function rowFromSnapshot(
   };
 }
 
+type TargetResult = Awaited<ReturnType<WebhookStore['saveEntitlement']>> | 'stale';
+
+/** บันทึกว่าประมวลผลเหตุการณ์นี้แล้ว (กันซ้ำ) และล้างของเก่า */
+async function recordEventAndPurge(store: WebhookStore, ev: RcWebhookEvent): Promise<void> {
+  await store.recordEvent({
+    id: ev.id,
+    type: ev.type,
+    app_user_id: ev.app_user_id ?? null,
+    event_at: ev.event_timestamp_ms ? new Date(ev.event_timestamp_ms).toISOString() : null,
+  });
+  // ล้างของเก่าเป็นงานเสริม: ล้มเหลวต้องไม่ทำให้ webhook ล้ม (RevenueCat จะส่งซ้ำโดยไม่จำเป็น)
+  try {
+    await store.purgeOldEvents(EVENT_RETENTION_DAYS);
+  } catch (e) {
+    console.error('revenuecat_events purge failed', e);
+  }
+}
+
+/** TRANSFER: สิทธิ์ที่ดีที่สุดของบัญชีต้นทาง (ก่อนถูกตั้งเป็น EXPIRED) — เหตุการณ์อื่นเป็น null */
+function transferredSnapshotOf(
+  ev: RcWebhookEvent,
+  targets: Target[],
+  rows: Map<string, EntitlementRow | null>,
+): EntitlementSnapshot | null {
+  if (ev.type !== 'TRANSFER') return null;
+  return bestSnapshot(
+    targets
+      .filter((target) => target.direction === 'from')
+      .map((target) => snapshotFromRow(rows.get(target.userId) ?? null)),
+    ev.event_timestamp_ms ?? 0,
+  );
+}
+
 export async function handleWebhook(
   req: { authorization: string | null; body: unknown },
   deps: { secret: string; store: WebhookStore; now: number },
@@ -232,23 +271,8 @@ export async function handleWebhook(
   if (!ev) return { status: 400, body: { error: 'invalid event' } };
   if (await deps.store.eventSeen(ev.id)) return { status: 200, body: { duplicate: true } };
 
-  const record = async () => {
-    await deps.store.recordEvent({
-      id: ev.id,
-      type: ev.type,
-      app_user_id: ev.app_user_id ?? null,
-      event_at: ev.event_timestamp_ms ? new Date(ev.event_timestamp_ms).toISOString() : null,
-    });
-    // ล้างของเก่าเป็นงานเสริม: ล้มเหลวต้องไม่ทำให้ webhook ล้ม (RevenueCat จะส่งซ้ำโดยไม่จำเป็น)
-    try {
-      await deps.store.purgeOldEvents(EVENT_RETENTION_DAYS);
-    } catch (e) {
-      console.error('revenuecat_events purge failed', e);
-    }
-  };
-
   if (!isRelevant(ev)) {
-    await record();
+    await recordEventAndPurge(deps.store, ev);
     return { status: 200, body: { ignored: true } };
   }
 
@@ -258,17 +282,9 @@ export async function handleWebhook(
   for (const target of targets) {
     if (!rows.has(target.userId)) rows.set(target.userId, await deps.store.getEntitlement(target.userId));
   }
-  const transferred =
-    ev.type === 'TRANSFER'
-      ? bestSnapshot(
-          targets
-            .filter((target) => target.direction === 'from')
-            .map((target) => snapshotFromRow(rows.get(target.userId) ?? null)),
-          ev.event_timestamp_ms ?? 0,
-        )
-      : null;
+  const transferred = transferredSnapshotOf(ev, targets, rows);
 
-  const results: Record<string, string> = {};
+  const results: Record<string, TargetResult> = {};
   // เขียนบัญชีปลายทางก่อนต้นทาง: ถ้าล้มกลางทาง RevenueCat ส่งซ้ำแล้วยังอ่านสิทธิ์เดิมของต้นทางได้
   const ordered = [
     ...targets.filter((target) => target.direction !== 'from'),
@@ -288,6 +304,6 @@ export async function handleWebhook(
       rowFromSnapshot(target.userId, next, ev, deps.now),
     );
   }
-  await record();
+  await recordEventAndPurge(deps.store, ev);
   return { status: 200, body: { results } };
 }

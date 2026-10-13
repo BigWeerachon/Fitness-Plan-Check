@@ -93,13 +93,17 @@ export function buildPaywallModel(input: PaywallInput): PaywallModel {
   }
   if (lifetime) disclosures.push('paywall.disclosure.lifetimeNoTrial');
 
+  let defaultPlan: PlanKind | null = null;
+  if (monthly) defaultPlan = 'monthly';
+  else if (lifetime) defaultPlan = 'lifetime';
+
   return {
     headline,
     offerTrial,
     trialDays: offerTrial ? (monthly?.trialDays ?? null) : null,
     monthly,
     lifetime,
-    defaultPlan: monthly ? 'monthly' : lifetime ? 'lifetime' : null,
+    defaultPlan,
     disclosures,
     unavailable: !monthly && !lifetime,
     upgrade,
@@ -116,14 +120,14 @@ export type BilledTerms =
  * ยอดที่จะถูกเรียกเก็บจริงของแพ็กเกจที่เลือก (ราคาจากสโตร์) — แสดงติดปุ่มซื้อ ตัวใหญ่เท่าหรือมากกว่าคำว่า "ฟรี"
  * ข้อเสนอทดลองอยู่ในประโยคเดียวกับราคาเสมอ (SPEC B5, App Review 3.1.2)
  */
-export function billedTerms(model: PaywallModel, plan: PlanKind | null): BilledTerms | null {
-  const sp = plan === 'monthly' ? model.monthly : plan === 'lifetime' ? model.lifetime : null;
-  if (!sp) return null;
-  if (sp.kind === 'lifetime') return { key: 'paywall.billed.lifetime', price: sp.priceString };
+export function billedTerms(model: PaywallModel, planKind: PlanKind | null): BilledTerms | null {
+  const selected = planKind ? model[planKind] : null;
+  if (!selected) return null;
+  if (selected.kind === 'lifetime') return { key: 'paywall.billed.lifetime', price: selected.priceString };
   if (model.offerTrial && model.trialDays) {
-    return { key: 'paywall.billed.trial', count: model.trialDays, price: sp.priceString };
+    return { key: 'paywall.billed.trial', count: model.trialDays, price: selected.priceString };
   }
-  return { key: 'paywall.billed.monthly', price: sp.priceString };
+  return { key: 'paywall.billed.monthly', price: selected.priceString };
 }
 
 // ───────────── ลำดับการซื้อ (SPEC B4) ─────────────

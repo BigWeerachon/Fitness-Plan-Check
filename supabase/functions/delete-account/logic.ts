@@ -32,6 +32,17 @@ export function bearerToken(header: string | null): string | null {
   return token || null;
 }
 
+/** ลองทำงานเสริม: สำเร็จ = true, ล้มเหลว = log แล้วไปต่อ (false) */
+async function attempt(label: string, task: () => Promise<void>, log?: DeleteDeps['log']): Promise<boolean> {
+  try {
+    await task();
+    return true;
+  } catch (e) {
+    log?.(`${label} failed`, e);
+    return false;
+  }
+}
+
 export async function handleDeleteAccount(
   req: { authorization: string | null; body: unknown },
   deps: DeleteDeps,
@@ -47,25 +58,17 @@ export async function handleDeleteAccount(
       : null;
 
   // เพิกถอนโทเค็น Apple: ถ้าล้มเหลวยังลบข้อมูลต่อ (สิทธิ์ของผู้ใช้ในการลบข้อมูลสำคัญกว่า) และรายงานผลกลับ
-  let appleRevoked = false;
-  if (user.provider === 'apple' && typeof code === 'string' && code && deps.revokeApple) {
-    try {
-      await deps.revokeApple(code);
-      appleRevoked = true;
-    } catch (e) {
-      deps.log?.('apple revoke failed', e);
-    }
-  }
+  const revokeApple = deps.revokeApple;
+  const appleCode = typeof code === 'string' && code !== '' ? code : null;
+  const appleRevoked =
+    user.provider === 'apple' && appleCode !== null && revokeApple
+      ? await attempt('apple revoke', () => revokeApple(appleCode), deps.log)
+      : false;
 
-  let revenueCatDeleted = false;
-  if (deps.deleteRevenueCatCustomer) {
-    try {
-      await deps.deleteRevenueCatCustomer(user.id);
-      revenueCatDeleted = true;
-    } catch (e) {
-      deps.log?.('revenuecat delete failed', e);
-    }
-  }
+  const deleteRevenueCatCustomer = deps.deleteRevenueCatCustomer;
+  const revenueCatDeleted = deleteRevenueCatCustomer
+    ? await attempt('revenuecat delete', () => deleteRevenueCatCustomer(user.id), deps.log)
+    : false;
 
   try {
     await deps.deleteWebhookEvents(user.id);
@@ -84,7 +87,7 @@ function base64url(bytes: Uint8Array | string): string {
   return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-function utf8(text: string): string {
+function utf8ToBinaryString(text: string): string {
   return String.fromCharCode(...new TextEncoder().encode(text));
 }
 
@@ -111,29 +114,31 @@ export interface AppleSecretInput {
 }
 
 /** client_secret ของ Apple = JWT ES256 อายุสั้น (5 นาที) เซ็นด้วยคีย์ Sign in with Apple */
-export async function appleClientSecret(i: AppleSecretInput): Promise<string> {
-  const header = base64url(utf8(JSON.stringify({ alg: 'ES256', kid: i.keyId, typ: 'JWT' })));
+export async function appleClientSecret(input: AppleSecretInput): Promise<string> {
+  const header = base64url(
+    utf8ToBinaryString(JSON.stringify({ alg: 'ES256', kid: input.keyId, typ: 'JWT' })),
+  );
   const payload = base64url(
-    utf8(
+    utf8ToBinaryString(
       JSON.stringify({
-        iss: i.teamId,
-        iat: i.nowSec,
-        exp: i.nowSec + 300,
+        iss: input.teamId,
+        iat: input.nowSec,
+        exp: input.nowSec + 300,
         aud: 'https://appleid.apple.com',
-        sub: i.clientId,
+        sub: input.clientId,
       }),
     ),
   );
-  const key = await i.subtle.importKey(
+  const key = await input.subtle.importKey(
     'pkcs8',
-    pemToPkcs8(i.privateKeyPem),
+    pemToPkcs8(input.privateKeyPem),
     { name: 'ECDSA', namedCurve: 'P-256' },
     false,
     ['sign'],
   );
   const signingInput = `${header}.${payload}`;
   // WebCrypto คืนลายเซ็นแบบ r||s (64 ไบต์) ซึ่งเป็นรูปแบบที่ JWS ES256 ต้องการพอดี
-  const sig = await i.subtle.sign(
+  const sig = await input.subtle.sign(
     { name: 'ECDSA', hash: 'SHA-256' },
     key,
     new TextEncoder().encode(signingInput),

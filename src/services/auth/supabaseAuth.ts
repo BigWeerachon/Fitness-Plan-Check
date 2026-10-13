@@ -24,6 +24,21 @@ function toUser(session: Session | null): AuthUser | null {
   return { id: session.user.id, email, provider, isPrivateRelay: isPrivateRelayEmail(email) };
 }
 
+/** แลกโทเค็นสำเร็จแล้วต้องมีเซสชัน — ถ้าว่างให้ล้มแบบมีชื่อ ไม่ปล่อย null ไหลต่อเป็น AuthUser */
+function requireUser(session: Session | null): AuthUser {
+  const user = toUser(session);
+  if (!user) throw new AuthUnavailableError('No session returned');
+  return user;
+}
+
+const APPLE_CANCELED_CODE = 'ERR_REQUEST_CANCELED';
+
+/** ปุ่ม Cancel ของ Apple = ยกเลิกเงียบๆ ที่เหลือโยนต่อ */
+function rethrowAppleError(e: unknown): never {
+  if ((e as { code?: string } | null)?.code === APPLE_CANCELED_CODE) throw new AuthCancelledError();
+  throw e;
+}
+
 /** ผู้ใช้ล่าสุดที่ล็อกอิน (ข้อมูลระบุตัวตนเท่านั้น ไม่ใช่โทเค็น — โทเค็นอยู่ใน SecureStore) */
 const LAST_USER_KEY = 'auth.lastUser';
 
@@ -94,7 +109,7 @@ export class SupabaseAuthService implements AuthService {
         token: idToken,
       });
       if (error) throw error;
-      return toUser(data.session)!;
+      return requireUser(data.session);
     } catch (e) {
       if (
         isErrorWithCode(e) &&
@@ -122,10 +137,9 @@ export class SupabaseAuthService implements AuthService {
         nonce: rawNonce,
       });
       if (error) throw error;
-      return toUser(data.session)!;
+      return requireUser(data.session);
     } catch (e) {
-      if ((e as { code?: string }).code === 'ERR_REQUEST_CANCELED') throw new AuthCancelledError();
-      throw e;
+      rethrowAppleError(e);
     }
   }
 
@@ -143,7 +157,7 @@ export class SupabaseAuthService implements AuthService {
     if (!code) throw new AuthUnavailableError('Missing auth code');
     const exchanged = await supabase.auth.exchangeCodeForSession(code);
     if (exchanged.error) throw exchanged.error;
-    return toUser(exchanged.data.session)!;
+    return requireUser(exchanged.data.session);
   }
 
   async signOut(): Promise<void> {
@@ -167,8 +181,7 @@ export class SupabaseAuthService implements AuthService {
         const credential = await AppleAuthentication.signInAsync({ requestedScopes: [] });
         appleAuthorizationCode = credential.authorizationCode;
       } catch (e) {
-        if ((e as { code?: string }).code === 'ERR_REQUEST_CANCELED') throw new AuthCancelledError();
-        throw e;
+        rethrowAppleError(e);
       }
     }
     const { error } = await supabase.functions.invoke('delete-account', { body: { appleAuthorizationCode } });

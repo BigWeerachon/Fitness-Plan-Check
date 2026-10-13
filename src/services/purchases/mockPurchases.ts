@@ -1,7 +1,16 @@
 import { assertCanPurchase, type StorePlan, type TrialEligibility } from '../../domain/entitlement/paywall';
-import type { CustomerInfoLike, EntitlementInfoLike } from '../../domain/entitlement/machine';
+import {
+  ENTITLEMENT_ID,
+  type CustomerInfoLike,
+  type EntitlementInfoLike,
+} from '../../domain/entitlement/machine';
 import { now } from '../../utils/clock';
-import type { PurchaseResult, PurchasesService, StorePlans } from './types';
+import {
+  STORE_SUBSCRIPTION_URLS,
+  type PurchaseResult,
+  type PurchasesService,
+  type StorePlans,
+} from './types';
 
 export type MockScenario =
   | 'new'
@@ -22,6 +31,36 @@ interface MockAccount {
 }
 
 const DAY = 86_400_000;
+const MONTHLY_PERIOD_DAYS = 30;
+
+function newAccount(patch: Partial<MockAccount> = {}): MockAccount {
+  return { trialUsed: true, entitlement: null, everHad: null, lifetime: false, ...patch };
+}
+
+function buildEntitlement(o: {
+  productId: string;
+  periodType: string;
+  expiresAt: number | null;
+  isActive?: boolean;
+  willRenew?: boolean;
+  billingIssueAt?: number | null;
+}): EntitlementInfoLike {
+  return {
+    identifier: ENTITLEMENT_ID,
+    isActive: o.isActive ?? true,
+    willRenew: o.willRenew ?? true,
+    periodType: o.periodType,
+    productIdentifier: o.productId,
+    expirationDate: o.expiresAt === null ? null : new Date(o.expiresAt).toISOString(),
+    billingIssueDetectedAt: o.billingIssueAt ? new Date(o.billingIssueAt).toISOString() : null,
+  };
+}
+
+/** ไม่มีวันหมดอายุถือว่ายังไม่หมด */
+function isUnexpired(entitlement: EntitlementInfoLike): boolean {
+  const expiresAt = entitlement.expirationDate ? Date.parse(entitlement.expirationDate) : Infinity;
+  return expiresAt > now();
+}
 
 /**
  * ร้านค้าจำลองสำหรับ dev/test — จำลองพฤติกรรมของสโตร์ (ไม่ใช่ตัวนับเวลาทดลองของแอป):
@@ -72,83 +111,77 @@ export class MockPurchasesService implements PurchasesService {
   }
 
   private seed(): MockAccount {
-    const t = now();
-    const sub = (periodType: string, exp: number, billing: number | null = null): EntitlementInfoLike => ({
-      identifier: 'pro',
-      isActive: exp > t,
-      willRenew: true,
-      periodType,
-      productIdentifier: this.monthlyPlan.productId,
-      expirationDate: new Date(exp).toISOString(),
-      billingIssueDetectedAt: billing ? new Date(billing).toISOString() : null,
-    });
+    const nowMs = now();
+    const monthlyEntitlement = (
+      periodType: string,
+      expiresAt: number,
+      billingIssueAt: number | null = null,
+    ): EntitlementInfoLike =>
+      buildEntitlement({
+        productId: this.monthlyPlan.productId,
+        periodType,
+        expiresAt,
+        isActive: expiresAt > nowMs,
+        billingIssueAt,
+      });
     switch (this.scenario) {
       case 'trial_used':
-        return { trialUsed: true, entitlement: null, everHad: null, lifetime: false };
+        return newAccount();
       case 'trialing':
-        return { trialUsed: true, entitlement: sub('TRIAL', t + 5 * DAY), everHad: null, lifetime: false };
+        return newAccount({ entitlement: monthlyEntitlement('TRIAL', nowMs + 5 * DAY) });
       case 'monthly':
-        return { trialUsed: true, entitlement: sub('NORMAL', t + 20 * DAY), everHad: null, lifetime: false };
+        return newAccount({ entitlement: monthlyEntitlement('NORMAL', nowMs + 20 * DAY) });
       case 'billing_grace':
-        return {
-          trialUsed: true,
-          entitlement: sub('NORMAL', t + 3 * DAY, t - DAY),
-          everHad: null,
-          lifetime: false,
-        };
+        return newAccount({ entitlement: monthlyEntitlement('NORMAL', nowMs + 3 * DAY, nowMs - DAY) });
       case 'billing_retry':
-        return {
-          trialUsed: true,
-          entitlement: sub('NORMAL', t - DAY, t - 4 * DAY),
-          everHad: null,
-          lifetime: false,
-        };
+        return newAccount({ entitlement: monthlyEntitlement('NORMAL', nowMs - DAY, nowMs - 4 * DAY) });
       case 'lifetime':
-        return { trialUsed: false, entitlement: null, everHad: null, lifetime: true };
+        return newAccount({ trialUsed: false, lifetime: true });
       case 'expired': {
-        const old = { ...sub('NORMAL', t - 2 * DAY), isActive: false, willRenew: false };
-        return { trialUsed: true, entitlement: null, everHad: old, lifetime: false };
+        const old = { ...monthlyEntitlement('NORMAL', nowMs - 2 * DAY), isActive: false, willRenew: false };
+        return newAccount({ everHad: old });
       }
       default:
-        return { trialUsed: false, entitlement: null, everHad: null, lifetime: false };
+        return newAccount({ trialUsed: false });
     }
   }
 
-  private info(): CustomerInfoLike {
+  /** สร้าง CustomerInfo จากบัญชีปัจจุบัน และเก็บเป็น lastInfo (แคชที่ offlineInfo คืนตอนออฟไลน์) */
+  private snapshotCustomerInfo(): CustomerInfoLike {
     if (!this.appUserId) return { entitlements: { active: {}, all: {} }, nonSubscriptionTransactions: [] };
     const acc = this.account(this.appUserId);
     const active: Record<string, EntitlementInfoLike> = {};
     const all: Record<string, EntitlementInfoLike> = {};
-    if (acc.lifetime) {
-      const lt: EntitlementInfoLike = {
-        identifier: 'pro',
-        isActive: true,
-        willRenew: false,
-        periodType: 'NORMAL',
-        productIdentifier: this.lifetimePlan.productId,
-        expirationDate: null,
-        billingIssueDetectedAt: null,
-      };
-      active.pro = lt;
-      all.pro = lt;
-    } else if (acc.entitlement) {
-      const exp = acc.entitlement.expirationDate ? Date.parse(acc.entitlement.expirationDate) : Infinity;
-      const isActive = exp > now();
-      const e = { ...acc.entitlement, isActive };
-      all.pro = e;
-      if (isActive) active.pro = e;
-    } else if (acc.everHad) {
-      all.pro = acc.everHad;
-    }
     // รายเดือนที่ซื้อไว้ยังอยู่ในรอบแม้ซื้อขาดแล้ว (สโตร์ไม่ยกเลิกให้อัตโนมัติ SPEC J5)
-    const sub = acc.entitlement;
-    const subActive = !!sub?.expirationDate && Date.parse(sub.expirationDate) > now();
+    const monthlyEntitlement = acc.entitlement;
+    const monthlyActive = !!monthlyEntitlement && isUnexpired(monthlyEntitlement);
+    if (acc.lifetime) {
+      const lifetimeEntitlement = buildEntitlement({
+        productId: this.lifetimePlan.productId,
+        periodType: 'NORMAL',
+        expiresAt: null,
+        willRenew: false,
+      });
+      active[ENTITLEMENT_ID] = lifetimeEntitlement;
+      all[ENTITLEMENT_ID] = lifetimeEntitlement;
+    } else if (monthlyEntitlement) {
+      const current = { ...monthlyEntitlement, isActive: monthlyActive };
+      all[ENTITLEMENT_ID] = current;
+      if (monthlyActive) active[ENTITLEMENT_ID] = current;
+    } else if (acc.everHad) {
+      all[ENTITLEMENT_ID] = acc.everHad;
+    }
     const info: CustomerInfoLike = {
       entitlements: { active, all },
       nonSubscriptionTransactions: acc.lifetime ? [{ productIdentifier: this.lifetimePlan.productId }] : [],
-      activeSubscriptions: sub && subActive ? [sub.productIdentifier] : [],
-      subscriptionsByProductIdentifier: sub
-        ? { [sub.productIdentifier]: { willRenew: sub.willRenew, isActive: subActive } }
+      activeSubscriptions: monthlyEntitlement && monthlyActive ? [monthlyEntitlement.productIdentifier] : [],
+      subscriptionsByProductIdentifier: monthlyEntitlement
+        ? {
+            [monthlyEntitlement.productIdentifier]: {
+              willRenew: monthlyEntitlement.willRenew,
+              isActive: monthlyActive,
+            },
+          }
         : {},
       requestDate: new Date(now()).toISOString(),
     };
@@ -165,14 +198,14 @@ export class MockPurchasesService implements PurchasesService {
   }
 
   private emit() {
-    const info = this.info();
+    const info = this.snapshotCustomerInfo();
     this.listeners.forEach((l) => l(info));
   }
 
   async logIn(userId: string): Promise<CustomerInfoLike> {
     if (this.offline) return this.offlineInfo(userId);
     this.appUserId = userId;
-    const info = this.info();
+    const info = this.snapshotCustomerInfo();
     this.emit();
     return info;
   }
@@ -188,7 +221,7 @@ export class MockPurchasesService implements PurchasesService {
 
   async getCustomerInfo(): Promise<CustomerInfoLike> {
     if (this.offline) return this.offlineInfo();
-    return this.info();
+    return this.snapshotCustomerInfo();
   }
 
   async getPlans(): Promise<StorePlans> {
@@ -216,23 +249,19 @@ export class MockPurchasesService implements PurchasesService {
     } else {
       const trial = !acc.trialUsed && !!plan.trialDays;
       acc.trialUsed = true;
-      acc.entitlement = {
-        identifier: 'pro',
-        isActive: true,
-        willRenew: true,
+      acc.entitlement = buildEntitlement({
+        productId: plan.productId,
         periodType: trial ? 'TRIAL' : 'NORMAL',
-        productIdentifier: plan.productId,
-        expirationDate: new Date(now() + (trial ? plan.trialDays! : 30) * DAY).toISOString(),
-        billingIssueDetectedAt: null,
-      };
+        expiresAt: now() + (trial ? plan.trialDays! : MONTHLY_PERIOD_DAYS) * DAY,
+      });
     }
     this.emit();
-    return { status: 'success', info: this.info() };
+    return { status: 'success', info: this.snapshotCustomerInfo() };
   }
 
   async restore(): Promise<CustomerInfoLike> {
     if (this.offline) throw new Error('network');
-    const info = this.info();
+    const info = this.snapshotCustomerInfo();
     this.emit();
     return info;
   }
@@ -243,7 +272,7 @@ export class MockPurchasesService implements PurchasesService {
   }
 
   async manageSubscriptionsUrl(): Promise<string> {
-    return 'https://apps.apple.com/account/subscriptions';
+    return STORE_SUBSCRIPTION_URLS.ios;
   }
 
   // ───── ตัวช่วยสำหรับเทสต์: จำลองเหตุการณ์จากสโตร์ ─────
@@ -257,7 +286,7 @@ export class MockPurchasesService implements PurchasesService {
   }
 
   /** สโตร์ต่ออายุรอบใหม่ (เช่น Google Play ต่ออายุตรงเวลาหมดอายุ) */
-  simulateRenew(userId: string, days = 30) {
+  simulateRenew(userId: string, days = MONTHLY_PERIOD_DAYS) {
     const acc = this.account(userId);
     if (acc.entitlement) {
       acc.entitlement = {

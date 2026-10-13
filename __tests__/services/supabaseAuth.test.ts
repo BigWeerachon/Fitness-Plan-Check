@@ -4,17 +4,30 @@ import { settingsRepo } from '@/db/repos/settingsRepo';
 import { freshEnv } from '../helpers/env';
 
 const mockGetSession = jest.fn<() => Promise<{ data: { session: unknown }; error: unknown }>>();
+const mockSignInWithIdToken = jest.fn<() => Promise<{ data: { session: unknown }; error: unknown }>>();
 jest.mock('@/services/supabase', () => ({
-  getSupabase: () => ({ auth: { getSession: mockGetSession, signOut: async () => ({ error: null }) } }),
+  getSupabase: () => ({
+    auth: {
+      getSession: mockGetSession,
+      signInWithIdToken: mockSignInWithIdToken,
+      signOut: async () => ({ error: null }),
+    },
+  }),
 }));
 jest.mock('@react-native-google-signin/google-signin', () => ({
-  GoogleSignin: { configure: () => undefined, signOut: async () => undefined },
+  GoogleSignin: {
+    configure: () => undefined,
+    signOut: async () => undefined,
+    hasPlayServices: async () => true,
+    signIn: async () => ({ type: 'success', data: { idToken: 'google-id-token' } }),
+  },
   isErrorWithCode: () => false,
   statusCodes: {},
 }));
 jest.mock('expo-apple-authentication', () => ({ AppleAuthenticationScope: { EMAIL: 1 } }));
 jest.mock('expo-web-browser', () => ({}));
 
+const { AuthUnavailableError } = require('@/services/auth/types') as typeof import('@/services/auth/types');
 const { SupabaseAuthService } =
   require('@/services/auth/supabaseAuth') as typeof import('@/services/auth/supabaseAuth');
 
@@ -51,6 +64,25 @@ describe('Supabase auth adapter keeps the user signed in offline (B9, B10)', () 
     settingsRepo.set('auth.lastUser', USER);
     mockGetSession.mockResolvedValue({ data: { session: null }, error: null });
     expect(await new SupabaseAuthService().init()).toBeNull();
+    expect(settingsRepo.get('auth.lastUser')).toBeUndefined();
+  });
+});
+
+describe('Supabase auth adapter token exchange', () => {
+  beforeEach(() => {
+    freshEnv();
+    mockSignInWithIdToken.mockReset();
+  });
+
+  it('returns and remembers the user when the exchange yields a session', async () => {
+    mockSignInWithIdToken.mockResolvedValue({ data: { session }, error: null });
+    expect(await new SupabaseAuthService().signIn('google')).toEqual(USER);
+    expect(settingsRepo.get('auth.lastUser')).toEqual(USER);
+  });
+
+  it('an exchange that succeeds without a session fails as unavailable instead of returning null', async () => {
+    mockSignInWithIdToken.mockResolvedValue({ data: { session: null }, error: null });
+    await expect(new SupabaseAuthService().signIn('google')).rejects.toBeInstanceOf(AuthUnavailableError);
     expect(settingsRepo.get('auth.lastUser')).toBeUndefined();
   });
 });
