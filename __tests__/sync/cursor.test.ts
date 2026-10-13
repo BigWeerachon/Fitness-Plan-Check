@@ -34,6 +34,5 @@ describe('pull cursor', () => {
     expect(afterCursorFilter({ ts: TS, id: 'abc' })).toBe(
       `server_updated_at.gt."${TS}",and(server_updated_at.eq."${TS}",id.gt."abc")`,
     );
-    expect(afterCursorFilter({ ts: TS, id: '' })).toBe(`server_updated_at.gte."${TS}"`);
   });
 });

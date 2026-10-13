@@ -49,7 +49,7 @@ export interface TodayModel {
 function describeRoutine(
   routine: Routine,
   programs: Map<string, Program>,
-  defaultRest: number,
+  defaultRestSec: number,
 ): TodayRoutine {
   const exercises = routineExerciseRepo.listByRoutine(routine.id);
   const muscles: MuscleGroup[] = [];
@@ -64,7 +64,7 @@ function describeRoutine(
     muscles,
     estMinutes: estimateSessionMinutes(
       exercises.map((e) => ({ sets: e.sets, restSec: e.restSec })),
-      defaultRest,
+      defaultRestSec,
     ),
     lastDone: routineRepo.lastPerformedDate(routine.id),
   };
@@ -86,7 +86,7 @@ export function loadToday(date: LocalDate = toLocalDate(now())): TodayModel {
   const activeId = profile?.activeProgramId ?? null;
   const program = (activeId && programs.get(activeId)) || null;
   const restTimerOff = profile?.restTimerEnabled === false;
-  const defaultRest = restTimerOff ? 0 : (profile?.restTimerSec ?? DEFAULT_REST_SEC);
+  const defaultRestSec = restTimerOff ? 0 : (profile?.restTimerSec ?? DEFAULT_REST_SEC);
   const allRoutines = routineRepo.listAll().filter((r) => programs.has(r.programId));
   const byId = new Map(allRoutines.map((r) => [r.id, r]));
   // override ที่ชี้ไป routine ที่ถูกลบแล้ว (เช่น ลบจากอีกเครื่อง) ไม่มีผล → ใช้ตารางหลักแทน
@@ -102,12 +102,12 @@ export function loadToday(date: LocalDate = toLocalDate(now())): TodayModel {
   const routines = plan.routineIds
     .map((id) => byId.get(id))
     .filter((r): r is Routine => !!r)
-    .map((r) => describeRoutine(r, programs, defaultRest));
+    .map((r) => describeRoutine(r, programs, defaultRestSec));
   const inActiveProgram = (r: Routine) => r.programId === activeId;
   const others = allRoutines
     .filter((r) => !plan.routineIds.includes(r.id))
     .sort((a, b) => Number(inActiveProgram(b)) - Number(inActiveProgram(a)))
-    .map((r) => describeRoutine(r, programs, defaultRest));
+    .map((r) => describeRoutine(r, programs, defaultRestSec));
 
   const todaySessions = sessionRepo.listForDate(date);
   const completedToday = todaySessions.filter((s) => s.status === 'completed');

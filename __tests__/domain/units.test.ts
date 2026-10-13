@@ -7,6 +7,7 @@ import {
   KG_PER_LB,
   kgToLb,
   lbToKg,
+  parseWeightInput,
   roundTo,
   roundToStep,
   roundWeightToStep,
@@ -127,5 +128,25 @@ describe('roundWeightToStep (unit aware)', () => {
 
   it('does not round when the step is not positive', () => {
     expect(roundWeightToStep(61.3, 0, 'kg')).toBe(61.3);
+  });
+});
+
+describe('parseWeightInput', () => {
+  it('treats an empty field as valid and unset', () => {
+    expect(parseWeightInput('')).toEqual({ valid: true, value: null });
+    expect(parseWeightInput('   ')).toEqual({ valid: true, value: null });
+  });
+
+  it('reads numbers with a comma or dot decimal separator, including zero', () => {
+    expect(parseWeightInput('82.5')).toEqual({ valid: true, value: 82.5 });
+    expect(parseWeightInput('82,5')).toEqual({ valid: true, value: 82.5 });
+    expect(parseWeightInput(' 60 ')).toEqual({ valid: true, value: 60 });
+    expect(parseWeightInput('0')).toEqual({ valid: true, value: 0 });
+  });
+
+  it('rejects negative and unreadable input', () => {
+    expect(parseWeightInput('-5')).toEqual({ valid: false, value: null });
+    expect(parseWeightInput('abc')).toEqual({ valid: false, value: null });
+    expect(parseWeightInput('1,2,3')).toEqual({ valid: false, value: null });
   });
 });

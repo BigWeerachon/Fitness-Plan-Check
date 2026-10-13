@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
-import { resetDbForTests } from '@/db/client';
+import { getDb, resetDbForTests } from '@/db/client';
+import { syncOutbox } from '@/db/schema';
 import { createRow, getRow, listRows, softDeleteRow, updateRow } from '@/db/mutations';
 import { setOwner } from '@/db/owner';
 import {
@@ -217,9 +218,14 @@ describe('sync engine (SPEC L, J6, B11)', () => {
   it('claims rows created before sign-in and wipes a deleted account locally', () => {
     setOwner(null);
     createRow('program', { name: 'draft' });
+    getDb().update(syncOutbox).set({ lastError: 'old failure', attempts: 3 }).run();
     setOwner(USER);
     expect(listRows('program')).toHaveLength(0);
     expect(claimLocalRows(USER)).toBe(1);
+    // เข้าคิวใหม่ของบัญชีนี้: รีเซ็ตจำนวนครั้งที่ล้มและข้อความ error เหมือน enqueue
+    expect(getDb().select().from(syncOutbox).all()).toMatchObject([
+      { ownerId: USER, attempts: 0, lastError: null, version: 2 },
+    ]);
     expect(listRows('program')).toHaveLength(1);
     wipeLocalData(USER);
     expect(listRows('program')).toHaveLength(0);

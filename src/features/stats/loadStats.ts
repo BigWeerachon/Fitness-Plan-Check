@@ -1,7 +1,7 @@
 import { dailyLogRepo } from '../../db/repos/dailyLogRepo';
 import { profileRepo } from '../../db/repos/profileRepo';
 import { sessionRepo } from '../../db/repos/sessionRepo';
-import type { DailyLog, SessionSet, WorkoutSession } from '../../db/schema';
+import type { DailyLog, SessionSet, WeightUnit, WorkoutSession } from '../../db/schema';
 import { toLocalDate, type LocalDate } from '../../domain/dates';
 import { nutritionSummary, type NutritionSummary } from '../../domain/nutrition';
 import type { StatsData } from '../../domain/stats';
@@ -10,7 +10,7 @@ import { now } from '../../utils/clock';
 export interface StatsModel {
   data: StatsData & { sessions: WorkoutSession[]; sets: SessionSet[] };
   dailyLogs: DailyLog[];
-  unit: 'kg' | 'lb';
+  unit: WeightUnit;
   weekStart: number;
   today: LocalDate;
   nutrition: NutritionSummary | null;

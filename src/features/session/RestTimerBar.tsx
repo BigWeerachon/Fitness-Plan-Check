@@ -16,6 +16,8 @@ function mmss(sec: number): string {
 
 /** อัปเดตเวลาที่เหลือทุกกี่ ms */
 const REST_TICK_MS = 500;
+/** ปุ่ม "+" เพิ่มเวลาพักครั้งละกี่วินาที */
+const REST_EXTEND_SEC = 15;
 
 /** แถบตัวจับเวลาพักลอยด้านล่าง (SPEC G1) — นับจากเวลาสิ้นสุดจริง สั่นเมื่อครบ */
 export function RestTimerBar() {
@@ -23,7 +25,7 @@ export function RestTimerBar() {
   const p = usePalette();
   const insets = useSafeAreaInsets();
   const endsAt = useRestTimer((s) => s.endsAt);
-  const total = useRestTimer((s) => s.totalSec);
+  const totalSec = useRestTimer((s) => s.totalSec);
   const nowMs = useNow(REST_TICK_MS, endsAt !== null);
   const notified = useRef<number | null>(null);
 
@@ -44,17 +46,17 @@ export function RestTimerBar() {
         accessibilityLiveRegion="polite"
         testID="rest-timer"
       >
-        <View style={styles.text}>
+        <View style={styles.labelColumn}>
           <AppText variant="headline" accent>
             {finished ? t('session.restDone') : t('session.restRemaining', { time: mmss(remaining) })}
           </AppText>
-          <ProgressBar value={total > 0 ? 1 - remaining / total : 1} label={t('session.rest')} />
+          <ProgressBar value={totalSec > 0 ? 1 - remaining / totalSec : 1} label={t('session.rest')} />
         </View>
         {!finished ? (
           <Button
-            title={t('session.restPlus')}
+            title={t('session.restPlus', { sec: REST_EXTEND_SEC })}
             kind="plain"
-            onPress={() => useRestTimer.getState().extend(15)}
+            onPress={() => useRestTimer.getState().extend(REST_EXTEND_SEC)}
           />
         ) : null}
         <Button
@@ -78,5 +80,5 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     padding: spacing.md,
   },
-  text: { flex: 1, gap: spacing.xs },
+  labelColumn: { flex: 1, gap: spacing.xs },
 });

@@ -47,7 +47,7 @@ export default function RoutineScreen() {
       exercises: routineExerciseRepo.listByRoutine(id),
       programs: programRepo.list(),
       unit: profile?.weightUnit ?? 'kg',
-      defaultRest: profile?.restTimerSec ?? DEFAULT_REST_SEC,
+      defaultRestSec: profile?.restTimerSec ?? DEFAULT_REST_SEC,
     };
   }, `${id}|${i18n.language}`);
   const [editing, setEditing] = useState<RoutineExercise | null>(null);
@@ -195,7 +195,7 @@ export default function RoutineScreen() {
         title={editing ? exerciseDisplayName(editing.exerciseId) : ''}
         value={editing}
         unit={unit}
-        defaultRestSec={data.defaultRest}
+        defaultRestSec={data.defaultRestSec}
         onClose={() => setEditing(null)}
         onSave={(patch) => {
           if (editing) routineExerciseRepo.update(editing.id, patch);

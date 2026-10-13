@@ -61,30 +61,41 @@ export interface StatsView {
   strength: StrengthItem[];
 }
 
-/** รวมผลคำนวณทั้งหมดของหน้าสถิติจากข้อมูลในเครื่อง + ตัวเลือกบนหน้าจอ (ตัวสลับช่วงเวลาตัวเดียวใช้ทั้งหน้า) */
-export function buildStatsView(model: StatsModel, sel: StatsSelection): StatsView {
-  const range = periodRange(sel.period, sel.anchor, model.weekStart);
-  const groups = programGroups(model.data);
-  const selected = sel.groupKey ? (groups.find((g) => g.key === sel.groupKey) ?? null) : null;
-  // มีกรุ๊ปเดียว → มุมมองประเภท routine ใช้กรุ๊ปนั้นได้เลยโดยไม่ต้องเลือก
-  const routineTypeGroup = selected ?? (groups.length === 1 ? groups[0] : null);
-  const groupFilter: GroupFilter | null = selected ? groupFilterOf(selected) : null;
-  const options = { metric: sel.metric, range, group: groupFilter };
+type BreakdownOptions = { metric: Metric; range: DateRange; group: GroupFilter | null };
 
-  let breakdown: BreakdownView;
-  if (sel.view === 'program') breakdown = { view: 'program', breakdown: byProgram(model.data, options) };
-  else if (sel.view === 'muscle') breakdown = { view: 'muscle', breakdown: byMuscle(model.data, options) };
-  else if (routineTypeGroup)
-    breakdown = {
-      view: 'routineType',
-      breakdown: byRoutineType(model.data, { ...options, group: groupFilterOf(routineTypeGroup) }),
-    };
-  else breakdown = { view: 'needsGroup' };
+function buildBreakdown(
+  model: StatsModel,
+  view: StatsViewKind,
+  options: BreakdownOptions,
+  routineTypeGroup: ProgramGroup | null,
+): BreakdownView {
+  switch (view) {
+    case 'program':
+      return { view, breakdown: byProgram(model.data, options) };
+    case 'muscle':
+      return { view, breakdown: byMuscle(model.data, options) };
+    case 'routineType':
+      return routineTypeGroup
+        ? {
+            view,
+            breakdown: byRoutineType(model.data, { ...options, group: groupFilterOf(routineTypeGroup) }),
+          }
+        : { view: 'needsGroup' };
+  }
+}
 
+const isWeightedSet = (s: { weightKg: number | null }) => s.weightKg != null && s.weightKg > 0;
+
+/** ท่าที่มีเซ็ตใส่น้ำหนักในช่วงนี้ พร้อม e1RM ดีที่สุด เรียงจากมากไปน้อย (เท่ากัน → ตาม exerciseId) */
+function buildStrengthItems(
+  model: StatsModel,
+  range: DateRange,
+  groupFilter: GroupFilter | null,
+): StrengthItem[] {
   const { setsBySession } = selectStatsData(model.data, { range, group: groupFilter });
   const exerciseIds = new Set<string>();
   for (const sets of setsBySession.values()) {
-    for (const s of sets) if (s.weightKg != null && s.weightKg > 0) exerciseIds.add(s.exerciseId);
+    for (const s of sets) if (isWeightedSet(s)) exerciseIds.add(s.exerciseId);
   }
   const strength: StrengthItem[] = [];
   for (const exerciseId of exerciseIds) {
@@ -94,8 +105,23 @@ export function buildStatsView(model: StatsModel, sel: StatsSelection): StatsVie
     strength.push({ exerciseId, best });
   }
   strength.sort((a, b) => b.best.e1rmKg - a.best.e1rmKg || (a.exerciseId < b.exerciseId ? -1 : 1));
+  return strength;
+}
 
-  const n = model.nutrition;
+/** รวมผลคำนวณทั้งหมดของหน้าสถิติจากข้อมูลในเครื่อง + ตัวเลือกบนหน้าจอ (ตัวสลับช่วงเวลาตัวเดียวใช้ทั้งหน้า) */
+export function buildStatsView(model: StatsModel, selection: StatsSelection): StatsView {
+  const range = periodRange(selection.period, selection.anchor, model.weekStart);
+  const groups = programGroups(model.data);
+  const selected = selection.groupKey ? (groups.find((g) => g.key === selection.groupKey) ?? null) : null;
+  // มีกรุ๊ปเดียว → มุมมองประเภท routine ใช้กรุ๊ปนั้นได้เลยโดยไม่ต้องเลือก
+  const routineTypeGroup = selected ?? (groups.length === 1 ? groups[0] : null);
+  const groupFilter: GroupFilter | null = selected ? groupFilterOf(selected) : null;
+  const options = { metric: selection.metric, range, group: groupFilter };
+
+  const breakdown = buildBreakdown(model, selection.view, options, routineTypeGroup);
+  const strength = buildStrengthItems(model, range, groupFilter);
+
+  const nutrition = model.nutrition;
   return {
     range,
     groups,
@@ -105,12 +131,12 @@ export function buildStatsView(model: StatsModel, sel: StatsSelection): StatsVie
     energy: energySummary<Macros>(
       { sessions: model.data.sessions, dailyLogs: model.dailyLogs },
       {
-        period: sel.period,
-        anchor: sel.anchor,
+        period: selection.period,
+        anchor: selection.anchor,
         weekStart: model.weekStart,
-        tdee: n?.tdee ?? null,
-        targetKcal: n?.target.kcal ?? null,
-        macrosPerDay: n?.macros ?? null,
+        tdee: nutrition?.tdee ?? null,
+        targetKcal: nutrition?.target.kcal ?? null,
+        macrosPerDay: nutrition?.macros ?? null,
         today: model.today,
       },
     ),

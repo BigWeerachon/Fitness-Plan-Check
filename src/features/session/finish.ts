@@ -10,29 +10,34 @@ import { now } from '../../utils/clock';
 
 /** คำนวณ "เป้าหมายครั้งหน้า" จากผลของเซสชันนี้ เทียบกับค่าตั้งของท่า ณ ตอนจบเซสชัน */
 function computeProgression(sessionId: string): SessionProgression[] {
-  const unit = profileRepo.get()?.weightUnit ?? 'kg';
+  const unit = profileRepo.weightUnit();
   const sets = sessionRepo.setsInSession(sessionId);
-  const out: SessionProgression[] = [];
+  const progressions: SessionProgression[] = [];
   for (const ex of sessionRepo.exercisesInSession(sessionId)) {
     if (!ex.routineExerciseId) continue;
     const config = routineExerciseRepo.get(ex.routineExerciseId);
     if (!config) continue;
-    const mine = sets.filter((s) => s.sessionExerciseId === ex.id);
-    const s = suggestNext({ config, lastSets: mine.length > 0 ? mine : null, unit, now: now() });
-    out.push({
+    const exerciseSets = sets.filter((s) => s.sessionExerciseId === ex.id);
+    const suggestion = suggestNext({
+      config,
+      lastSets: exerciseSets.length > 0 ? exerciseSets : null,
+      unit,
+      now: now(),
+    });
+    progressions.push({
       sessionExerciseId: ex.id,
       routineExerciseId: config.id,
       exerciseId: ex.exerciseId,
       exerciseName: ex.exerciseName,
-      targetWeightKg: s.targetWeightKg,
-      targetReps: s.targetReps,
-      reason: s.reason,
-      failStreak: s.failStreak,
-      deloadOffered: s.deloadOffered,
+      targetWeightKg: suggestion.targetWeightKg,
+      targetReps: suggestion.targetReps,
+      reason: suggestion.reason,
+      failStreak: suggestion.failStreak,
+      deloadOffered: suggestion.deloadOffered,
       decision: null,
     });
   }
-  return out;
+  return progressions;
 }
 
 /**
@@ -113,33 +118,49 @@ export function suggestionsFor(sessionId: string): ExerciseSuggestion[] {
 }
 
 /** บันทึกการตัดสินใจครั้งเดียวต่อท่าต่อเซสชัน — กดซ้ำ/กลับมาหน้าเดิมไม่บันทึกซ้ำ */
-function decide(s: ExerciseSuggestion, decision: ProgressionDecision, apply: () => void): void {
+function recordDecisionOnce(
+  exerciseSuggestion: ExerciseSuggestion,
+  decision: ProgressionDecision,
+  apply: () => void,
+): void {
   transaction(() => {
-    const session = sessionRepo.get(s.sessionId);
-    const list = session?.progression ?? [];
-    const entry = list.find((p) => p.sessionExerciseId === s.sessionExerciseId);
+    const session = sessionRepo.get(exerciseSuggestion.sessionId);
+    const progressionEntries = session?.progression ?? [];
+    const entry = progressionEntries.find(
+      (p) => p.sessionExerciseId === exerciseSuggestion.sessionExerciseId,
+    );
     if (!session || !entry || entry.decision) return;
     apply();
     sessionRepo.setProgression(
-      s.sessionId,
-      list.map((p) => (p === entry ? { ...p, decision } : p)),
+      exerciseSuggestion.sessionId,
+      progressionEntries.map((p) => (p === entry ? { ...p, decision } : p)),
     );
   });
 }
 
-export function acceptSuggestion(s: ExerciseSuggestion): void {
-  decide(s, 'accepted', () =>
-    routineExerciseRepo.update(s.routineExercise.id, applySuggestion(s.suggestion)),
+export function acceptSuggestion(exerciseSuggestion: ExerciseSuggestion): void {
+  recordDecisionOnce(exerciseSuggestion, 'accepted', () =>
+    routineExerciseRepo.update(
+      exerciseSuggestion.routineExercise.id,
+      applySuggestion(exerciseSuggestion.suggestion),
+    ),
   );
 }
 
 /** ข้าม: เป้าเดิมไม่เปลี่ยน (จำนวนครั้งที่พลาดบันทึกไปแล้วตอนจบเซสชัน) */
-export function declineSuggestion(s: ExerciseSuggestion): void {
-  decide(s, 'skipped', () => undefined);
+export function declineSuggestion(exerciseSuggestion: ExerciseSuggestion): void {
+  recordDecisionOnce(exerciseSuggestion, 'skipped', () => undefined);
 }
 
-export function setCustomTarget(s: ExerciseSuggestion, weightKg: number | null, reps: number): void {
-  decide(s, 'adjusted', () =>
-    routineExerciseRepo.update(s.routineExercise.id, { targetWeightKg: weightKg, targetReps: reps }),
+export function setCustomTarget(
+  exerciseSuggestion: ExerciseSuggestion,
+  weightKg: number | null,
+  reps: number,
+): void {
+  recordDecisionOnce(exerciseSuggestion, 'adjusted', () =>
+    routineExerciseRepo.update(exerciseSuggestion.routineExercise.id, {
+      targetWeightKg: weightKg,
+      targetReps: reps,
+    }),
   );
 }

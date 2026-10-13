@@ -16,22 +16,27 @@ export function startSession(opts: { routineId: string | null; date?: string; ba
 } {
   const active = sessionRepo.getActive();
   if (active) return { session: active, resumed: true };
-  const date = opts.date ?? toLocalDate(now());
+  const today = toLocalDate(now());
+  const date = opts.date ?? today;
+  const isBackfill = date !== today;
   const profile = profileRepo.get();
   const unit = profile?.weightUnit ?? 'kg';
-  const at = date === toLocalDate(now()) ? now() : parseLocalDate(date).getTime();
+  const sessionStartMs = isBackfill ? parseLocalDate(date).getTime() : now();
   const session = sessionRepo.start({
     routineId: opts.routineId,
     date,
-    backfilled: opts.backfilled ?? date !== toLocalDate(now()),
+    backfilled: opts.backfilled ?? isBackfill,
     bodyWeightKg: profile?.weightKg ?? null,
     resolve: resolveExercise,
     // โหมด custom: ใช้เป้าของสัปดาห์ที่ฝึกจริง ไม่ใช่ค่าที่บันทึกไว้จากรอบก่อน (G2)
-    targetFor: (re) => {
-      if (re.progressionMode !== 'custom' || !re.customWeeks?.length) {
-        return { weightKg: re.targetWeightKg, reps: re.targetReps ?? re.repMin };
+    targetFor: (routineExercise) => {
+      if (routineExercise.progressionMode !== 'custom' || !routineExercise.customWeeks?.length) {
+        return {
+          weightKg: routineExercise.targetWeightKg,
+          reps: routineExercise.targetReps ?? routineExercise.repMin,
+        };
       }
-      const s = suggestNext({ config: re, lastSets: null, unit, now: at });
+      const s = suggestNext({ config: routineExercise, lastSets: null, unit, now: sessionStartMs });
       return { weightKg: s.targetWeightKg, reps: s.targetReps };
     },
   });

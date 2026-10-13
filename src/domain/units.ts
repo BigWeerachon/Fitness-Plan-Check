@@ -70,6 +70,20 @@ export function weightToKg(value: number, unit: WeightUnit): number {
   return unit === 'lb' ? lbToKg(value) : value;
 }
 
+export interface WeightInput {
+  /** อ่านได้และไม่ติดลบ (ช่องว่างถือว่าใช้ได้) */
+  valid: boolean;
+  /** ตัวเลขในหน่วยของผู้ใช้ — null = ช่องว่างหรืออ่านไม่ได้ */
+  value: number | null;
+}
+
+/** อ่านน้ำหนักที่ผู้ใช้กรอก (รับจุลภาคเป็นจุดทศนิยม): ช่องว่าง = ไม่ตั้งค่า, ตัวเลขผิดหรือติดลบ = ไม่ถูกต้อง */
+export function parseWeightInput(text: string): WeightInput {
+  if (text.trim() === '') return { valid: true, value: null };
+  const n = Number(text.replace(',', '.'));
+  return Number.isFinite(n) && n >= 0 ? { valid: true, value: n } : { valid: false, value: null };
+}
+
 /** ตัวเลขน้ำหนักเป็นข้อความ ปัด 0.1 และตัด .0 ท้าย เช่น "100", "45.4" (ป้ายหน่วยมาจาก i18n `common.units`) */
 export function formatWeight(kg: number, unit: WeightUnit): string {
   return String(displayWeight(kg, unit));

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { AppText, Button, Sheet, Stepper, TextField } from '../../components';
 import type { WeightUnit } from '../../db/schema';
-import { displayWeight, weightToKg } from '../../domain/units';
+import { displayWeight, parseWeightInput, weightToKg } from '../../domain/units';
 import { spacing } from '../../theme/tokens';
 
 /**
@@ -62,10 +62,12 @@ function Body({
 }) {
   const { t } = useTranslation();
   const [weight, setWeight] = useState(weightKg != null ? String(displayWeight(weightKg, unit)) : '');
-  const [r, setR] = useState(reps);
-  const parsed = weight.trim() === '' ? null : Number(weight.replace(',', '.'));
-  const valid = parsed === null || (Number.isFinite(parsed) && parsed >= 0);
-  const target = () => ({ weightKg: parsed === null ? null : weightToKg(parsed, unit), reps: r });
+  const [repsValue, setRepsValue] = useState(reps);
+  const { valid, value: weightValue } = parseWeightInput(weight);
+  const target = () => ({
+    weightKg: weightValue === null ? null : weightToKg(weightValue, unit),
+    reps: repsValue,
+  });
   return (
     <View style={styles.gap}>
       <AppText variant="headline" align="center">
@@ -81,8 +83,8 @@ function Body({
       />
       <Stepper
         label={t('session.enterReps')}
-        value={r}
-        onChange={setR}
+        value={repsValue}
+        onChange={setRepsValue}
         min={1}
         max={100}
         testID="target-reps"

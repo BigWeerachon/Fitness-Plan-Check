@@ -35,7 +35,8 @@ export function onLocalWrite(listener: () => void): () => void {
   return () => writeListeners.delete(listener);
 }
 
-export function enqueue(name: SyncedTableName, rowId: string, ownerId = getOwner()): void {
+/** ใส่/ปรับคิวซิงก์ของแถวโดยไม่แจ้ง listener (ใช้เมื่อใส่คิวทีละหลายแถวในทรานแซกชัน) */
+export function upsertOutbox(name: SyncedTableName, rowId: string, ownerId: string): void {
   getDb()
     .insert(syncOutbox)
     .values({ tableName: name, rowId, ownerId, queuedAt: now(), version: 1, attempts: 0, lastError: null })
@@ -51,6 +52,10 @@ export function enqueue(name: SyncedTableName, rowId: string, ownerId = getOwner
       },
     })
     .run();
+}
+
+export function enqueue(name: SyncedTableName, rowId: string, ownerId = getOwner()): void {
+  upsertOutbox(name, rowId, ownerId);
   writeListeners.forEach((l) => l());
 }
 

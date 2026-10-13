@@ -17,8 +17,8 @@ import {
   Stepper,
   TextField,
 } from '../../../../components';
-import type { Intensity } from '../../../../db/schema';
-import { displayWeight, weightToKg } from '../../../../domain/units';
+import type { Intensity, WeightUnit } from '../../../../db/schema';
+import { displayWeight, parseWeightInput, weightToKg } from '../../../../domain/units';
 import { useRepoQuery } from '../../../../features/data/useRepoQuery';
 import {
   acceptSuggestion,
@@ -248,7 +248,7 @@ function AdjustBody({
   onSave,
 }: {
   suggestion: ExerciseSuggestion;
-  unit: 'kg' | 'lb';
+  unit: WeightUnit;
   onSave: (weightKg: number | null, reps: number) => void;
 }) {
   const { t } = useTranslation();
@@ -258,8 +258,7 @@ function AdjustBody({
       : '',
   );
   const [reps, setReps] = useState(suggestion.suggestion.targetReps);
-  const parsed = weight.trim() === '' ? null : Number(weight.replace(',', '.'));
-  const valid = parsed === null || (Number.isFinite(parsed) && parsed >= 0);
+  const { valid, value: weightValue } = parseWeightInput(weight);
   return (
     <View style={styles.list}>
       <AppText variant="headline" align="center">
@@ -276,7 +275,7 @@ function AdjustBody({
       <Button
         title={t('common.save')}
         disabled={!valid}
-        onPress={() => onSave(parsed === null ? null : weightToKg(parsed, unit), reps)}
+        onPress={() => onSave(weightValue === null ? null : weightToKg(weightValue, unit), reps)}
       />
     </View>
   );

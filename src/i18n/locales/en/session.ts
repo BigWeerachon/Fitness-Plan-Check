@@ -42,7 +42,7 @@ const session = {
   emptySessionBody: 'Add exercises to start logging sets.',
   rest: 'Rest',
   restRemaining: 'Rest {{time}}',
-  restPlus: '+15 s',
+  restPlus: '+{{sec}} s',
   restSkip: 'Skip',
   restDone: 'Rest over — next set!',
   adjustTitle: 'Change target',

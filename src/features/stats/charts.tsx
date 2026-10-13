@@ -18,10 +18,43 @@ export interface ShareItem {
   color: string;
 }
 
-/** ความกว้างจริงของพื้นที่กราฟ (กราฟ svg ต้องรู้ความกว้างเป็นตัวเลข) */
-function useWidth(): [number, (e: LayoutChangeEvent) => void] {
+/** ระยะขอบซ้าย-ขวารวมที่เว้นไว้ให้ป้ายแกน y (px) */
+const CHART_SIDE_PADDING = 48;
+const MAX_TREND_LABELS = 5;
+const MAX_BAR_LABELS = 7;
+/** เว้นช่องว่างบนของแกน y เป็นสัดส่วนของช่วงค่า */
+const Y_AXIS_PADDING_RATIO = 0.2;
+
+/** ความกว้างจริงของพื้นที่กราฟ (กราฟ svg ต้องรู้ความกว้างเป็นตัวเลข); measured = วัดได้แล้ว */
+function useChartWidth(): {
+  measured: boolean;
+  chartWidth: number;
+  onLayout: (e: LayoutChangeEvent) => void;
+} {
   const [width, setWidth] = useState(0);
-  return [width, (e) => setWidth(Math.round(e.nativeEvent.layout.width))];
+  return {
+    measured: width > 0,
+    chartWidth: Math.max(0, width - CHART_SIDE_PADDING),
+    onLayout: (e) => setWidth(Math.round(e.nativeEvent.layout.width)),
+  };
+}
+
+/** แสดงป้ายแกน x เฉพาะบางจุดให้ไม่ทับกัน (ไม่เกิน maxLabels ป้าย) จุดอื่นเป็นข้อความว่าง */
+function labelOrBlank(label: string, index: number, count: number, maxLabels: number): string {
+  const showEvery = Math.max(1, Math.ceil(count / maxLabels));
+  return index % showEvery === 0 ? label : '';
+}
+
+/** สีและฟอนต์ของแกน/เส้นกริดที่กราฟทุกแบบใช้ร่วมกัน */
+function useAxisProps() {
+  const p = usePalette();
+  return {
+    rulesColor: p.separator,
+    xAxisColor: p.separator,
+    yAxisColor: 'transparent',
+    yAxisTextStyle: [styles.axis, { color: p.textSecondary }],
+    xAxisLabelTextStyle: [styles.axis, { color: p.textSecondary }],
+  };
 }
 
 /** กราฟโดนัท + ตัวเลขรวมตรงกลาง (I2) — โปรแกรมอ่านหน้าจออ่านสรุปเป็นข้อความแทนรูป */
@@ -107,23 +140,22 @@ export interface TrendPoint {
 /** กราฟเส้นแนวโน้ม (น้ำหนักตัว / 1RM) */
 export function TrendChart({ points, a11yLabel }: { points: TrendPoint[]; a11yLabel: string }) {
   const p = usePalette();
-  const [width, onLayout] = useWidth();
+  const axisProps = useAxisProps();
+  const { measured, chartWidth, onLayout } = useChartWidth();
   const values = points.map((x) => x.value);
   const min = Math.min(...values);
   const max = Math.max(...values);
   // เริ่มแกน y ใกล้ค่าต่ำสุด เพื่อให้เห็นการเปลี่ยนแปลงเล็กๆ ของน้ำหนัก
-  const pad = Math.max(1, (max - min) * 0.2);
+  const pad = Math.max(1, (max - min) * Y_AXIS_PADDING_RATIO);
   const offset = Math.max(0, Math.floor(min - pad));
-  const chartWidth = Math.max(0, width - 48);
   const step = points.length > 1 ? chartWidth / (points.length - 1) : chartWidth;
-  const showEvery = Math.max(1, Math.ceil(points.length / 5));
   return (
     <View onLayout={onLayout} accessible accessibilityRole="image" accessibilityLabel={a11yLabel}>
-      {width > 0 ? (
+      {measured ? (
         <LineChart
           data={points.map((x, i) => ({
             value: x.value - offset,
-            label: i % showEvery === 0 ? x.label : '',
+            label: labelOrBlank(x.label, i, points.length, MAX_TREND_LABELS),
           }))}
           width={chartWidth}
           height={160}
@@ -140,15 +172,11 @@ export function TrendChart({ points, a11yLabel }: { points: TrendPoint[]; a11yLa
           endOpacity={0}
           dataPointsColor={p.accentFill}
           hideRules={false}
-          rulesColor={p.separator}
-          xAxisColor={p.separator}
-          yAxisColor="transparent"
+          {...axisProps}
           yAxisOffset={0}
           noOfSections={4}
           maxValue={Math.ceil(max + pad - offset)}
           formatYLabel={(l) => formatNumber(Number(l) + offset)}
-          yAxisTextStyle={[styles.axis, { color: p.textSecondary }]}
-          xAxisLabelTextStyle={[styles.axis, { color: p.textSecondary }]}
           disableScroll
         />
       ) : null}
@@ -159,19 +187,18 @@ export function TrendChart({ points, a11yLabel }: { points: TrendPoint[]; a11yLa
 /** กราฟแท่งแคลอรี่ตามช่วง (I3) */
 export function KcalBars({ points, a11yLabel }: { points: TrendPoint[]; a11yLabel: string }) {
   const p = usePalette();
-  const [width, onLayout] = useWidth();
-  const chartWidth = Math.max(0, width - 48);
+  const axisProps = useAxisProps();
+  const { measured, chartWidth, onLayout } = useChartWidth();
   const n = Math.max(1, points.length);
   const barWidth = Math.max(4, Math.min(28, (chartWidth / n) * 0.6));
   const gap = Math.max(2, chartWidth / n - barWidth);
-  const showEvery = Math.max(1, Math.ceil(points.length / 7));
   return (
     <View onLayout={onLayout} accessible accessibilityRole="image" accessibilityLabel={a11yLabel}>
-      {width > 0 ? (
+      {measured ? (
         <BarChart
           data={points.map((x, i) => ({
             value: x.value,
-            label: i % showEvery === 0 ? x.label : '',
+            label: labelOrBlank(x.label, i, points.length, MAX_BAR_LABELS),
             frontColor: p.accentFill,
           }))}
           width={chartWidth}
@@ -182,11 +209,7 @@ export function KcalBars({ points, a11yLabel }: { points: TrendPoint[]; a11yLabe
           barBorderTopLeftRadius={4}
           barBorderTopRightRadius={4}
           noOfSections={3}
-          rulesColor={p.separator}
-          xAxisColor={p.separator}
-          yAxisColor="transparent"
-          yAxisTextStyle={[styles.axis, { color: p.textSecondary }]}
-          xAxisLabelTextStyle={[styles.axis, { color: p.textSecondary }]}
+          {...axisProps}
           formatYLabel={(l) => formatNumber(Number(l))}
           disableScroll
         />

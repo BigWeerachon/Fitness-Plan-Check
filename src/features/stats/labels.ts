@@ -1,4 +1,5 @@
 import type { TFunction } from 'i18next';
+import type { WeightUnit } from '../../db/schema';
 import { parseLocalDate, type LocalDate } from '../../domain/dates';
 import type { DateRange, Period } from '../../domain/periods';
 import type { Metric, ProgramGroup, SessionSummary } from '../../domain/stats';
@@ -8,16 +9,16 @@ import { formatDateShort, formatMonthYear, formatNumber, formatYear } from '../.
 /** ข้อความช่วงเวลาที่กำลังดู เช่น "6–12 ต.ค." / "ตุลาคม 2569" */
 export function periodLabel(period: Period, range: DateRange, today: LocalDate): string {
   const start = parseLocalDate(range.start);
-  const now = parseLocalDate(today);
-  if (period === 'day') return formatDateShort(start, now);
+  const todayDate = parseLocalDate(today);
+  if (period === 'day') return formatDateShort(start, todayDate);
   if (period === 'week')
-    return `${formatDateShort(start, now)} – ${formatDateShort(parseLocalDate(range.end), now)}`;
+    return `${formatDateShort(start, todayDate)} – ${formatDateShort(parseLocalDate(range.end), todayDate)}`;
   if (period === 'month') return formatMonthYear(start.getFullYear(), start.getMonth());
   return formatYear(start.getFullYear());
 }
 
 /** ค่าของตัวชี้วัดในรูปที่อ่านง่าย (ปริมาณรวมแปลงเป็นหน่วยที่ผู้ใช้เลือก) */
-export function metricValueLabel(t: TFunction, metric: Metric, value: number, unit: 'kg' | 'lb'): string {
+export function metricValueLabel(t: TFunction, metric: Metric, value: number, unit: WeightUnit): string {
   if (metric === 'sets') return t('stats.totalSets', { count: value });
   if (metric === 'sessions') return t('stats.totalSessions', { count: value });
   return t('stats.totalVolume', {
@@ -26,7 +27,7 @@ export function metricValueLabel(t: TFunction, metric: Metric, value: number, un
   });
 }
 
-export function metricShortValue(metric: Metric, value: number, unit: 'kg' | 'lb'): string {
+export function metricShortValue(metric: Metric, value: number, unit: WeightUnit): string {
   return formatNumber(metric === 'volume' ? displayWeight(value, unit) : value);
 }
 
@@ -34,7 +35,7 @@ export function metricShortValue(metric: Metric, value: number, unit: 'kg' | 'lb
 export function sessionLine(
   t: TFunction,
   s: Pick<SessionSummary, 'exercises' | 'sets' | 'volumeKg'>,
-  unit: 'kg' | 'lb',
+  unit: WeightUnit,
 ): string {
   return t('stats.sessionLine', {
     exercises: t('stats.exercisesCount', { count: s.exercises }),
@@ -53,18 +54,21 @@ export function groupLabels(
   noProgram: string,
   formatDate: (date: LocalDate) => string,
 ): Map<string, string> {
-  const base = (g: Pick<ProgramGroup, 'programName'>) => g.programName ?? noProgram;
+  const baseNameOf = (g: Pick<ProgramGroup, 'programName'>) => g.programName ?? noProgram;
   const nameCount = new Map<string, number>();
-  for (const g of groups) nameCount.set(base(g), (nameCount.get(base(g)) ?? 0) + 1);
-  const withDate = groups.map((g) => ({
+  for (const g of groups) nameCount.set(baseNameOf(g), (nameCount.get(baseNameOf(g)) ?? 0) + 1);
+  const dateDisambiguated = groups.map((g) => ({
     key: g.key,
-    label: (nameCount.get(base(g)) ?? 0) > 1 ? `${base(g)} · ${formatDate(g.lastDate)}` : base(g),
+    label:
+      (nameCount.get(baseNameOf(g)) ?? 0) > 1
+        ? `${baseNameOf(g)} · ${formatDate(g.lastDate)}`
+        : baseNameOf(g),
   }));
-  const seen = new Map<string, number>();
+  const occurrencesOfLabel = new Map<string, number>();
   const labels = new Map<string, string>();
-  for (const { key, label } of withDate) {
-    const n = (seen.get(label) ?? 0) + 1;
-    seen.set(label, n);
+  for (const { key, label } of dateDisambiguated) {
+    const n = (occurrencesOfLabel.get(label) ?? 0) + 1;
+    occurrencesOfLabel.set(label, n);
     labels.set(key, n > 1 ? `${label} (${n})` : label);
   }
   return labels;

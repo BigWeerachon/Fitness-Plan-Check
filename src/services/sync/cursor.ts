@@ -33,8 +33,10 @@ export function rewindCursor(value: string | null, ms = PULL_OVERLAP_MS): string
   return encodeCursor({ ts: new Date(t - ms).toISOString(), id: '' });
 }
 
-/** ตัวกรอง PostgREST แบบ or=(…) สำหรับ "แถวหลังเคอร์เซอร์" (ครอบค่าด้วย " เพราะเวลามี : และ .) */
-export function afterCursorFilter(c: PullCursor): string {
-  if (!c.id) return `server_updated_at.gte."${c.ts}"`;
-  return `server_updated_at.gt."${c.ts}",and(server_updated_at.eq."${c.ts}",id.gt."${c.id}")`;
+/**
+ * ตัวกรอง PostgREST แบบ or=(…) สำหรับ "แถวหลังเคอร์เซอร์" (ครอบค่าด้วย " เพราะเวลามี : และ .)
+ * ใช้เมื่อเคอร์เซอร์มี id เท่านั้น — เคอร์เซอร์ที่ id ว่าง (ย้อนจาก rewindCursor) ให้ใช้ gte บนเวลาแทน (ดู SupabaseSyncBackend.pull)
+ */
+export function afterCursorFilter(cursor: PullCursor): string {
+  return `server_updated_at.gt."${cursor.ts}",and(server_updated_at.eq."${cursor.ts}",id.gt."${cursor.id}")`;
 }

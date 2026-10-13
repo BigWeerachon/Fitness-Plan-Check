@@ -1,6 +1,6 @@
-import { and, asc, eq, gte, inArray, isNull, lt, notInArray, sql } from 'drizzle-orm';
+import { and, asc, count, eq, gte, inArray, isNull, lt, notInArray, sql } from 'drizzle-orm';
 import { getDb, transaction } from '../../db/client';
-import { onLocalWrite, softDeleteRow, updateRow } from '../../db/mutations';
+import { onLocalWrite, softDeleteRow, updateRow, upsertOutbox } from '../../db/mutations';
 import { getOwner, LOCAL_OWNER } from '../../db/owner';
 import {
   SYNCED_TABLE_NAMES,
@@ -24,7 +24,7 @@ import { fromRemote, toRemote } from './mapping';
  * ล้มเหลว = ข้อมูลในเครื่องไม่ถูกแตะ คิวยังอยู่ ลองใหม่แบบ backoff
  */
 
-const PAGE = 500;
+const PULL_PAGE_SIZE = 500;
 const PUSH_BATCH = 200;
 /** ลำดับเวลารอก่อนลองใหม่ (ms) */
 export const BACKOFF_MS = [5_000, 15_000, 60_000, 5 * 60_000, 10 * 60_000];
@@ -65,7 +65,8 @@ function setCursor(userId: string, table: SyncedTableName, value: string | null)
 }
 
 export function pendingCount(userId: string): number {
-  return getDb().select().from(syncOutbox).where(eq(syncOutbox.ownerId, userId)).all().length;
+  const row = getDb().select({ n: count() }).from(syncOutbox).where(eq(syncOutbox.ownerId, userId)).get();
+  return row?.n ?? 0;
 }
 
 /** ผูกแถวที่สร้างก่อนล็อกอิน ('local') เข้ากับบัญชี แล้วใส่คิวซิงก์ */
@@ -79,28 +80,7 @@ export function claimLocalRows(userId: string): number {
       }[];
       if (rows.length === 0) continue;
       getDb().update(t).set({ ownerId: userId }).where(eq(t.ownerId, LOCAL_OWNER)).run();
-      for (const r of rows) {
-        getDb()
-          .insert(syncOutbox)
-          .values({
-            tableName: name,
-            rowId: r.id,
-            ownerId: userId,
-            queuedAt: now(),
-            version: 1,
-            attempts: 0,
-          })
-          .onConflictDoUpdate({
-            target: [syncOutbox.tableName, syncOutbox.rowId],
-            set: {
-              ownerId: userId,
-              queuedAt: now(),
-              version: sql`${syncOutbox.version} + 1`,
-              attempts: 0,
-            },
-          })
-          .run();
-      }
+      for (const r of rows) upsertOutbox(name, r.id, userId);
       claimed += rows.length;
     }
   });
@@ -168,6 +148,84 @@ async function pushRows(name: SyncedTableName, userId: string, queued: QueuedRow
   clearSent(queued);
 }
 
+/** บันทึกว่าแถวถูกเซิร์ฟเวอร์ปฏิเสธ (ไม่ใช่ error ชั่วคราว) แล้วข้ามแถวนี้ในรอบนี้ คืน error ไว้รายงาน */
+function recordRejection(q: QueuedRow, e: unknown, failedIds: number[]): Error {
+  recordFailure(q, e);
+  failedIds.push(q.id);
+  return asError(e);
+}
+
+/** ส่งทีละแถวหลังส่งเป็นชุดไม่ผ่าน: แถวที่ถูกปฏิเสธไม่บล็อกแถวอื่น คืน error แรก (error ชั่วคราว = throw ทันที) */
+async function pushRowByRow(
+  name: SyncedTableName,
+  userId: string,
+  queued: QueuedRow[],
+  failedIds: number[],
+): Promise<Error | null> {
+  let firstError: Error | null = null;
+  for (const q of queued) {
+    try {
+      await pushRows(name, userId, [q]);
+    } catch (e) {
+      if (isTransient(e)) {
+        recordFailure(q, e);
+        throw e;
+      }
+      const rejection = recordRejection(q, e, failedIds);
+      firstError ??= rejection;
+    }
+  }
+  return firstError;
+}
+
+/** ส่งคิวของตารางเดียวทีละชุด คืน error แรกของแถวที่ถูกปฏิเสธ */
+async function pushTable(name: SyncedTableName, userId: string): Promise<Error | null> {
+  let firstError: Error | null = null;
+  const failedIds: number[] = [];
+  for (;;) {
+    const queued = getDb()
+      .select()
+      .from(syncOutbox)
+      .where(
+        and(
+          eq(syncOutbox.ownerId, userId),
+          eq(syncOutbox.tableName, name),
+          lt(syncOutbox.attempts, MAX_ATTEMPTS),
+          failedIds.length ? notInArray(syncOutbox.id, failedIds) : undefined,
+        ),
+      )
+      .orderBy(asc(syncOutbox.id))
+      .limit(PUSH_BATCH)
+      .all();
+    if (queued.length === 0) return firstError;
+    try {
+      await pushRows(name, userId, queued);
+    } catch (e) {
+      if (isTransient(e)) {
+        for (const q of queued) recordFailure(q, e);
+        throw e;
+      }
+      // ชุดเดียวที่ล้ม = แถวนั้นคือตัวปัญหาแล้ว ไม่ต้องส่งซ้ำ
+      const batchError =
+        queued.length === 1
+          ? recordRejection(queued[0], e, failedIds)
+          : await pushRowByRow(name, userId, queued, failedIds);
+      firstError ??= batchError;
+    }
+  }
+}
+
+/** error ของแถวที่เสีย (ล้มเกิน MAX_ATTEMPTS ถูกข้ามแต่ยังอยู่ในคิว) แถวแรก หรือ null ถ้าไม่มี */
+function findPoisonedRowError(userId: string): Error | null {
+  const poisoned = getDb()
+    .select()
+    .from(syncOutbox)
+    .where(and(eq(syncOutbox.ownerId, userId), gte(syncOutbox.attempts, MAX_ATTEMPTS)))
+    .orderBy(asc(syncOutbox.id))
+    .get();
+  return poisoned ? new Error(poisoned.lastError ?? 'Sync failed') : null;
+}
+
 /**
  * ส่งคิวขึ้นคลาวด์ ออฟไลน์/ไม่มีสิทธิ์ = throw ทันที (คิวอยู่ครบ)
  * เซิร์ฟเวอร์ปฏิเสธเฉพาะบางแถว (error อื่น) = ลองส่งทีละแถว แถวที่ล้มเหลวไม่บล็อกแถวอื่น
@@ -176,58 +234,10 @@ async function pushRows(name: SyncedTableName, userId: string, queued: QueuedRow
 async function push(userId: string): Promise<Error | null> {
   let firstError: Error | null = null;
   for (const name of SYNCED_TABLE_NAMES) {
-    const failedIds: number[] = [];
-    for (;;) {
-      const queued = getDb()
-        .select()
-        .from(syncOutbox)
-        .where(
-          and(
-            eq(syncOutbox.ownerId, userId),
-            eq(syncOutbox.tableName, name),
-            lt(syncOutbox.attempts, MAX_ATTEMPTS),
-            failedIds.length ? notInArray(syncOutbox.id, failedIds) : undefined,
-          ),
-        )
-        .orderBy(asc(syncOutbox.id))
-        .limit(PUSH_BATCH)
-        .all();
-      if (queued.length === 0) break;
-      try {
-        await pushRows(name, userId, queued);
-      } catch (e) {
-        if (isTransient(e)) {
-          for (const q of queued) recordFailure(q, e);
-          throw e;
-        }
-        // ทีละแถว: หาว่าแถวไหนเป็นตัวปัญหา
-        const singles = queued.length > 1 ? queued : [];
-        if (queued.length === 1) {
-          recordFailure(queued[0], e);
-          failedIds.push(queued[0].id);
-          firstError ??= asError(e);
-        }
-        for (const q of singles) {
-          try {
-            await pushRows(name, userId, [q]);
-          } catch (e2) {
-            recordFailure(q, e2);
-            if (isTransient(e2)) throw e2;
-            failedIds.push(q.id);
-            firstError ??= asError(e2);
-          }
-        }
-      }
-    }
+    const tableError = await pushTable(name, userId);
+    firstError ??= tableError;
   }
-  if (firstError) return firstError;
-  const poisoned = getDb()
-    .select()
-    .from(syncOutbox)
-    .where(and(eq(syncOutbox.ownerId, userId), gte(syncOutbox.attempts, MAX_ATTEMPTS)))
-    .orderBy(asc(syncOutbox.id))
-    .get();
-  return poisoned ? new Error(poisoned.lastError ?? 'Sync failed') : null;
+  return firstError ?? findPoisonedRowError(userId);
 }
 
 /** ตารางที่ควรมีแถวเดียวต่อกุญแจ: profile (ต่อบัญชี) และ daily_log (ต่อวัน) */
@@ -336,55 +346,55 @@ async function pull(userId: string): Promise<number> {
     const stored = getCursor(userId, name);
     let cursor = sync.startCursor ? sync.startCursor(stored) : stored;
     for (;;) {
-      const page = await sync.pull(name, userId, cursor, PAGE);
+      const page = await sync.pull(name, userId, cursor, PULL_PAGE_SIZE);
       transaction(() => {
         for (const r of page.rows) if (mergeRemoteRow(name, r, userId) === 'applied') applied++;
         // หน้าว่างไม่บันทึก — กันเคอร์เซอร์ที่ถูกย้อน (startCursor) ถอยหลังสะสมทุกรอบ
         if (page.rows.length > 0) setCursor(userId, name, page.cursor);
       });
       cursor = page.cursor;
-      if (page.rows.length < PAGE) break;
+      if (page.rows.length < PULL_PAGE_SIZE) break;
     }
   }
   return applied;
 }
 
 let inFlight: Promise<SyncOutcome> | null = null;
-let timer: ReturnType<typeof setTimeout> | null = null;
-let failures = 0;
-let ctx: SyncContext | null = null;
+let scheduledSyncTimer: ReturnType<typeof setTimeout> | null = null;
+let consecutiveFailures = 0;
+let syncContext: SyncContext | null = null;
 
 export type SyncOutcome = 'synced' | 'disabled' | 'offline' | 'denied' | 'error';
 
 /** ตั้งค่า engine (เรียกครั้งเดียวตอนเปิดแอป) และตั้งเวลาซิงก์เมื่อมีการเขียนข้อมูล */
 export function configureSync(context: SyncContext): () => void {
-  ctx = context;
-  failures = 0;
+  syncContext = context;
+  consecutiveFailures = 0;
   const off = onLocalWrite(() => {
-    const userId = ctx?.userId();
+    const userId = syncContext?.userId();
     if (userId) useSync.getState().set({ pending: pendingCount(userId) });
     requestSync(DEBOUNCE_MS);
   });
   return () => {
     off();
-    if (timer) clearTimeout(timer);
-    timer = null;
-    ctx = null;
+    if (scheduledSyncTimer) clearTimeout(scheduledSyncTimer);
+    scheduledSyncTimer = null;
+    syncContext = null;
   };
 }
 
 /** ขอให้ซิงก์ภายใน delay ms (รวมหลายคำขอเป็นครั้งเดียว) */
 export function requestSync(delay = 0): void {
-  if (!ctx) return;
-  if (timer) clearTimeout(timer);
-  timer = setTimeout(() => {
-    timer = null;
+  if (!syncContext) return;
+  if (scheduledSyncTimer) clearTimeout(scheduledSyncTimer);
+  scheduledSyncTimer = setTimeout(() => {
+    scheduledSyncTimer = null;
     void syncNow();
   }, delay);
 }
 
 function scheduleRetry() {
-  const delay = BACKOFF_MS[Math.min(failures - 1, BACKOFF_MS.length - 1)];
+  const delay = BACKOFF_MS[Math.min(consecutiveFailures - 1, BACKOFF_MS.length - 1)];
   useSync.getState().set({ nextRetryAt: now() + delay });
   requestSync(delay);
 }
@@ -398,10 +408,16 @@ export function syncNow(): Promise<SyncOutcome> {
   return inFlight;
 }
 
+function classifySyncError(e: unknown): { status: 'offline' | 'waiting' | 'error'; outcome: SyncOutcome } {
+  if (e instanceof SyncNetworkError) return { status: 'offline', outcome: 'offline' };
+  if (e instanceof SyncAccessDeniedError) return { status: 'waiting', outcome: 'denied' };
+  return { status: 'error', outcome: 'error' };
+}
+
 async function runSync(): Promise<SyncOutcome> {
   const store = useSync.getState();
-  const userId = ctx?.userId() ?? null;
-  if (!ctx || !userId || !ctx.canSync()) {
+  const userId = syncContext?.userId() ?? null;
+  if (!syncContext || !userId || !syncContext.canSync()) {
     store.set({ status: 'disabled', pending: userId ? pendingCount(userId) : 0 });
     return 'disabled';
   }
@@ -413,37 +429,25 @@ async function runSync(): Promise<SyncOutcome> {
     if (applied > 0 || merged > 0) notifyDataChanged();
     // ส่งบางแถวไม่สำเร็จ: ยังดึงข้อมูลได้ตามปกติ แต่สถานะต้องเป็น error (ไม่โชว์ว่าซิงก์ครบ)
     if (pushError) throw pushError;
-    failures = 0;
+    consecutiveFailures = 0;
     useSync
       .getState()
       .set({ status: 'idle', lastSyncedAt: now(), pending: pendingCount(userId), nextRetryAt: null });
     return 'synced';
   } catch (e) {
-    failures++;
-    const pending = pendingCount(userId);
-    if (e instanceof SyncNetworkError) {
-      useSync.getState().set({ status: 'offline', pending, lastError: e.message });
-      scheduleRetry();
-      return 'offline';
-    }
-    if (e instanceof SyncAccessDeniedError) {
-      useSync.getState().set({ status: 'waiting', pending, lastError: e.message });
-      scheduleRetry();
-      return 'denied';
-    }
-    useSync
-      .getState()
-      .set({ status: 'error', pending, lastError: e instanceof Error ? e.message : String(e) });
+    consecutiveFailures++;
+    const { status, outcome } = classifySyncError(e);
+    useSync.getState().set({ status, pending: pendingCount(userId), lastError: asError(e).message });
     scheduleRetry();
-    return 'error';
+    return outcome;
   }
 }
 
 /** สำหรับเทสต์ */
 export function resetSyncForTests(): void {
-  if (timer) clearTimeout(timer);
-  timer = null;
+  if (scheduledSyncTimer) clearTimeout(scheduledSyncTimer);
+  scheduledSyncTimer = null;
   inFlight = null;
-  failures = 0;
-  ctx = null;
+  consecutiveFailures = 0;
+  syncContext = null;
 }

@@ -45,7 +45,7 @@ const session: LocaleShape<typeof en> = {
   emptySessionBody: 'เพิ่มท่าเพื่อเริ่มบันทึกเซ็ต',
   rest: 'พัก',
   restRemaining: 'พัก {{time}}',
-  restPlus: '+15 วิ',
+  restPlus: '+{{sec}} วิ',
   restSkip: 'ข้าม',
   restDone: 'หมดเวลาพัก — ไปเซ็ตต่อไป!',
   adjustTitle: 'ปรับเป้าหมาย',

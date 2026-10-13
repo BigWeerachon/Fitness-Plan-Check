@@ -102,6 +102,16 @@ describe('sync engine robustness (SPEC L)', () => {
       expect(useSync.getState().lastError).toBe('constraint violation');
     });
 
+    it('keeps pushing later tables after an earlier table has a rejected row', async () => {
+      const bad = createRow('program', { name: 'bad' });
+      createRow('routine', { programId: bad.id, name: 'ok routine', type: 'push' });
+      rejectOnly('bad');
+      expect(await syncNow()).toBe('error');
+      expect(s.sync.rowsOf('program', USER)).toHaveLength(0);
+      expect(s.sync.rowsOf('routine', USER).map((r) => r.name)).toEqual(['ok routine']);
+      expect(pendingCount(USER)).toBe(1);
+    });
+
     it('stops retrying a row that keeps failing but keeps it pending; editing it queues it again', async () => {
       createRow('program', { name: 'ok' });
       const bad = createRow('program', { name: 'bad' });

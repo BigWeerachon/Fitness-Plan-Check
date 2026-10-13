@@ -23,14 +23,12 @@ import { routineExerciseRepo } from '../../../db/repos/routineExerciseRepo';
 import { sessionRepo } from '../../../db/repos/sessionRepo';
 import type { RoutineExercise, SessionSet } from '../../../db/schema';
 import { parseLocalDate } from '../../../domain/dates';
+import type { ExerciseSettingsPatch } from '../../../domain/exerciseSettings';
 import { adjustTarget } from '../../../domain/progression';
 import { isExerciseComplete, restSecondsFor, sessionDurationSec } from '../../../domain/sessionSummary';
 import { displayWeight, formatWeight, weightToKg } from '../../../domain/units';
 import { useRepoQuery } from '../../../features/data/useRepoQuery';
-import {
-  ExerciseSettingsSheet,
-  type ExerciseSettingsPatch,
-} from '../../../features/programs/ExerciseSettingsSheet';
+import { ExerciseSettingsSheet } from '../../../features/programs/ExerciseSettingsSheet';
 import { formatSet, isBodyweightExercise } from '../../../features/session/formatSet';
 import { RestTimerBar } from '../../../features/session/RestTimerBar';
 import { SetTick } from '../../../features/session/SetTick';
@@ -97,7 +95,7 @@ export default function SessionScreen() {
     }
     sessionRepo.setDone(set.id, becomingDone);
     if (becomingDone) {
-      const sec = restSecondsFor(view.exercise.restSec, data.restDefaultSec, data.restEnabled);
+      const sec = restSecondsFor(view.exercise.restSec, data.defaultRestSec, data.restEnabled);
       const isLast =
         n === view.sets.length && view.exercise.id === exercises[exercises.length - 1]?.exercise.id;
       if (!isLast) useRestTimer.getState().start(session.id, sec, now());
@@ -529,7 +527,7 @@ export default function SessionScreen() {
         title={settingsFor?.view.exercise.exerciseName ?? ''}
         value={settingsFor?.config ?? null}
         unit={unit}
-        defaultRestSec={data.restDefaultSec}
+        defaultRestSec={data.defaultRestSec}
         onClose={() => setSettingsFor(null)}
         onSave={(patch) => settingsFor && saveSettings(settingsFor, patch)}
       />

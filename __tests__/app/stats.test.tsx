@@ -206,6 +206,42 @@ describe('stats (SPEC I1–I5)', () => {
   });
 });
 
+describe('buildStatsView strength list', () => {
+  it('lists weighted exercises by best e1RM, ties by exercise id, and skips unweighted sets', async () => {
+    await entitledApp();
+    const p = programRepo.create('Solo');
+    const r = routineRepo.create(p.id, 'Quick', 'other');
+    routineExerciseRepo.add(r.id, 'barbell_bench_press', { sets: 1 });
+    routineExerciseRepo.add(r.id, 'back_squat', { sets: 1 });
+    completeRoutine(r.id, '2026-10-09', 1, 100, 5);
+    const view = buildStatsView(loadStats(), {
+      period: 'week',
+      anchor: '2026-10-09',
+      metric: 'sets',
+      view: 'program',
+      groupKey: null,
+    });
+    // น้ำหนักและครั้งเท่ากัน → e1RM เท่ากัน เรียงตาม exerciseId
+    expect(view.strength.map((x) => x.exerciseId)).toEqual(['back_squat', 'barbell_bench_press']);
+  });
+
+  it('leaves out exercises with no weighted sets', async () => {
+    await entitledApp();
+    const p = programRepo.create('Solo');
+    const r = routineRepo.create(p.id, 'Quick', 'other');
+    routineExerciseRepo.add(r.id, 'back_squat', { sets: 1 });
+    completeRoutine(r.id, '2026-10-09', 1, null, 10);
+    const view = buildStatsView(loadStats(), {
+      period: 'week',
+      anchor: '2026-10-09',
+      metric: 'sets',
+      view: 'program',
+      groupKey: null,
+    });
+    expect(view.strength).toEqual([]);
+  });
+});
+
 describe('stats audit fixes (SPEC I1, I2, I4, I5, H5)', () => {
   it('shows the health disclaimer on the stats tab and on the strength drill-in', async () => {
     await entitledApp();
