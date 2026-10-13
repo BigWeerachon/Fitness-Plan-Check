@@ -1,5 +1,6 @@
 import { asc, desc, eq } from 'drizzle-orm';
 import { getDb } from '../client';
+import { isInRange, type DateRange } from '../../domain/periods';
 import { createRow, updateRow, type PatchInput } from '../mutations';
 import { dailyLog, type DailyLog } from '../schema';
 import { live } from './query';
@@ -17,14 +18,14 @@ export const dailyLogRepo = {
         .get()
     );
   },
-  listBetween(start: string, end: string): DailyLog[] {
+  listBetween(range: DateRange): DailyLog[] {
     return getDb()
       .select()
       .from(dailyLog)
       .where(live(dailyLog))
       .orderBy(asc(dailyLog.date))
       .all()
-      .filter((d) => d.date >= start && d.date <= end);
+      .filter((d) => isInRange(d.date, range));
   },
   listAll(): DailyLog[] {
     return getDb().select().from(dailyLog).where(live(dailyLog)).orderBy(asc(dailyLog.date)).all();

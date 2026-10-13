@@ -1,17 +1,10 @@
 import { asc, desc, eq } from 'drizzle-orm';
 import { getDb, transaction } from '../client';
 import { createRow, softDeleteRow, updateRow } from '../mutations';
-import {
-  program,
-  routine,
-  routineExercise,
-  weekPlan,
-  workoutSession,
-  type Program,
-  type Routine,
-} from '../schema';
+import { program, routine, weekPlan, workoutSession, type Program, type Routine } from '../schema';
 import { live, stripManaged } from './query';
-import { dayOverrideRepo } from './weekPlanRepo';
+import { routineExerciseRepo } from './routineExerciseRepo';
+import { dayOverrideRepo, weekPlanRepo } from './weekPlanRepo';
 
 /** กรุ๊ปโปรแกรม (SPEC F1–F3) */
 export const programRepo = {
@@ -41,13 +34,7 @@ export const programRepo = {
   remove(id: string): void {
     transaction(() => {
       for (const r of routineRepo.listByProgram(id)) routineRepo.remove(r.id);
-      for (const w of getDb()
-        .select()
-        .from(weekPlan)
-        .where(live(weekPlan, eq(weekPlan.programId, id)))
-        .all()) {
-        softDeleteRow('week_plan', w.id);
-      }
+      for (const w of weekPlanRepo.listByProgram(id)) softDeleteRow('week_plan', w.id);
       softDeleteRow('program', id);
     });
   },
@@ -86,13 +73,7 @@ export const routineRepo = {
   /** ลบ routine + ท่าใน routine + แถวตารางสัปดาห์ที่อ้างถึง */
   remove(id: string): void {
     transaction(() => {
-      for (const ex of getDb()
-        .select()
-        .from(routineExercise)
-        .where(live(routineExercise, eq(routineExercise.routineId, id)))
-        .all()) {
-        softDeleteRow('routine_exercise', ex.id);
-      }
+      for (const ex of routineExerciseRepo.listByRoutine(id)) softDeleteRow('routine_exercise', ex.id);
       for (const w of getDb()
         .select()
         .from(weekPlan)
@@ -110,14 +91,8 @@ export const routineRepo = {
     if (!src) return undefined;
     return transaction(() => {
       const copy = routineRepo.create(targetProgramId, src.name, src.type);
-      for (const ex of getDb()
-        .select()
-        .from(routineExercise)
-        .where(live(routineExercise, eq(routineExercise.routineId, id)))
-        .all()) {
-        const { routineId: _routineId, ...rest } = stripManaged(ex);
-        void _routineId;
-        createRow('routine_exercise', { ...rest, routineId: copy.id });
+      for (const ex of routineExerciseRepo.listByRoutine(id)) {
+        createRow('routine_exercise', { ...stripManaged(ex), routineId: copy.id });
       }
       return copy;
     });

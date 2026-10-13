@@ -19,7 +19,7 @@ export function buildExport(kind: ExportKind): { filename: string; content: stri
   const { data } = loadStats();
   const exerciseOrder = new Map<string, number>();
   for (const s of data.sessions) {
-    for (const e of sessionRepo.exercises(s.id)) exerciseOrder.set(e.id, e.sortOrder);
+    for (const e of sessionRepo.exercisesInSession(s.id)) exerciseOrder.set(e.id, e.sortOrder);
   }
   return {
     filename: `fitnese-workouts-${stamp}.csv`,

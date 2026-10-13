@@ -40,9 +40,9 @@ export default function WeekScreen() {
     const programs = programRepo.list();
     const program = programs.find((p) => p.id === profile.activeProgramId) ?? null;
     const routines = program ? routineRepo.listByProgram(program.id) : [];
-    const entries = program ? weekPlanRepo.listForProgram(program.id) : [];
+    const entries = program ? weekPlanRepo.listByProgram(program.id) : [];
     const today = toLocalDate(now());
-    const overrides = dayOverrideRepo.listBetween(today, addDays(today, 6));
+    const overrides = dayOverrideRepo.listBetween({ start: today, end: addDays(today, 6) });
     const allRoutines = routineRepo.listAll();
     const names = new Map(allRoutines.map((r) => [r.id, r.name]));
     const upcoming = Array.from({ length: 7 }, (_, i) => {

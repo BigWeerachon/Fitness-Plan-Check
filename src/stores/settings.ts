@@ -15,7 +15,7 @@ export interface DeviceSettings {
   statsMetric: StatsMetric;
 }
 
-const DEFAULTS = (): DeviceSettings => ({
+const createDefaultSettings = (): DeviceSettings => ({
   language: deviceLanguage(),
   theme: 'dark',
   accent: DEFAULT_ACCENT,
@@ -29,12 +29,12 @@ interface SettingsStore extends DeviceSettings {
   set<K extends keyof DeviceSettings>(key: K, value: DeviceSettings[K]): void;
 }
 
-export const useSettings = create<SettingsStore>((set, get) => ({
-  ...DEFAULTS(),
+export const useSettings = create<SettingsStore>((set) => ({
+  ...createDefaultSettings(),
   loaded: false,
   load() {
     const stored = settingsRepo.all();
-    const merged = { ...DEFAULTS() };
+    const merged = { ...createDefaultSettings() };
     (Object.keys(merged) as (keyof DeviceSettings)[]).forEach((k) => {
       if (stored[k] !== undefined) (merged as Record<string, unknown>)[k] = stored[k];
     });
@@ -45,6 +45,5 @@ export const useSettings = create<SettingsStore>((set, get) => ({
     settingsRepo.set(key, value);
     if (key === 'language') setLanguage(value as Language);
     set({ [key]: value } as Partial<SettingsStore>);
-    void get;
   },
 }));

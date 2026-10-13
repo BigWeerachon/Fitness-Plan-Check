@@ -174,7 +174,7 @@ describe('Exercise library (SPEC F7, F9)', () => {
     routineExerciseRepo.add(r.id, 'back_squat', { sets: 2 });
     const { session } = startSession({ routineId: r.id });
     renderRouter('./src/app', { initialUrl: `/session/${session.id}` });
-    const [first] = sessionRepo.exercises(session.id);
+    const [first] = sessionRepo.exercisesInSession(session.id);
     expect(first.muscleGroup).toBe('quads');
     expect(await screen.findByTestId(`muscle-icon-${first.muscleGroup}`, { hidden: true })).toBeTruthy();
   });

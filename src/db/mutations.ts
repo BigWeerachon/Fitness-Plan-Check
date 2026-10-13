@@ -15,7 +15,9 @@ import { SYNCED_TABLES, syncOutbox, type SyncedTableName } from './schema';
 type TableOf<N extends SyncedTableName> = (typeof SYNCED_TABLES)[N];
 export type RowOf<N extends SyncedTableName> = InferSelectModel<TableOf<N>>;
 type InsertOf<N extends SyncedTableName> = InferInsertModel<TableOf<N>>;
-type Managed = 'id' | 'ownerId' | 'createdAt' | 'updatedAt' | 'deletedAt';
+/** ฟิลด์ที่ระบบจัดการเอง (ผู้เรียกไม่ต้องใส่ และต้องตัดออกเมื่อคัดลอกแถว) */
+export const MANAGED_FIELDS = ['id', 'ownerId', 'createdAt', 'updatedAt', 'deletedAt'] as const;
+export type Managed = (typeof MANAGED_FIELDS)[number];
 export type CreateInput<N extends SyncedTableName> = Omit<InsertOf<N>, Managed> & { id?: string };
 export type PatchInput<N extends SyncedTableName> = Partial<Omit<InsertOf<N>, Managed>>;
 

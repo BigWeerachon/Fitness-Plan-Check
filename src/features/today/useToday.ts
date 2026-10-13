@@ -79,7 +79,7 @@ export function loadToday(date: LocalDate = toLocalDate(now())): TodayModel {
     .listForDate(date)
     .filter((o) => o.kind !== 'routine' || (o.routineId !== null && byId.has(o.routineId)));
   const plan = resolveDayPlan({
-    entries: program ? weekPlanRepo.listForProgram(program.id) : [],
+    entries: program ? weekPlanRepo.listByProgram(program.id) : [],
     overrides: overrides.slice(0, 1),
     date,
   });

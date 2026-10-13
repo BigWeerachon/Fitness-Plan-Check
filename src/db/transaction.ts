@@ -13,17 +13,18 @@ export function createTxState(): TxState {
 
 export function runTransaction<T>(exec: (sql: string) => void, state: TxState, fn: () => T): T {
   const level = state.depth;
+  const isOutermost = level === 0;
   const savepoint = `tx_${level}`;
-  exec(level === 0 ? 'BEGIN' : `SAVEPOINT ${savepoint}`);
+  exec(isOutermost ? 'BEGIN' : `SAVEPOINT ${savepoint}`);
   state.depth++;
   try {
     const result = fn();
     state.depth--;
-    exec(level === 0 ? 'COMMIT' : `RELEASE ${savepoint}`);
+    exec(isOutermost ? 'COMMIT' : `RELEASE ${savepoint}`);
     return result;
   } catch (e) {
     state.depth--;
-    exec(level === 0 ? 'ROLLBACK' : `ROLLBACK TO ${savepoint}; RELEASE ${savepoint}`);
+    exec(isOutermost ? 'ROLLBACK' : `ROLLBACK TO ${savepoint}; RELEASE ${savepoint}`);
     throw e;
   }
 }

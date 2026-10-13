@@ -29,9 +29,9 @@ function completeRoutine(
   reps = 10,
 ) {
   const { session } = startSession({ routineId, date });
-  for (const e of sessionRepo.exercises(session.id)) {
+  for (const e of sessionRepo.exercisesInSession(session.id)) {
     sessionRepo
-      .setsOf(e.id)
+      .setsOfExercise(e.id)
       .slice(0, setsPerExercise)
       .forEach((s) => {
         sessionRepo.updateSet(s.id, { weightKg, reps });

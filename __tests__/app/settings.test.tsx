@@ -102,7 +102,7 @@ describe('settings tab (SPEC K)', () => {
     const program = instantiateTemplate('ppl3', 'en')!;
     const push = routineRepo.listByProgram(program.id).find((r) => r.type === 'push')!;
     const { session } = startSession({ routineId: push.id });
-    const first = sessionRepo.sets(session.id)[0];
+    const first = sessionRepo.setsInSession(session.id)[0];
     sessionRepo.updateSet(first.id, { weightKg: 60, reps: 10 });
     sessionRepo.setDone(first.id, true);
     finishSession(session.id, 'moderate', 3600);

@@ -48,7 +48,7 @@ describe('workout session (SPEC G1, G2)', () => {
     fireEvent.press(screen.getByTestId('tick-back_squat-0'));
     await flush();
     const first = sessionRepo
-      .sets(session.id)
+      .setsInSession(session.id)
       .find((s) => s.exerciseId === 'back_squat' && s.setIndex === 0)!;
     expect(first).toMatchObject({ weightKg: 100, reps: 8, done: true });
     expect(Haptics.notificationAsync).toHaveBeenCalled();
@@ -65,7 +65,9 @@ describe('workout session (SPEC G1, G2)', () => {
       .listByRoutine(legs.id)
       .find((e) => e.exerciseId === 'back_squat')!;
     expect(squatConfig.targetWeightKg).toBe(100);
-    const next = sessionRepo.sets(session.id).find((s) => s.exerciseId === 'back_squat' && s.setIndex === 1)!;
+    const next = sessionRepo
+      .setsInSession(session.id)
+      .find((s) => s.exerciseId === 'back_squat' && s.setIndex === 1)!;
     expect(next).toMatchObject({ targetWeightKg: 100, weightKg: 100 });
 
     // ติ๊กเซ็ตที่เหลือของสควอต (ใช้ค่าเป้าหมายอัตโนมัติ)
@@ -76,7 +78,9 @@ describe('workout session (SPEC G1, G2)', () => {
     // เพิ่มเซ็ตระหว่างฝึก
     fireEvent.press(screen.getByTestId('add-set-romanian_deadlift'));
     await flush();
-    expect(sessionRepo.sets(session.id).filter((s) => s.exerciseId === 'romanian_deadlift')).toHaveLength(4);
+    expect(
+      sessionRepo.setsInSession(session.id).filter((s) => s.exerciseId === 'romanian_deadlift'),
+    ).toHaveLength(4);
 
     // จบเซสชันหลังผ่านไป 1 ชั่วโมง เลือก "หนัก" → 6 MET × 70 kg × 1 h = 420 kcal
     t += 3_600_000;
@@ -117,7 +121,7 @@ describe('workout session (SPEC G1, G2)', () => {
     profileRepo.update({ weightKg: 80 });
     const { session } = startSession({ routineId: null, date: '2026-10-07' });
     sessionRepo.addExercise(session.id, 'push_up', () => ({ name: 'Push-Up', muscle: 'chest' }), { sets: 1 });
-    sessionRepo.setDone(sessionRepo.sets(session.id)[0].id, true);
+    sessionRepo.setDone(sessionRepo.setsInSession(session.id)[0].id, true);
     renderRouter('./src/app', { initialUrl: `/session/summary/${session.id}` });
     fireEvent.press(await screen.findByTestId('intensity-light'));
     fireEvent.press(screen.getByTestId('session-save'));
@@ -136,14 +140,14 @@ describe('workout session (SPEC G1, G2)', () => {
     const { session } = startSession({ routineId: null });
     sessionRepo.addExercise(session.id, 'push_up', () => ({ name: 'Push-Up', muscle: 'chest' }), { sets: 3 });
     renderRouter('./src/app', { initialUrl: `/session/${session.id}` });
-    const ids = () => sessionRepo.sets(session.id).map((s) => s.id);
+    const ids = () => sessionRepo.setsInSession(session.id).map((s) => s.id);
     const [first, second, third] = ids();
 
     // ลบเซ็ตกลาง (ไม่ใช่เซ็ตสุดท้าย)
     fireEvent.press(await screen.findByTestId('set-menu-push_up-1'));
     fireEvent.press(await screen.findByTestId('set-remove'));
     await flush();
-    expect(sessionRepo.sets(session.id).map((s) => [s.id, s.setIndex])).toEqual([
+    expect(sessionRepo.setsInSession(session.id).map((s) => [s.id, s.setIndex])).toEqual([
       [first, 0],
       [third, 1],
     ]);
@@ -157,14 +161,14 @@ describe('workout session (SPEC G1, G2)', () => {
     fireEvent.press(await screen.findByTestId('ex-remove'));
     await flush();
     expect(alert).toHaveBeenCalledTimes(1);
-    expect(sessionRepo.exercises(session.id)).toHaveLength(1);
+    expect(sessionRepo.exercisesInSession(session.id)).toHaveLength(1);
     alert.mockImplementation((_t, _m, buttons) => {
       buttons?.find((b) => b.style === 'destructive')?.onPress?.();
     });
     fireEvent.press(screen.getByTestId('ex-menu-push_up'));
     fireEvent.press(await screen.findByTestId('ex-remove'));
     await flush();
-    expect(sessionRepo.exercises(session.id)).toHaveLength(0);
+    expect(sessionRepo.exercisesInSession(session.id)).toHaveLength(0);
     alert.mockRestore();
   });
 
@@ -178,7 +182,7 @@ describe('workout session (SPEC G1, G2)', () => {
     fireEvent.press(await screen.findByTestId('ex-remove'));
     await flush();
     expect(alert).not.toHaveBeenCalled();
-    expect(sessionRepo.exercises(session.id)).toHaveLength(0);
+    expect(sessionRepo.exercisesInSession(session.id)).toHaveLength(0);
     alert.mockRestore();
   });
 
@@ -197,7 +201,7 @@ describe('workout session (SPEC G1, G2)', () => {
     );
 
     const benchSets = () =>
-      sessionRepo.sets(session.id).filter((s) => s.exerciseId === 'barbell_bench_press');
+      sessionRepo.setsInSession(session.id).filter((s) => s.exerciseId === 'barbell_bench_press');
     const before = benchSets().length;
     fireEvent.press(screen.getByTestId('ex-menu-barbell_bench_press'));
     fireEvent.press(await screen.findByTestId('ex-settings'));
@@ -223,7 +227,7 @@ describe('workout session (SPEC G1, G2)', () => {
     await screen.findByText('Back Squat');
     const squat = () =>
       sessionRepo
-        .sets(session.id)
+        .setsInSession(session.id)
         .filter((s) => s.exerciseId === 'back_squat')
         .sort((a, b) => a.setIndex - b.setIndex);
     // ผู้ใช้พิมพ์น้ำหนักเซ็ตที่ 3 เอง

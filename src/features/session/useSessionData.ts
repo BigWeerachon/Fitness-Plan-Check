@@ -24,8 +24,8 @@ export function loadSession(id: string): SessionData | null {
   const session = sessionRepo.get(id);
   if (!session) return null;
   const profile = profileRepo.get();
-  const allSets = sessionRepo.sets(id);
-  const exercises = sessionRepo.exercises(id).map((exercise) => ({
+  const allSets = sessionRepo.setsInSession(id);
+  const exercises = sessionRepo.exercisesInSession(id).map((exercise) => ({
     exercise,
     sets: allSets.filter((s) => s.sessionExerciseId === exercise.id).sort((a, b) => a.setIndex - b.setIndex),
     config: exercise.routineExerciseId ? routineExerciseRepo.get(exercise.routineExerciseId) : undefined,

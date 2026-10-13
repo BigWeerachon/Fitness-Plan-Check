@@ -4,6 +4,7 @@ import { createRow, softDeleteRow, updateRow } from '../mutations';
 import { dayOverride, weekPlan, type DayOverride, type OverrideKind, type WeekPlanEntry } from '../schema';
 import { profileRepo } from './profileRepo';
 import { live } from './query';
+import { isInRange, type DateRange } from '../../domain/periods';
 import { copyDay as copyDayPlan, toggleDay as toggleDayPlan } from '../../domain/schedule';
 
 function normalizeDays(days: number[]): number[] {
@@ -12,7 +13,7 @@ function normalizeDays(days: number[]): number[] {
 
 /** ตารางประจำสัปดาห์ต่อโปรแกรม (SPEC E, D15) */
 export const weekPlanRepo = {
-  listForProgram(programId: string): WeekPlanEntry[] {
+  listByProgram(programId: string): WeekPlanEntry[] {
     return getDb()
       .select()
       .from(weekPlan)
@@ -29,9 +30,10 @@ export const weekPlanRepo = {
   },
   /** แถวของ routine ในตารางของโปรแกรม (สร้างถ้ายังไม่มี) */
   ensureEntry(programId: string, routineId: string, days: number[] = []): WeekPlanEntry {
-    const existing = weekPlanRepo.listForProgram(programId).find((e) => e.routineId === routineId);
+    const entries = weekPlanRepo.listByProgram(programId);
+    const existing = entries.find((e) => e.routineId === routineId);
     if (existing) return existing;
-    const sortOrder = weekPlanRepo.listForProgram(programId).length;
+    const sortOrder = entries.length;
     return createRow('week_plan', {
       programId,
       routineId,
@@ -58,7 +60,7 @@ export const weekPlanRepo = {
   copyDay(programId: string, fromDay: number, toDay: number): void {
     if (fromDay === toDay) return;
     transaction(() => {
-      const entries = weekPlanRepo.listForProgram(programId);
+      const entries = weekPlanRepo.listByProgram(programId);
       const next = copyDayPlan(entries, fromDay, toDay);
       // บันทึกเฉพาะแถวที่เปลี่ยน (copyDay คืน object เดิมสำหรับแถวที่ไม่เปลี่ยน)
       next.forEach((e, i) => {
@@ -92,7 +94,7 @@ export const dayOverrideRepo = {
   getForDate(date: string): DayOverride | undefined {
     return dayOverrideRepo.listForDate(date)[0];
   },
-  listBetween(start: string, end: string): DayOverride[] {
+  listBetween(range: DateRange): DayOverride[] {
     return (
       getDb()
         .select()
@@ -101,21 +103,22 @@ export const dayOverrideRepo = {
         // เรียงเก่า → ใหม่: resolveDayPlan ใช้แถวหลังสุดเมื่อเวลาแก้ไขเท่ากัน ให้ตรงกับ listForDate
         .orderBy(asc(dayOverride.updatedAt), asc(dayOverride.createdAt))
         .all()
-        .filter((o) => o.date >= start && o.date <= end)
+        .filter((o) => isInRange(o.date, range))
     );
   },
   set(date: string, kind: OverrideKind, routineId: string | null = null): DayOverride {
     return transaction(() => {
       const [existing, ...extra] = dayOverrideRepo.listForDate(date);
+      const overrideRoutineId = kind === 'routine' ? routineId : null;
       // รวมให้เหลือแถวเดียว
       for (const o of extra) softDeleteRow('day_override', o.id);
       if (existing) {
         return updateRow('day_override', existing.id, {
           kind,
-          routineId: kind === 'routine' ? routineId : null,
+          routineId: overrideRoutineId,
         })!;
       }
-      return createRow('day_override', { date, kind, routineId: kind === 'routine' ? routineId : null });
+      return createRow('day_override', { date, kind, routineId: overrideRoutineId });
     });
   },
   /** กลับไปใช้ตารางหลัก: ลบทุกแถวของวันนั้น */

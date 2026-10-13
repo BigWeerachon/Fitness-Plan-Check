@@ -30,7 +30,7 @@ function setup(config: Parameters<typeof routineExerciseRepo.add>[2]) {
 /** ทำเซสชันของ routine: ทุกเซ็ตด้วยน้ำหนัก/ครั้งที่กำหนด แล้วจบ */
 function train(routineId: string, weightKg: number, reps: number): string {
   const { session } = startSession({ routineId });
-  for (const s of sessionRepo.sets(session.id)) {
+  for (const s of sessionRepo.setsInSession(session.id)) {
     sessionRepo.updateSet(s.id, { weightKg, reps });
     sessionRepo.setDone(s.id, true);
   }
@@ -118,11 +118,11 @@ describe('progressive overload after finishing (SPEC G2)', () => {
       progressionStartedAt: t,
     });
     const week1 = startSession({ routineId: routine.id }).session;
-    expect(sessionRepo.sets(week1.id)[0]).toMatchObject({ targetWeightKg: 100, targetReps: 8 });
+    expect(sessionRepo.setsInSession(week1.id)[0]).toMatchObject({ targetWeightKg: 100, targetReps: 8 });
     sessionRepo.remove(week1.id);
 
     t += 7 * DAY;
     const week2 = startSession({ routineId: routine.id }).session;
-    expect(sessionRepo.sets(week2.id)[0]).toMatchObject({ targetWeightKg: 110, targetReps: 5 });
+    expect(sessionRepo.setsInSession(week2.id)[0]).toMatchObject({ targetWeightKg: 110, targetReps: 5 });
   });
 });

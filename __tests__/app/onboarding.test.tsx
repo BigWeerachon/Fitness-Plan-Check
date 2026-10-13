@@ -146,7 +146,7 @@ describe('draft migration into the account (B4 last step)', () => {
     expect(p.templateKey).toBe('ppl3');
     expect(routineRepo.listByProgram(p.id).map((r) => r.type)).toEqual(['push', 'pull', 'legs']);
     expect(weekPlanRepo.activeProgramId()).toBe(p.id);
-    expect(weekPlanRepo.listForProgram(p.id).map((e) => e.days)).toEqual([[1], [3], [5]]);
+    expect(weekPlanRepo.listByProgram(p.id).map((e) => e.days)).toEqual([[1], [3], [5]]);
     expect(migrateDraftToAccount('u1')).toBe('nothing');
     expect(programRepo.list()).toHaveLength(1);
   });

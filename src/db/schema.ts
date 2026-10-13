@@ -139,6 +139,9 @@ export const routine = sqliteTable(
   (t) => [index('routine_program_idx').on(t.programId), index('routine_owner_idx').on(t.ownerId)],
 );
 
+/** จำนวนเซ็ตตั้งต้นของท่า (ใช้เป็นค่า default ของคอลัมน์ sets และตอนเพิ่มท่าระหว่างเซสชัน) */
+export const DEFAULT_SET_COUNT = 3;
+
 export const routineExercise = sqliteTable(
   'routine_exercise',
   {
@@ -146,7 +149,7 @@ export const routineExercise = sqliteTable(
     routineId: text('routine_id').notNull(),
     exerciseId: text('exercise_id').notNull(),
     sortOrder: integer('sort_order').notNull().default(0),
-    sets: integer('sets').notNull().default(3),
+    sets: integer('sets').notNull().default(DEFAULT_SET_COUNT),
     repMin: integer('rep_min').notNull().default(8),
     repMax: integer('rep_max').notNull().default(12),
     progressionMode: text('progression_mode').$type<ProgressionMode>().notNull().default('double'),

@@ -59,3 +59,8 @@ export function resizeSets(
   }
   return { add: 0, removeIds };
 }
+
+/** เซ็ตครั้งก่อนที่ตรงลำดับเดียวกัน; ถ้าครั้งก่อนมีเซ็ตน้อยกว่าใช้เซ็ตสุดท้าย; ไม่มีประวัติ → undefined */
+export function previousSetFor<T>(previousSets: readonly T[], index: number): T | undefined {
+  return previousSets[index] ?? previousSets[previousSets.length - 1];
+}

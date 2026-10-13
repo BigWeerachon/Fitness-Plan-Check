@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { resizeSets, retargetSet } from '@/domain/sessionEdit';
+import { previousSetFor, resizeSets, retargetSet } from '@/domain/sessionEdit';
 
 const pending = (over: Partial<Parameters<typeof retargetSet>[0]> = {}) => ({
   done: false,
@@ -93,5 +93,25 @@ describe('resizeSets (change the number of sets mid-workout)', () => {
   it('keeps at least one set', () => {
     expect(resizeSets(sets(false, false), 0)).toEqual({ add: 0, removeIds: ['s1'] });
     expect(resizeSets([], 0)).toEqual({ add: 1, removeIds: [] });
+  });
+});
+
+describe('previousSetFor', () => {
+  const previous = [
+    { weightKg: 60, reps: 10 },
+    { weightKg: 62.5, reps: 8 },
+  ];
+
+  it('returns the previous set at the same index', () => {
+    expect(previousSetFor(previous, 0)).toBe(previous[0]);
+    expect(previousSetFor(previous, 1)).toBe(previous[1]);
+  });
+
+  it('falls back to the last previous set when there are more sets now than before', () => {
+    expect(previousSetFor(previous, 2)).toBe(previous[1]);
+  });
+
+  it('returns undefined without history', () => {
+    expect(previousSetFor([], 0)).toBeUndefined();
   });
 });

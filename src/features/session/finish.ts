@@ -11,9 +11,9 @@ import { now } from '../../utils/clock';
 /** คำนวณ "เป้าหมายครั้งหน้า" จากผลของเซสชันนี้ เทียบกับค่าตั้งของท่า ณ ตอนจบเซสชัน */
 function computeProgression(sessionId: string): SessionProgression[] {
   const unit = profileRepo.get()?.weightUnit ?? 'kg';
-  const sets = sessionRepo.sets(sessionId);
+  const sets = sessionRepo.setsInSession(sessionId);
   const out: SessionProgression[] = [];
-  for (const ex of sessionRepo.exercises(sessionId)) {
+  for (const ex of sessionRepo.exercisesInSession(sessionId)) {
     if (!ex.routineExerciseId) continue;
     const config = routineExerciseRepo.get(ex.routineExerciseId);
     if (!config) continue;

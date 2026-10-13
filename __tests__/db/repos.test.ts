@@ -69,7 +69,7 @@ describe('repositories (T06)', () => {
     expect(programRepo.list()).toHaveLength(0);
     expect(routineRepo.get(r.id)).toBeUndefined();
     expect(routineExerciseRepo.get(re.id)).toBeUndefined();
-    expect(weekPlanRepo.listForProgram(p.id)).toHaveLength(0);
+    expect(weekPlanRepo.listByProgram(p.id)).toHaveLength(0);
     // snapshot ในประวัติยังอยู่ (F6)
     expect(sessionRepo.listCompleted()[0]).toMatchObject({
       programName: 'PPL',
@@ -179,9 +179,9 @@ describe('repositories (T06)', () => {
       status: 'active',
     });
     expect(sessionRepo.getActive()?.id).toBe(s1.id);
-    const [ex] = sessionRepo.exercises(s1.id);
+    const [ex] = sessionRepo.exercisesInSession(s1.id);
     expect(ex).toMatchObject({ exerciseName: 'name:barbell_bench_press', muscleGroup: 'chest' });
-    const sets = sessionRepo.setsOf(ex.id);
+    const sets = sessionRepo.setsOfExercise(ex.id);
     expect(sets.map((s) => [s.targetWeightKg, s.targetReps])).toEqual([
       [60, 8],
       [60, 8],
@@ -200,8 +200,8 @@ describe('repositories (T06)', () => {
     expect(sessionRepo.get(s1.id)?.routineName).toBe('Push A');
 
     const s2 = sessionRepo.start({ routineId: r.id, date: '2026-10-09', resolve });
-    const [ex2] = sessionRepo.exercises(s2.id);
-    const sets2 = sessionRepo.setsOf(ex2.id);
+    const [ex2] = sessionRepo.exercisesInSession(s2.id);
+    const sets2 = sessionRepo.setsOfExercise(ex2.id);
     expect(sets2.map((s) => [s.prevWeightKg, s.prevReps])).toEqual([
       [60, 10],
       [60, 8],
@@ -216,13 +216,15 @@ describe('repositories (T06)', () => {
     const a = sessionRepo.addExercise(s.id, 'push_up', resolve, { sets: 3 });
     const b = sessionRepo.addExercise(s.id, 'back_squat', resolve, { sets: 2 });
     sessionRepo.reorderExercises(s.id, [b.id, a.id]);
-    expect(sessionRepo.exercises(s.id).map((e) => e.exerciseId)).toEqual(['back_squat', 'push_up']);
+    expect(sessionRepo.exercisesInSession(s.id).map((e) => e.exerciseId)).toEqual(['back_squat', 'push_up']);
     sessionRepo.swapExercise(a.id, 'front_squat', resolve);
     expect(
-      sessionRepo.setsOf(a.id).every((x) => x.exerciseId === 'front_squat' && x.muscleGroup === 'quads'),
+      sessionRepo
+        .setsOfExercise(a.id)
+        .every((x) => x.exerciseId === 'front_squat' && x.muscleGroup === 'quads'),
     ).toBe(true);
     sessionRepo.removeExercise(b.id);
-    expect(sessionRepo.exercises(s.id)).toHaveLength(1);
+    expect(sessionRepo.exercisesInSession(s.id)).toHaveLength(1);
     sessionRepo.remove(s.id);
     expect(sessionRepo.get(s.id)).toBeUndefined();
   });
@@ -235,24 +237,36 @@ describe('repositories (T06)', () => {
       targetReps: 5,
     });
     const after = sessionRepo.addExercise(s.id, 'triceps_pushdown', resolve, { sets: 2 });
-    const [first] = sessionRepo.setsOf(bench.id);
+    const [first] = sessionRepo.setsOfExercise(bench.id);
     sessionRepo.setDone(first.id, true);
 
     const newId = sessionRepo.swapExercise(bench.id, 'dumbbell_bench_press', resolve)!;
     expect(newId).not.toBe(bench.id);
     // เซ็ตที่ทำแล้วยังเป็นบาร์เบลเบนช์ 80 kg
-    expect(sessionRepo.setsOf(bench.id)).toEqual([
+    expect(sessionRepo.setsOfExercise(bench.id)).toEqual([
       expect.objectContaining({ id: first.id, exerciseId: 'barbell_bench_press', weightKg: 80, done: true }),
     ]);
     // เซ็ตที่เหลือย้ายเป็นท่าใหม่ ไม่พกน้ำหนักของท่าเดิมมา (ไม่มีประวัติ)
-    const moved = sessionRepo.setsOf(newId);
+    const moved = sessionRepo.setsOfExercise(newId);
     expect(moved).toHaveLength(2);
     expect(
       moved.every((x) => x.exerciseId === 'dumbbell_bench_press' && !x.done && x.weightKg === null),
     ).toBe(true);
     expect(moved.map((x) => x.setIndex)).toEqual([0, 1]);
     // ท่าใหม่อยู่ต่อจากท่าเดิม
-    expect(sessionRepo.exercises(s.id).map((e) => e.id)).toEqual([bench.id, newId, after.id]);
+    expect(sessionRepo.exercisesInSession(s.id).map((e) => e.id)).toEqual([bench.id, newId, after.id]);
+  });
+
+  it('swapping an exercise whose sets are all done changes nothing and returns the same id', () => {
+    const s = sessionRepo.start({ date: '2026-10-09', resolve });
+    const bench = sessionRepo.addExercise(s.id, 'barbell_bench_press', resolve, { sets: 2 });
+    for (const set of sessionRepo.setsOfExercise(bench.id)) sessionRepo.setDone(set.id, true);
+
+    expect(sessionRepo.swapExercise(bench.id, 'dumbbell_bench_press', resolve)).toBe(bench.id);
+    expect(sessionRepo.exercisesInSession(s.id)).toHaveLength(1);
+    expect(sessionRepo.setsOfExercise(bench.id).every((x) => x.exerciseId === 'barbell_bench_press')).toBe(
+      true,
+    );
   });
 
   it('removes any set and renumbers the rest; retargets without overwriting typed values; resizes sets', () => {
@@ -262,10 +276,10 @@ describe('repositories (T06)', () => {
       targetWeightKg: 60,
       targetReps: 8,
     });
-    const [a, b, c, d] = sessionRepo.setsOf(bench.id);
+    const [a, b, c, d] = sessionRepo.setsOfExercise(bench.id);
     // ลบเซ็ตกลางท่า → เลขเซ็ตที่เหลือต่อเนื่อง
     sessionRepo.removeSet(b.id);
-    expect(sessionRepo.setsOf(bench.id).map((x) => [x.id, x.setIndex])).toEqual([
+    expect(sessionRepo.setsOfExercise(bench.id).map((x) => [x.id, x.setIndex])).toEqual([
       [a.id, 0],
       [c.id, 1],
       [d.id, 2],
@@ -275,16 +289,16 @@ describe('repositories (T06)', () => {
     sessionRepo.setDone(a.id, true);
     sessionRepo.updateSet(c.id, { weightKg: 62.5 });
     sessionRepo.retargetPending(bench.id, { targetWeightKg: 65, targetReps: 6 });
-    const byId = new Map(sessionRepo.setsOf(bench.id).map((x) => [x.id, x]));
+    const byId = new Map(sessionRepo.setsOfExercise(bench.id).map((x) => [x.id, x]));
     expect(byId.get(a.id)).toMatchObject({ targetWeightKg: 60, weightKg: 60, reps: 8, done: true });
     expect(byId.get(c.id)).toMatchObject({ targetWeightKg: 65, targetReps: 6, weightKg: 62.5, reps: 6 });
     expect(byId.get(d.id)).toMatchObject({ targetWeightKg: 65, targetReps: 6, weightKg: 65, reps: 6 });
 
     // เปลี่ยนจำนวนเซ็ต: เพิ่มต่อท้าย / ลดโดยไม่ลบเซ็ตที่ทำแล้ว
     sessionRepo.resizeSets(bench.id, 5);
-    expect(sessionRepo.setsOf(bench.id).map((x) => x.setIndex)).toEqual([0, 1, 2, 3, 4]);
+    expect(sessionRepo.setsOfExercise(bench.id).map((x) => x.setIndex)).toEqual([0, 1, 2, 3, 4]);
     sessionRepo.resizeSets(bench.id, 1);
-    expect(sessionRepo.setsOf(bench.id).map((x) => x.id)).toEqual([a.id]);
+    expect(sessionRepo.setsOfExercise(bench.id).map((x) => x.id)).toEqual([a.id]);
   });
 
   it('daily log upserts one row per date', () => {
@@ -292,7 +306,7 @@ describe('repositories (T06)', () => {
     dailyLogRepo.upsert('2026-10-09', { bodyWeightKg: 70.5 });
     dailyLogRepo.upsert('2026-10-10', { kcalExpenditureOverride: 2600 });
     expect(dailyLogRepo.get('2026-10-09')).toMatchObject({ kcalIntake: 2000, bodyWeightKg: 70.5 });
-    expect(dailyLogRepo.listBetween('2026-10-01', '2026-10-09')).toHaveLength(1);
+    expect(dailyLogRepo.listBetween({ start: '2026-10-01', end: '2026-10-09' })).toHaveLength(1);
   });
 
   it('custom exercises and owner scoping', () => {

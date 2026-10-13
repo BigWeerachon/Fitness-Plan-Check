@@ -37,7 +37,7 @@ describe('Today (SPEC D)', () => {
     expect(await screen.findByText('Today: Pull')).toBeTruthy();
     expect(screen.getByText('Changed for today only — your weekly plan is unchanged.')).toBeTruthy();
     // ตารางหลักไม่เปลี่ยน
-    expect(weekPlanRepo.listForProgram(program.id).find((e) => e.routineId === pull.id)?.days).toEqual([3]);
+    expect(weekPlanRepo.listByProgram(program.id).find((e) => e.routineId === pull.id)?.days).toEqual([3]);
     fireEvent.press(screen.getByTestId('today-rest'));
     expect(await screen.findByText('Rest day today')).toBeTruthy();
     fireEvent.press(screen.getByTestId('today-back-to-plan'));
@@ -71,7 +71,7 @@ describe('Today (SPEC D)', () => {
     const program = instantiateTemplate('ppl3', 'en')!;
     const legs = routineRepo.listByProgram(program.id).find((r) => r.type === 'legs')!;
     const { session } = startSession({ routineId: legs.id });
-    const [first] = sessionRepo.sets(session.id);
+    const [first] = sessionRepo.setsInSession(session.id);
     sessionRepo.updateSet(first.id, { weightKg: 60, reps: 8 });
     sessionRepo.setDone(first.id, true);
     expect(loadToday().doneMuscles).toEqual([first.muscleGroup]);
@@ -167,7 +167,7 @@ describe('Programs, routines and the weekly plan (SPEC E, F)', () => {
     const { within } = require('expo-router/testing-library');
     fireEvent.press(within(row).getByTestId('weekday-4'));
     await flush();
-    const entry = () => weekPlanRepo.listForProgram(program.id).find((e) => e.routineId === push.id)!;
+    const entry = () => weekPlanRepo.listByProgram(program.id).find((e) => e.routineId === push.id)!;
     expect(entry().days).toEqual([1, 4]);
     fireEvent(screen.getByTestId(`week-toggle-${push.id}`), 'valueChange', false);
     await flush();
@@ -188,7 +188,7 @@ describe('Programs, routines and the weekly plan (SPEC E, F)', () => {
     fireEvent.press(screen.getByTestId('copy-confirm'));
     await flush();
     // อังคารได้ Push เหมือนวันจันทร์ และ routine อื่นไม่มีวันอังคาร
-    const entries = weekPlanRepo.listForProgram(ppl.id);
+    const entries = weekPlanRepo.listByProgram(ppl.id);
     expect(entries.find((e) => e.routineId === push.id)?.days).toEqual([1, 2]);
     expect(entries.filter((e) => e.days.includes(2)).map((e) => e.routineId)).toEqual([push.id]);
 
@@ -217,7 +217,7 @@ describe('Programs, routines and the weekly plan (SPEC E, F)', () => {
       programName: 'Push / Pull / Legs (3 days)',
       routineType: 'pull',
     });
-    expect(sessionRepo.exercises(active.id).length).toBeGreaterThan(0);
+    expect(sessionRepo.exercisesInSession(active.id).length).toBeGreaterThan(0);
   });
 
   it('back-fill offers an empty session too', async () => {

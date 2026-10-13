@@ -30,7 +30,7 @@ export function loadPrograms(): { cards: ProgramCard[]; activeId: string | null;
     ? [
         ...new Set(
           weekPlanRepo
-            .listForProgram(activeId)
+            .listByProgram(activeId)
             .filter((e) => e.enabled)
             .flatMap((e) => e.days),
         ),
