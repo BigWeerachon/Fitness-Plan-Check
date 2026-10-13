@@ -5,6 +5,8 @@ import type { DateRange, Period } from '../../domain/periods';
 import type { Metric, ProgramGroup, SessionSummary } from '../../domain/stats';
 import { displayWeight } from '../../domain/units';
 import { formatDateShort, formatMonthYear, formatNumber, formatYear } from '../../i18n/format';
+import type { ShareItem } from './charts';
+import type { BreakdownView } from './statsView';
 
 /** ข้อความช่วงเวลาที่กำลังดู เช่น "6–12 ต.ค." / "ตุลาคม 2569" */
 export function periodLabel(period: Period, range: DateRange, today: LocalDate): string {
@@ -72,4 +74,49 @@ export function groupLabels(
     labels.set(key, n > 1 ? `${label} (${n})` : label);
   }
   return labels;
+}
+
+/**
+ * รายการสัดส่วนสำหรับกราฟโดนัท/แท่ง จากผลแยกสัดส่วนของมุมมองนั้น พร้อมผลรวม
+ * คืน null เมื่อมุมมองยังต้องเลือกกรุ๊ปก่อน (needsGroup)
+ */
+export function buildShareItems(
+  breakdown: BreakdownView,
+  ctx: {
+    t: TFunction;
+    metric: Metric;
+    unit: WeightUnit;
+    chartColors: readonly string[];
+    /** ป้ายของกรุ๊ปตาม key (ชื่อซ้ำถูกแยกแล้ว) */
+    groupLabel: (key: string, programName: string | null) => string;
+  },
+): { items: ShareItem[]; total: number } | null {
+  const toItems = <E extends { key: string; value: number; percent: number }>(
+    entries: readonly E[],
+    labelOf: (entry: E) => string,
+  ): ShareItem[] =>
+    entries.map((e, i) => ({
+      key: e.key,
+      label: labelOf(e),
+      value: e.value,
+      percent: e.percent,
+      valueLabel: metricValueLabel(ctx.t, ctx.metric, e.value, ctx.unit),
+      color: ctx.chartColors[i % ctx.chartColors.length],
+    }));
+  switch (breakdown.view) {
+    case 'needsGroup':
+      return null;
+    case 'program': {
+      const { entries, total } = breakdown.breakdown;
+      return { items: toItems(entries, (e) => ctx.groupLabel(e.key, e.programName)), total };
+    }
+    case 'routineType': {
+      const { entries, total } = breakdown.breakdown;
+      return { items: toItems(entries, (e) => ctx.t(`programs.types.${e.key}`)), total };
+    }
+    case 'muscle': {
+      const { entries, total } = breakdown.breakdown;
+      return { items: toItems(entries, (e) => ctx.t(`exercises.muscles.${e.key}`)), total };
+    }
+  }
 }

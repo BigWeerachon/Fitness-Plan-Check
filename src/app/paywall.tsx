@@ -1,11 +1,10 @@
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Platform, StyleSheet, View } from 'react-native';
 import {
   ActionBar,
   AppText,
-  Badge,
   Button,
   Card,
   CardGroup,
@@ -15,14 +14,16 @@ import {
   IconButton,
   ListRow,
   LoadingState,
-  RadioIndicator,
   Screen,
   StackHeader,
 } from '../components';
-import { purchasePlan, refreshEntitlement, restorePurchases } from '../features/access/accountFlow';
+import { purchasePlan, refreshEntitlement } from '../features/access/accountFlow';
 import { usePaywallData } from '../features/access/usePaywallData';
 import { getAccess, useAccess } from '../features/access/useAccess';
 import { useManageSubscriptions } from '../features/access/useManageSubscriptions';
+import { useRestorePurchases } from '../features/access/useRestorePurchases';
+import { openLegal } from '../features/legal/openLegal';
+import { PlanOption } from '../features/access/PlanOption';
 import {
   billedTerms,
   buildPaywallModel,
@@ -31,13 +32,25 @@ import {
   type PlanKind,
   type StorePlan,
 } from '../domain/entitlement/paywall';
+import type { PurchaseResult } from '../services/purchases/types';
 import { getServices } from '../services/registry';
 import { useAuth } from '../stores/auth';
 import { useEntitlement } from '../stores/entitlement';
-import { radius, spacing } from '../theme/tokens';
+import { spacing } from '../theme/tokens';
 import { usePalette } from '../theme/useTheme';
 
 const PLAN_KINDS: PlanKind[] = ['monthly', 'lifetime'];
+
+/** รหัสข้อผิดพลาดของสโตร์ที่มีข้อความเฉพาะ — รหัสอื่น (store/unknown) ใช้ errors.purchaseFailed */
+const PURCHASE_ERROR_KEY: Partial<
+  Record<
+    Extract<PurchaseResult, { status: 'error' }>['code'],
+    'errors.purchaseOffline' | 'errors.purchaseNotAllowed'
+  >
+> = {
+  network: 'errors.purchaseOffline',
+  not_allowed: 'errors.purchaseNotAllowed',
+};
 
 /**
  * Paywall (SPEC B4–B6, J2, J4, J5) — ไม่มี dark pattern: ราคาจากสโตร์, เงื่อนไขต่ออายุ/ยกเลิกครบ,
@@ -55,7 +68,8 @@ export default function PaywallScreen() {
   const billingIssue = useEntitlement((s) => s.cached?.billingIssueAt != null);
   const { plans, loading, error, reload } = usePaywallData();
   const openManage = useManageSubscriptions();
-  const [selected, setSelected] = useState<PlanKind | null>(params.plan ?? null);
+  const restore = useRestorePurchases();
+  const [requestedKind, setRequestedKind] = useState<PlanKind | null>(params.plan ?? null);
   const [busy, setBusy] = useState(false);
   const store = Platform.OS === 'ios' ? t('paywall.store.ios') : t('paywall.store.android');
 
@@ -71,32 +85,35 @@ export default function PaywallScreen() {
       }),
     [access.state, plans, eligibility, billingIssue, params.upgrade],
   );
-  const planOf = (kind: PlanKind): StorePlan | null => (kind === 'monthly' ? model.monthly : model.lifetime);
+  const storePlanForKind = (kind: PlanKind): StorePlan | null =>
+    kind === 'monthly' ? model.monthly : model.lifetime;
   // แพ็กเกจที่ส่งมากับลิงก์อาจไม่มีในโหมดนี้ (เช่น อัปเกรดมีแค่ซื้อขาด) → ใช้ค่าตั้งต้นของโมเดล
-  const plan: PlanKind | null = selected && planOf(selected) ? selected : model.defaultPlan;
-  const chosen: StorePlan | null = plan ? planOf(plan) : null;
-  const billed = billedTerms(model, plan);
+  const selectedKind: PlanKind | null =
+    requestedKind && storePlanForKind(requestedKind) ? requestedKind : model.defaultPlan;
+  const selectedPlan: StorePlan | null = selectedKind ? storePlanForKind(selectedKind) : null;
+  const billed = billedTerms(model, selectedKind);
 
   if (access.allowed && !access.pending && !model.upgrade) return <Redirect href="/" />;
 
   const ctaTitle = (): string => {
-    if (!chosen) return t('paywall.unavailable');
-    if (chosen.kind === 'lifetime') return t('paywall.cta.lifetime', { price: chosen.priceString });
+    if (!selectedPlan) return t('paywall.unavailable');
+    if (selectedPlan.kind === 'lifetime')
+      return t('paywall.cta.lifetime', { price: selectedPlan.priceString });
     return model.offerTrial
-      ? t('paywall.cta.trial', { price: chosen.priceString })
-      : t('paywall.cta.monthly', { price: chosen.priceString });
+      ? t('paywall.cta.trial', { price: selectedPlan.priceString })
+      : t('paywall.cta.monthly', { price: selectedPlan.priceString });
   };
 
   const onBuy = async () => {
-    if (!chosen) return;
+    if (!selectedPlan) return;
     const upgrade = model.upgrade;
-    const step = nextStepOnSelect(chosen.kind, {
+    const step = nextStepOnSelect(selectedPlan.kind, {
       authUserId: user?.id ?? null,
       purchasesUserId: getServices().purchases.currentAppUserId(),
     });
     // ยังไม่ล็อกอิน → ไปล็อกอินก่อน แล้วกลับมาที่นี่พร้อมแพ็กเกจที่เลือก (SPEC B4)
     if (step.step === 'needLogin') {
-      router.push({ pathname: '/login', params: { plan: chosen.kind } });
+      router.push({ pathname: '/login', params: { plan: selectedPlan.kind } });
       return;
     }
     setBusy(true);
@@ -104,24 +121,17 @@ export default function PaywallScreen() {
       if (step.step === 'linkingAccount') {
         await refreshEntitlement();
         // ผูกบัญชีแล้วพบว่ามีสิทธิ์อยู่แล้ว → ไม่เปิดหน้าซื้อซ้ำ (SPEC B11, J3)
-        if (!purchaseStillNeeded(getAccess(), chosen.kind, upgrade)) {
+        if (!purchaseStillNeeded(getAccess(), selectedPlan.kind, upgrade)) {
           router.replace('/');
           return;
         }
       }
-      const result = await purchasePlan(chosen);
+      const result = await purchasePlan(selectedPlan);
       if (result.status === 'success') {
         Alert.alert(t('paywall.success'));
         router.replace('/');
       } else if (result.status === 'error') {
-        Alert.alert(
-          t('common.errorTitle'),
-          result.code === 'network'
-            ? t('errors.purchaseOffline')
-            : result.code === 'not_allowed'
-              ? t('errors.purchaseNotAllowed')
-              : t('errors.purchaseFailed'),
-        );
+        Alert.alert(t('common.errorTitle'), t(PURCHASE_ERROR_KEY[result.code] ?? 'errors.purchaseFailed'));
       }
     } catch {
       Alert.alert(t('common.errorTitle'), t('errors.purchaseFailed'));
@@ -132,12 +142,8 @@ export default function PaywallScreen() {
 
   const onRestore = async () => {
     setBusy(true);
-    const outcome = await restorePurchases();
+    await restore();
     setBusy(false);
-    if (outcome === 'needLogin') router.push({ pathname: '/login', params: { then: 'restore' } });
-    else if (outcome === 'restored') Alert.alert(t('paywall.restored'));
-    else if (outcome === 'none') Alert.alert(t('paywall.nothingToRestore'));
-    else Alert.alert(t('common.errorTitle'), t('errors.restoreFailed'));
   };
 
   const features: { icon: React.ComponentProps<typeof Icon>['name']; text: string }[] = [
@@ -203,49 +209,18 @@ export default function PaywallScreen() {
       ) : (
         <View style={styles.plans} accessibilityRole="radiogroup">
           {PLAN_KINDS.map((kind) => {
-            const sp = planOf(kind);
-            if (!sp) return null;
-            const on = plan === kind;
-            const title = kind === 'monthly' ? t('paywall.plans.monthly') : t('paywall.plans.lifetime');
-            const price =
-              kind === 'monthly'
-                ? t('paywall.plans.perMonth', { price: sp.priceString })
-                : t('paywall.plans.oneTime', { price: sp.priceString });
-            const note =
-              kind === 'monthly' ? t('paywall.plans.monthlyNote') : t('paywall.plans.lifetimeNote');
-            const trial =
-              kind === 'monthly' && model.offerTrial
-                ? t('paywall.plans.trialBadge', { count: model.trialDays })
-                : null;
+            const storePlan = storePlanForKind(kind);
+            if (!storePlan) return null;
             return (
-              <Pressable
+              <PlanOption
                 key={kind}
-                onPress={() => setSelected(kind)}
-                accessibilityRole="radio"
-                accessibilityState={{ selected: on }}
-                accessibilityLabel={[title, price, trial, note].filter(Boolean).join(', ')}
-                testID={`plan-${kind}`}
-                style={[
-                  styles.plan,
-                  { backgroundColor: on ? p.accentSoft : p.card, borderColor: on ? p.accent : p.separator },
-                ]}
-              >
-                <View style={styles.planHeader}>
-                  <AppText variant="headline">{title}</AppText>
-                  <RadioIndicator selected={on} />
-                </View>
-                {/* ราคาเต็มจากสโตร์ห้ามถูกตัดทอน (B5) — ราคาและรอบการชำระแยกบรรทัด ตัดคำได้ */}
-                <AppText variant="title" color={on ? p.accent : p.text}>
-                  {sp.priceString}
-                </AppText>
-                <AppText variant="callout" color={on ? p.accent : p.text}>
-                  {kind === 'monthly' ? t('paywall.plans.perMonthLabel') : t('paywall.plans.oneTimeLabel')}
-                </AppText>
-                {trial ? <Badge label={trial} /> : null}
-                <AppText variant="caption" secondary>
-                  {note}
-                </AppText>
-              </Pressable>
+                kind={kind}
+                storePlan={storePlan}
+                selected={selectedKind === kind}
+                offerTrial={model.offerTrial}
+                trialDays={model.trialDays}
+                onSelect={() => setRequestedKind(kind)}
+              />
             );
           })}
         </View>
@@ -281,7 +256,7 @@ export default function PaywallScreen() {
           title={ctaTitle()}
           kind={fixPayment ? 'secondary' : 'primary'}
           onPress={onBuy}
-          disabled={!chosen || loading}
+          disabled={!selectedPlan || loading}
           loading={busy}
           testID="paywall-cta"
         />
@@ -316,16 +291,8 @@ export default function PaywallScreen() {
       </View>
 
       <View style={styles.links}>
-        <Button
-          title={t('paywall.terms')}
-          kind="plain"
-          onPress={() => router.push({ pathname: '/legal/[doc]', params: { doc: 'terms' } })}
-        />
-        <Button
-          title={t('paywall.privacy')}
-          kind="plain"
-          onPress={() => router.push({ pathname: '/legal/[doc]', params: { doc: 'privacy' } })}
-        />
+        <Button title={t('paywall.terms')} kind="plain" onPress={() => openLegal('terms')} />
+        <Button title={t('paywall.privacy')} kind="plain" onPress={() => openLegal('privacy')} />
         <Button title={t('paywall.references')} kind="plain" onPress={() => router.push('/references')} />
       </View>
     </Screen>
@@ -336,15 +303,6 @@ const styles = StyleSheet.create({
   block: { minHeight: 160 },
   fix: { marginBottom: spacing.xl },
   plans: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.xl },
-  plan: {
-    flex: 1,
-    borderRadius: radius.card - 8,
-    borderWidth: 1.5,
-    padding: spacing.lg,
-    gap: spacing.xs,
-    minHeight: 150,
-  },
-  planHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   actions: { marginTop: spacing.xl, gap: spacing.md },
   noticeRow: { flexDirection: 'row', gap: spacing.sm },
   flex: { flex: 1 },

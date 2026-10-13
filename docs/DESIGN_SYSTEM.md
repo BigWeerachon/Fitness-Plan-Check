@@ -562,6 +562,7 @@
 - `IconButton` — ปุ่มไอคอนเส้นบางสีหลัก props `icon`, `label` (**บังคับ** จาก i18n), `onPress`, `size` (26), `color?` (ค่าเริ่มต้น `accent`), `disabled?` (ทึบ 0.35), `style`, `testID`; พื้นที่แตะ ≥ 48 × 48 + `hitSlop` 4; role `button` + state disabled — ใช้ที่ ActionBar, ปุ่มย้อนใน `StackHeader`, ✕ ใน `Sheet`, ⋮/⋯ ในเซสชัน, ย้อน/ถัดไปของช่วงเวลาในสถิติ, routine, program, exercises
 - `ActionBar` — แถวปุ่ม "+" "⋯" ชิดขวาเหนือการ์ดแรก (ข้อ 1.7) ใช้ที่ `(tabs)/index`, `(tabs)/programs`, `paywall` (เป็น header)
 - `RadioIndicator` — วงกลมเรดิโอ `radio-button-on/off` ขนาด 22 (เลือก = `accent`, ไม่เลือก = `textSecondary`) prop `selected` วางท้ายแถวที่แตะเพื่อเลือก (`ListRow right`, หัวการ์ดแผนใน `paywall`) — ตัวแถวต้องใส่ role/state เอง ใช้ที่: `ProfileFormView` (ระดับกิจกรรม), `paywall`, `onboarding/program`
+- `LabeledRow` — แถวในการ์ดที่มีป้ายหัวข้อ caption สี secondary อยู่เหนือตัวควบคุม (padding `lg`, gap `sm`) prop `label` (ไม่ใส่ = เว้นขอบอย่างเดียว) ใช้ที่: `settings` (หน่วย วันเริ่มสัปดาห์ ก้าวน้ำหนัก ตัวจับเวลาพัก) และ `AppearanceGroup`
 
 ### 3.19 คอมโพเนนต์ระดับฟีเจอร์ที่ยึดตาม DS
 
@@ -569,7 +570,7 @@
 |---|---|---|
 | `src/features/session/SetTick.tsx` | `SetTick` | วงกลม 48 ขอบ 2: ยังไม่เสร็จ = ขอบ `textSecondary`; เสร็จ = พื้น+ขอบ `accentFill` และ ✓ สี `onAccent`; role `checkbox`; haptic success (ติ๊ก) / selection (ยกเลิก); เด้ง 1 → 1.25 (120 ms) → 1 (160 ms) **เฉพาะตอนติ๊ก** (ตอนยกเลิกไม่เด้ง) และข้ามเมื่อผู้ใช้เปิดลดการเคลื่อนไหว; `hitSlop` 4 |
 | `src/features/session/RestTimerBar.tsx` | `RestTimerBar` | แถบลอยล่าง พื้น `elevated` มุม 28 ขอบ hairline: "พัก m:ss" headline สีหลัก + `ProgressBar` + ปุ่ม plain "+15 วิ" + ปุ่ม secondary "ข้าม/ตกลง"; live region `polite`; haptic warning เมื่อครบ |
-| `src/features/appearance/AppearancePickers.tsx` | `LanguagePicker`, `ThemePicker`, `AccentPicker`, `AppearancePreview` | Chip / SegmentedControl / วงสี 36 ในพื้นที่แตะ 48 (เลือก = วงแหวนสี `text`) / พรีวิวหัวข้อ + `BigRow` + `WeekdayDots` + `Toggle` |
+| `src/features/appearance/AppearancePickers.tsx` | `LanguagePicker`, `ThemePicker`, `AccentPicker`, `AppearanceGroup` (ภาษา/ธีม/สีหลักในการ์ดเดียว `showLabels` — ใช้ที่ `settings`, `account`, `onboarding/index`), `AppearancePreview` | Chip / SegmentedControl / วงสี 36 ในพื้นที่แตะ 48 (เลือก = วงแหวนสี `text`) / พรีวิวหัวข้อ + `BigRow` + `WeekdayDots` + `Toggle` |
 | `src/features/auth/SignInButtons.tsx` | `GoogleButton`, `AppleButton` | สี `BRAND` (ข้อ 2.6) |
 | `src/features/stats/charts.tsx` | `DonutChart`, `ShareBars`, `TrendChart`, `KcalBars` | กราฟบน `Card`; สีจาก `p.chart` / `accentFill`; วงในโดนัทสี `card`; สรุปเป็นข้อความสำหรับโปรแกรมอ่านหน้าจอ (ข้อ 6.4) |
 | `src/features/onboarding/OnboardingFrame.tsx` | `OnboardingFrame` | `Screen` + `ProgressBar` ขั้นที่ x/3 + `HeroTitle compact` + ปุ่ม primary "ถัดไป" |

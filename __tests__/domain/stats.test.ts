@@ -11,6 +11,7 @@ import {
   energySummary,
   epley1RM,
   groupFilterOf,
+  latestBodyWeight,
   matchesGroup,
   METRICS,
   NO_PROGRAM_KEY,
@@ -770,6 +771,24 @@ describe('daily values and body weight trend (I4)', () => {
       { date: '2026-10-07', weightKg: 80.4 },
     ]);
     expect(bodyWeightTrend([])).toEqual([]);
+  });
+
+  it('finds the latest recorded body weight (the later entry wins a same-day tie)', () => {
+    expect(latestBodyWeight([])).toBeNull();
+    expect(latestBodyWeight([{ date: '2026-10-05', bodyWeightKg: null }])).toBeNull();
+    expect(
+      latestBodyWeight([
+        { date: '2026-10-07', bodyWeightKg: 80.4 },
+        { date: '2026-10-09', bodyWeightKg: null },
+        { date: '2026-10-05', bodyWeightKg: 81 },
+      ]),
+    ).toEqual({ date: '2026-10-07', kg: 80.4 });
+    expect(
+      latestBodyWeight([
+        { date: '2026-10-07', bodyWeightKg: 80 },
+        { date: '2026-10-07', bodyWeightKg: 79 },
+      ]),
+    ).toEqual({ date: '2026-10-07', kg: 79 });
   });
 
   it('breaks equal updatedAt ties by id', () => {

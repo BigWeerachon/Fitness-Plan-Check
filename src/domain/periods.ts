@@ -1,4 +1,4 @@
-import { addDays, diffDays, isLocalDate, startOfWeek, type LocalDate } from './dates';
+import { addDays, DEFAULT_WEEK_START, diffDays, isLocalDate, startOfWeek, type LocalDate } from './dates';
 
 /**
  * ช่วงเวลาของหน้าสถิติ (SPEC I: ตัวสลับ วัน / สัปดาห์ / เดือน / ปี ตัวเดียวใช้ทั้งหน้า ดูย้อนหลังได้)
@@ -62,7 +62,7 @@ export function daysInMonth(year: number, month: number): number {
  * ช่วงของ period ที่มีวัน anchor อยู่
  * weekStart: 1 = จันทร์ (ค่าเริ่มต้นใน profile), 0 = อาทิตย์
  */
-export function periodRange(period: Period, anchor: LocalDate, weekStart = 1): DateRange {
+export function periodRange(period: Period, anchor: LocalDate, weekStart = DEFAULT_WEEK_START): DateRange {
   const { y, m } = parts(anchor);
   switch (period) {
     case 'day':
@@ -137,7 +137,11 @@ export function bucketKeyFor(period: Period, date: LocalDate): string {
 /**
  * ช่องกราฟแท่งของ period: วัน → 1 ช่อง, สัปดาห์ → 7 วัน, เดือน → ทุกวันของเดือน, ปี → 12 เดือน
  */
-export function periodBuckets(period: Period, anchor: LocalDate, weekStart = 1): PeriodBucket[] {
+export function periodBuckets(
+  period: Period,
+  anchor: LocalDate,
+  weekStart = DEFAULT_WEEK_START,
+): PeriodBucket[] {
   const range = periodRange(period, anchor, weekStart);
   if (period !== 'year') {
     return eachDay(range).map((day) => ({ key: day, start: day, end: day }));

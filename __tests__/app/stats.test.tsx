@@ -369,3 +369,44 @@ describe('stats audit fixes (SPEC I1, I2, I4, I5, H5)', () => {
     });
   });
 });
+
+describe('body weight entry (stats)', () => {
+  async function openWeightPad(unit: 'kg' | 'lb') {
+    await entitledApp();
+    profileRepo.update({ weightUnit: unit });
+    renderRouter('./src/app', { initialUrl: '/stats' });
+    fireEvent.press(await screen.findByTestId('stats-log-weight'));
+    // เริ่มจากค่าเดิมของโปรไฟล์ → ลบให้ว่างก่อนพิมพ์
+    for (let i = 0; i < 6; i++) fireEvent.press(await screen.findByTestId('key-⌫'));
+  }
+  const typeKeys = (keys: string) => {
+    for (const k of keys) fireEvent.press(screen.getByTestId(`key-${k}`));
+  };
+
+  it('caps typing at the profile weight maximum in the chosen unit (300 kg ≈ 661.4 lb)', async () => {
+    await openWeightPad('lb');
+    typeKeys('662');
+    expect(screen.getByTestId('number-pad-value').props.children).toBe('66');
+    typeKeys('1');
+    expect(screen.getByTestId('number-pad-value').props.children).toBe('661');
+    fireEvent.press(screen.getByTestId('number-pad-done'));
+    await flush();
+    expect(dailyLogRepo.listAll().some((l) => l.bodyWeightKg != null && l.bodyWeightKg > 299)).toBe(true);
+  });
+
+  it('caps kg entry at 300', async () => {
+    await openWeightPad('kg');
+    typeKeys('301');
+    expect(screen.getByTestId('number-pad-value').props.children).toBe('30');
+  });
+
+  it('closes without saving when the value is cleared', async () => {
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+    await openWeightPad('kg');
+    fireEvent.press(screen.getByTestId('number-pad-done'));
+    await flush();
+    expect(screen.queryByTestId('number-pad-value')).toBeNull();
+    expect(alert).not.toHaveBeenCalled();
+    expect(dailyLogRepo.listAll().filter((l) => l.bodyWeightKg != null)).toHaveLength(0);
+  });
+});

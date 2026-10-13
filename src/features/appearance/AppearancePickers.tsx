@@ -8,6 +8,7 @@ import {
   CardGroup,
   Chip,
   Icon,
+  LabeledRow,
   SegmentedControl,
   Sheet,
   TextField,
@@ -43,6 +44,25 @@ export function LanguagePicker() {
         />
       ))}
     </View>
+  );
+}
+
+/** ภาษา ธีม สีหลัก ในการ์ดเดียว — showLabels=false สำหรับหน้าที่หัวข้อส่วนบอกอยู่แล้ว */
+export function AppearanceGroup({ showLabels }: { showLabels: boolean }) {
+  const { t } = useTranslation();
+  const label = (text: string) => (showLabels ? text : undefined);
+  return (
+    <CardGroup>
+      <LabeledRow label={label(t('appearance.language'))}>
+        <LanguagePicker />
+      </LabeledRow>
+      <LabeledRow label={label(t('appearance.theme'))}>
+        <ThemePicker />
+      </LabeledRow>
+      <LabeledRow label={label(t('appearance.accent'))}>
+        <AccentPicker />
+      </LabeledRow>
+    </CardGroup>
   );
 }
 

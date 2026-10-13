@@ -21,16 +21,16 @@ import {
 import { parseLocalDate } from '../../../domain/dates';
 import { PERIODS, shiftPeriod, type Period } from '../../../domain/periods';
 import { PROFILE_RANGES } from '../../../domain/profileInput';
-import { METRICS, type Metric } from '../../../domain/stats';
+import { METRICS, latestBodyWeight, type Metric } from '../../../domain/stats';
 import { displayWeight, formatWeight, weightToKg } from '../../../domain/units';
 import { useRepoQuery } from '../../../features/data/useRepoQuery';
 import { exerciseDisplayName } from '../../../features/exercises/resolve';
 import { logBodyWeight } from '../../../features/stats/bodyWeight';
-import { DonutChart, KcalBars, ShareBars, TrendChart, type ShareItem } from '../../../features/stats/charts';
+import { DonutChart, KcalBars, ShareBars, TrendChart } from '../../../features/stats/charts';
 import {
+  buildShareItems,
   groupLabels,
   metricShortValue,
-  metricValueLabel,
   periodLabel,
   sessionLine,
 } from '../../../features/stats/labels';
@@ -59,39 +59,37 @@ export default function StatsScreen() {
   const [groupKey, setGroupKey] = useState<string | null>(null);
   const [weighing, setWeighing] = useState(false);
 
-  const v = buildStatsView(model, { period, anchor, metric, view, groupKey });
+  const statsView = buildStatsView(model, { period, anchor, metric, view, groupKey });
   const unit = model.unit;
   const unitLabel = t(`common.units.${unit}`);
-  const kcal = (n: number) => `${formatNumber(n)} ${t('common.units.kcal')}`;
-  const atLatest = v.range.end >= model.today;
-  const groupName = (name: string | null) => name ?? t('stats.noProgram');
+  const formatKcal = (n: number) => `${formatNumber(n)} ${t('common.units.kcal')}`;
+  const atLatest = statsView.range.end >= model.today;
+  const programNameOrFallback = (name: string | null) => name ?? t('stats.noProgram');
   // กรุ๊ปที่ชื่อซ้ำกันต้องแยกออกด้วยป้ายต่อท้าย ไม่งั้นเลือกผิดอันไม่รู้ตัว (I5)
-  const labels = groupLabels(v.groups, t('stats.noProgram'), (d) =>
+  const groupLabelByKey = groupLabels(statsView.groups, t('stats.noProgram'), (d) =>
     formatDateShort(parseLocalDate(d), parseLocalDate(model.today)),
   );
-  const labelOf = (key: string, name: string | null) => labels.get(key) ?? groupName(name);
+  const groupLabel = (key: string, name: string | null) =>
+    groupLabelByKey.get(key) ?? programNameOrFallback(name);
 
-  const shareItems: ShareItem[] =
-    v.breakdown.view === 'needsGroup'
-      ? []
-      : v.breakdown.breakdown.entries.map((e, i) => ({
-          key: e.key,
-          label:
-            v.breakdown.view === 'program'
-              ? labelOf(e.key, (e as { programName: string | null }).programName)
-              : v.breakdown.view === 'routineType'
-                ? t(`programs.types.${e.key}`)
-                : t(`exercises.muscles.${e.key}`),
-          value: e.value,
-          percent: e.percent,
-          valueLabel: metricValueLabel(t, metric, e.value, unit),
-          color: p.chart[i % p.chart.length],
-        }));
-  const total = v.breakdown.view === 'needsGroup' ? 0 : v.breakdown.breakdown.total;
-  const totalSets = v.sessions.reduce((s, x) => s + x.sets, 0);
-  const totalVolume = v.sessions.reduce((s, x) => s + x.volumeKg, 0);
+  const shares = buildShareItems(statsView.breakdown, {
+    t,
+    metric,
+    unit,
+    chartColors: p.chart,
+    groupLabel,
+  });
+  // ช่วงเวลาและตัวกรองกรุ๊ปที่ส่งต่อให้หน้าประวัติและหน้าความแข็งแรงต่อท่า
+  const rangeParams = {
+    period,
+    from: statsView.range.start,
+    to: statsView.range.end,
+    ...(groupKey ? { group: groupKey } : {}),
+  };
+  const totalSets = statsView.sessions.reduce((s, x) => s + x.sets, 0);
+  const totalVolume = statsView.sessions.reduce((s, x) => s + x.volumeKg, 0);
 
-  const energy = v.energy;
+  const energy = statsView.energy;
   const bucketLabel = (start: string) => {
     const d = parseLocalDate(start);
     if (period === 'year') return monthShort(d.getMonth());
@@ -99,18 +97,41 @@ export default function StatsScreen() {
     return String(d.getDate());
   };
   const macros = energy.macrosPerDay;
-  const latestWeight = model.dailyLogs
-    .filter((l) => l.bodyWeightKg != null)
-    .reduce<{ date: string; kg: number } | null>(
-      (acc, l) => (!acc || l.date >= acc.date ? { date: l.date, kg: l.bodyWeightKg as number } : acc),
-      null,
-    );
+  const latestWeight = latestBodyWeight(model.dailyLogs);
+  const enteredKcalLine = (totals: { days: number; totalKcal: number }) =>
+    totals.days > 0
+      ? `${formatKcal(totals.totalKcal)} · ${t('stats.enteredDays', { count: totals.days })}`
+      : '–';
+
+  const saveBodyWeight = (value: number | null) => {
+    if (value === null) {
+      setWeighing(false);
+      return;
+    }
+    const kg = weightToKg(value, unit);
+    const { min, max } = PROFILE_RANGES.weightKg;
+    if (kg < min || kg > max) {
+      Alert.alert(
+        t('errors.outOfRange', {
+          min: `${formatWeight(min, unit)} ${unitLabel}`,
+          max: `${formatWeight(max, unit)} ${unitLabel}`,
+        }),
+      );
+      return;
+    }
+    logBodyWeight(kg);
+    setWeighing(false);
+  };
 
   return (
     <Screen withTabBar testID="stats">
       <HeroTitle
         title={t('stats.title')}
-        subtitle={v.group ? labelOf(v.group.key, v.group.programName) : t('stats.allGroups')}
+        subtitle={
+          statsView.group
+            ? groupLabel(statsView.group.key, statsView.group.programName)
+            : t('stats.allGroups')
+        }
       />
 
       <SegmentedControl
@@ -127,7 +148,7 @@ export default function StatsScreen() {
           testID="stats-prev"
         />
         <AppText variant="headline" align="center" style={styles.flex} testID="stats-period">
-          {periodLabel(period, v.range, model.today)}
+          {periodLabel(period, statsView.range, model.today)}
         </AppText>
         <IconButton
           icon="chevron-forward"
@@ -138,7 +159,7 @@ export default function StatsScreen() {
         />
       </View>
 
-      {v.groups.length > 0 ? (
+      {statsView.groups.length > 0 ? (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -152,10 +173,10 @@ export default function StatsScreen() {
             onPress={() => setGroupKey(null)}
             testID="group-all"
           />
-          {v.groups.map((g) => (
+          {statsView.groups.map((g) => (
             <Chip
               key={g.key}
-              label={labelOf(g.key, g.programName)}
+              label={groupLabel(g.key, g.programName)}
               selected={groupKey === g.key}
               onPress={() => setGroupKey(g.key)}
               testID={`group-${g.key}`}
@@ -165,14 +186,14 @@ export default function StatsScreen() {
       ) : null}
 
       <SectionTitle>{t('stats.activity')}</SectionTitle>
-      {v.sessions.length === 0 ? (
+      {statsView.sessions.length === 0 ? (
         <EmptyState icon="stats-chart-outline" title={t('stats.emptyTitle')} body={t('stats.emptyBody')} />
       ) : (
         <>
           <Card>
             <AppText variant="headline" testID="stats-totals">
               {[
-                t('stats.totalSessions', { count: v.sessions.length }),
+                t('stats.totalSessions', { count: statsView.sessions.length }),
                 t('stats.totalSets', { count: totalSets }),
                 t('stats.totalVolume', {
                   volume: formatNumber(displayWeight(totalVolume, unit)),
@@ -180,9 +201,9 @@ export default function StatsScreen() {
                 }),
               ].join(' · ')}
             </AppText>
-            {v.group ? (
+            {statsView.group ? (
               <AppText variant="caption" secondary>
-                {`${t('stats.groupFilter')}: ${labelOf(v.group.key, v.group.programName)}`}
+                {`${t('stats.groupFilter')}: ${groupLabel(statsView.group.key, statsView.group.programName)}`}
               </AppText>
             ) : null}
           </Card>
@@ -202,28 +223,28 @@ export default function StatsScreen() {
             style={styles.gapTop}
           />
           <Card style={styles.gapTop}>
-            {v.breakdown.view === 'needsGroup' ? (
+            {shares === null ? (
               <AppText secondary align="center" testID="stats-needs-group">
                 {t('stats.chooseGroup')}
               </AppText>
-            ) : shareItems.length === 0 ? (
+            ) : shares.items.length === 0 ? (
               <AppText secondary align="center" testID="stats-empty-metric">
                 {t(`stats.emptyMetric.${metric}`)}
               </AppText>
             ) : (
               <>
                 <DonutChart
-                  items={shareItems}
-                  centerValue={metricShortValue(metric, total, unit)}
+                  items={shares.items}
+                  centerValue={metricShortValue(metric, shares.total, unit)}
                   centerCaption={metric === 'volume' ? unitLabel : t(`stats.metrics.${metric}`)}
                   a11yLabel={t('stats.chartA11y', {
                     title: t(`stats.views.${view}`),
-                    items: shareItems
+                    items: shares.items
                       .map((s) => t('stats.share', { label: s.label, percent: s.percent }))
                       .join(', '),
                   })}
                 />
-                <ShareBars items={shareItems} />
+                <ShareBars items={shares.items} />
               </>
             )}
           </Card>
@@ -233,28 +254,18 @@ export default function StatsScreen() {
             <Button
               title={t('stats.seeAll')}
               kind="plain"
-              onPress={() =>
-                router.push({
-                  pathname: '/history',
-                  params: {
-                    period,
-                    from: v.range.start,
-                    to: v.range.end,
-                    ...(groupKey ? { group: groupKey } : {}),
-                  },
-                })
-              }
+              onPress={() => router.push({ pathname: '/history', params: rangeParams })}
               testID="stats-see-all"
             />
           </View>
           <CardGroup>
-            {v.sessions.slice(0, RECENT_LIMIT).map((s) => (
+            {statsView.sessions.slice(0, RECENT_LIMIT).map((s) => (
               <ListRow
                 key={s.sessionId}
                 title={s.routineName ?? t('session.freeSession')}
                 value={[
                   formatDateShort(parseLocalDate(s.date), parseLocalDate(model.today)),
-                  groupName(s.programName),
+                  programNameOrFallback(s.programName),
                   sessionLine(t, s, unit),
                 ].join(' · ')}
                 onPress={() => router.push({ pathname: '/history/[id]', params: { id: s.sessionId } })}
@@ -263,14 +274,14 @@ export default function StatsScreen() {
             ))}
           </CardGroup>
 
-          {v.strength.length > 0 ? (
+          {statsView.strength.length > 0 ? (
             <>
               <SectionTitle>{t('stats.strength')}</SectionTitle>
               <AppText variant="caption" secondary style={styles.hint}>
                 {t('stats.strengthHint')}
               </AppText>
               <CardGroup>
-                {v.strength.map((s) => (
+                {statsView.strength.map((s) => (
                   <ListRow
                     key={s.exerciseId}
                     title={exerciseDisplayName(s.exerciseId)}
@@ -283,13 +294,7 @@ export default function StatsScreen() {
                     onPress={() =>
                       router.push({
                         pathname: '/stats/exercise/[id]',
-                        params: {
-                          id: s.exerciseId,
-                          period,
-                          from: v.range.start,
-                          to: v.range.end,
-                          ...(groupKey ? { group: groupKey } : {}),
-                        },
+                        params: { id: s.exerciseId, ...rangeParams },
                       })
                     }
                     testID={`strength-${s.exerciseId}`}
@@ -302,7 +307,7 @@ export default function StatsScreen() {
       )}
 
       <SectionTitle>{t('stats.energy')}</SectionTitle>
-      {v.group ? (
+      {statsView.group ? (
         <AppText variant="caption" secondary style={styles.hint} testID="stats-energy-all-programs">
           {t('stats.allProgramsNote')}
         </AppText>
@@ -311,34 +316,27 @@ export default function StatsScreen() {
         <Card style={styles.gapBottom}>
           <KcalBars
             points={energy.series.map((x) => ({ label: bucketLabel(x.start), value: x.exerciseKcal }))}
-            a11yLabel={`${t('stats.exerciseKcal')}: ${kcal(energy.exerciseKcal)}`}
+            a11yLabel={`${t('stats.exerciseKcal')}: ${formatKcal(energy.exerciseKcal)}`}
           />
         </Card>
       ) : null}
       <CardGroup>
-        <ListRow title={t('stats.exerciseKcal')} value={kcal(energy.exerciseKcal)} testID="energy-exercise" />
         <ListRow
-          title={t('stats.dayKcal')}
-          value={
-            energy.expenditure.days > 0
-              ? `${kcal(energy.expenditure.totalKcal)} · ${t('stats.enteredDays', { count: energy.expenditure.days })}`
-              : '–'
-          }
+          title={t('stats.exerciseKcal')}
+          value={formatKcal(energy.exerciseKcal)}
+          testID="energy-exercise"
         />
+        <ListRow title={t('stats.dayKcal')} value={enteredKcalLine(energy.expenditure)} />
         <ListRow
           title={t('stats.intakeKcal')}
-          value={
-            energy.intake.days > 0
-              ? `${kcal(energy.intake.totalKcal)} · ${t('stats.enteredDays', { count: energy.intake.days })}`
-              : '–'
-          }
+          value={enteredKcalLine(energy.intake)}
           testID="energy-intake"
         />
         {energy.tdeeKcal != null ? (
-          <ListRow title={t('stats.tdee')} value={kcal(energy.tdeeKcal)} testID="energy-tdee" />
+          <ListRow title={t('stats.tdee')} value={formatKcal(energy.tdeeKcal)} testID="energy-tdee" />
         ) : null}
         {energy.targetKcal != null ? (
-          <ListRow title={t('stats.target')} value={kcal(energy.targetKcal)} />
+          <ListRow title={t('stats.target')} value={formatKcal(energy.targetKcal)} />
         ) : null}
         {macros ? (
           <ListRow
@@ -358,23 +356,23 @@ export default function StatsScreen() {
       ) : null}
 
       <SectionTitle>{t('stats.weight')}</SectionTitle>
-      {v.group ? (
+      {statsView.group ? (
         <AppText variant="caption" secondary style={styles.hint} testID="stats-weight-all-programs">
           {t('stats.allProgramsNote')}
         </AppText>
       ) : null}
       <Card>
-        {v.weight.length >= 2 ? (
+        {statsView.weight.length >= 2 ? (
           <TrendChart
-            points={v.weight.map((w) => ({
+            points={statsView.weight.map((w) => ({
               label: formatDateShort(parseLocalDate(w.date), parseLocalDate(model.today)),
               value: displayWeight(w.weightKg, unit),
             }))}
-            a11yLabel={`${t('stats.weight')}: ${v.weight
+            a11yLabel={`${t('stats.weight')}: ${statsView.weight
               .map((w) => `${formatWeight(w.weightKg, unit)} ${unitLabel}`)
               .join(', ')}`}
           />
-        ) : v.weight.length === 0 ? (
+        ) : statsView.weight.length === 0 ? (
           <AppText secondary>{t('stats.noWeight')}</AppText>
         ) : null}
         {latestWeight ? (
@@ -402,24 +400,9 @@ export default function StatsScreen() {
         title={t('stats.enterWeight')}
         initial={model.currentWeightKg != null ? displayWeight(model.currentWeightKg, unit) : null}
         suffix={unitLabel}
-        max={unit === 'lb' ? 700 : 300}
+        max={displayWeight(PROFILE_RANGES.weightKg.max, unit)}
         onClose={() => setWeighing(false)}
-        onSubmit={(value) => {
-          if (value === null) return setWeighing(false);
-          const kg = weightToKg(value, unit);
-          const { min, max } = PROFILE_RANGES.weightKg;
-          if (kg < min || kg > max) {
-            Alert.alert(
-              t('errors.outOfRange', {
-                min: `${formatWeight(min, unit)} ${unitLabel}`,
-                max: `${formatWeight(max, unit)} ${unitLabel}`,
-              }),
-            );
-            return;
-          }
-          logBodyWeight(kg);
-          setWeighing(false);
-        }}
+        onSubmit={saveBodyWeight}
       />
     </Screen>
   );

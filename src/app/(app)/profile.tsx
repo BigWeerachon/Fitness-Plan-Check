@@ -24,6 +24,7 @@ import { toLocalDate } from '../../domain/dates';
 import {
   ACTIVITY_MULTIPLIERS,
   ADULT_AGE,
+  MAX_DAILY_KCAL,
   DEFICIT_PCT,
   PROTEIN_PER_KG_DEFAULT,
   PROTEIN_PER_KG_RANGE,
@@ -295,7 +296,7 @@ export default function ProfileScreen() {
         initial={intake}
         allowDecimal={false}
         suffix={t('common.units.kcal')}
-        max={20000}
+        max={MAX_DAILY_KCAL}
         onClose={() => setEnteringIntake(false)}
         onSubmit={(value) => {
           dailyLogRepo.upsert(today, { kcalIntake: value });

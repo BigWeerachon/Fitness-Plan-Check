@@ -5,6 +5,9 @@
 
 export type LocalDate = string;
 
+/** วันเริ่มต้นสัปดาห์ที่ไม่ได้ตั้งค่าไว้: 1 = จันทร์ (0 = อาทิตย์) */
+export const DEFAULT_WEEK_START = 1;
+
 const RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 export function toLocalDate(d: Date | number): LocalDate {

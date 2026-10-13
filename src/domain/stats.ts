@@ -1,6 +1,6 @@
 import type { DailyLog, MuscleGroup, RoutineType, SessionSet, WorkoutSession } from '../db/schema';
 import { compareStrings } from './compare';
-import type { LocalDate } from './dates';
+import { DEFAULT_WEEK_START, type LocalDate } from './dates';
 import {
   intersectRange,
   isInRange,
@@ -538,7 +538,7 @@ export function energySummary<M>(
   data: { sessions: readonly StatsSession[]; dailyLogs: readonly StatsDailyLog[] },
   options: EnergyOptions<M>,
 ): EnergySummary<M> {
-  const weekStart = options.weekStart ?? 1;
+  const weekStart = options.weekStart ?? DEFAULT_WEEK_START;
   const range = periodRange(options.period, options.anchor, weekStart);
   const tdee = positiveOrNull(options.tdee);
   const target = positiveOrNull(options.targetKcal);
@@ -595,6 +595,18 @@ export function bodyWeightTrend(logs: readonly StatsDailyLog[], range?: DateRang
   return dailyValues(logs, range)
     .filter((d): d is DailyValues & { bodyWeightKg: number } => d.bodyWeightKg != null)
     .map((d) => ({ date: d.date, weightKg: d.bodyWeightKg }));
+}
+
+/** น้ำหนักตัวที่บันทึกล่าสุด (วันที่ใหม่สุดชนะ วันเดียวกันให้รายการหลังสุดในลิสต์ชนะ) — ไม่มีเลย = null */
+export function latestBodyWeight(
+  logs: readonly Pick<StatsDailyLog, 'date' | 'bodyWeightKg'>[],
+): { date: LocalDate; kg: number } | null {
+  let latest: { date: LocalDate; kg: number } | null = null;
+  for (const l of logs) {
+    if (l.bodyWeightKg == null) continue;
+    if (!latest || l.date >= latest.date) latest = { date: l.date, kg: l.bodyWeightKg };
+  }
+  return latest;
 }
 
 /**

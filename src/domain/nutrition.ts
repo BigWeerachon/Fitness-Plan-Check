@@ -30,6 +30,8 @@ export const DEFICIT_PCT = { default: 20, min: 10, max: 25 } as const;
 export const SURPLUS_PCT = { default: 10, min: 5, max: 20 } as const;
 /** เพดานความปลอดภัย: ไม่แนะนำแคลอรี่ต่ำกว่านี้ */
 export const KCAL_FLOOR: Readonly<Record<Sex, number>> = { female: 1200, male: 1500 };
+/** แคลอรี่ต่อวันสูงสุดที่รับกรอกด้วยมือ (kcal) */
+export const MAX_DAILY_KCAL = 20000;
 /** อายุต่ำกว่านี้ไม่แสดงเป้าลดน้ำหนัก */
 export const ADULT_AGE = 18;
 

@@ -14,14 +14,30 @@ export const WEIGHT_STEP_OPTIONS: Readonly<Record<WeightUnit, readonly number[]>
   lb: [5, 2.5],
 };
 
+/** ความต่างของก้าวน้ำหนัก (kg) ที่ถือว่าเป็นตัวเลือกเดียวกัน */
+const WEIGHT_STEP_MATCH_EPSILON_KG = 0.01;
+
 /** ก้าวเริ่มต้นเป็น kg: 2.5 kg หรือ 5 lb (≈ 2.268 kg) */
 export function defaultWeightStepKg(unit: WeightUnit): number {
   return unit === 'lb' ? lbToKg(WEIGHT_STEP_OPTIONS.lb[0]) : WEIGHT_STEP_OPTIONS.kg[0];
 }
 
+/** ตัวเลือกก้าวน้ำหนักของหน่วยนั้น: ค่าที่แสดงในหน่วยผู้ใช้ คู่กับค่า kg ที่เก็บในฐานข้อมูล */
+export function weightStepChoices(unit: WeightUnit): { kg: number; display: number }[] {
+  return WEIGHT_STEP_OPTIONS[unit].map((display) => ({
+    display,
+    kg: unit === 'lb' ? lbToKg(display) : display,
+  }));
+}
+
 /** ตัวเลือกก้าวน้ำหนักของหน่วยนั้น แปลงเป็น kg (ค่าที่เก็บในฐานข้อมูล) */
 export function weightStepOptionsKg(unit: WeightUnit): number[] {
-  return WEIGHT_STEP_OPTIONS[unit].map((s) => (unit === 'lb' ? lbToKg(s) : s));
+  return weightStepChoices(unit).map((c) => c.kg);
+}
+
+/** ก้าวที่เก็บไว้ตรงกับตัวเลือกหรือไม่ (เผื่อทศนิยมคลาดเคลื่อนจากการแปลง lb ↔ kg) */
+export function isSameWeightStep(aKg: number, bKg: number): boolean {
+  return Math.abs(aKg - bKg) < WEIGHT_STEP_MATCH_EPSILON_KG;
 }
 
 /**
@@ -29,7 +45,7 @@ export function weightStepOptionsKg(unit: WeightUnit): number[] {
  * ไม่งั้น (เช่น เพิ่งสลับ kg → lb) ใช้ค่าเริ่มต้นของหน่วยนั้น
  */
 export function preferredWeightStepKg(unit: WeightUnit, storedKg: number | null | undefined): number {
-  if (storedKg != null && weightStepOptionsKg(unit).some((o) => Math.abs(o - storedKg) < 0.01))
+  if (storedKg != null && weightStepOptionsKg(unit).some((o) => isSameWeightStep(o, storedKg)))
     return storedKg;
   return defaultWeightStepKg(unit);
 }

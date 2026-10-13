@@ -5,6 +5,8 @@ import { Alert, StyleSheet, View } from 'react-native';
 import { AppText, Button, HeroTitle, Screen, StackHeader } from '../components';
 import { restorePurchases, signIn } from '../features/access/accountFlow';
 import { getAccess } from '../features/access/useAccess';
+import { alertRestoreOutcome } from '../features/access/useRestorePurchases';
+import { openLegal } from '../features/legal/openLegal';
 import { migrateDraftWhenReady } from '../features/onboarding/resume';
 import { useSettings } from '../stores/settings';
 import { AppleButton, GoogleButton } from '../features/auth/SignInButtons';
@@ -50,16 +52,15 @@ export default function LoginScreen() {
 
   const onSignIn = async (provider: AuthProvider) => {
     setBusy(provider);
-    const outcome = await signIn(provider);
-    if (outcome === 'success' && params.then === 'restore') {
-      const r = await restorePurchases();
-      if (r === 'restored') Alert.alert(t('paywall.restored'));
-      else if (r === 'none') Alert.alert(t('paywall.nothingToRestore'));
-      else if (r === 'error') Alert.alert(t('common.errorTitle'), t('errors.restoreFailed'));
+    const signInOutcome = await signIn(provider);
+    if (signInOutcome === 'success' && params.then === 'restore') {
+      const outcome = await restorePurchases();
+      // เพิ่งล็อกอินสำเร็จ จึงไม่มีกรณี needLogin
+      if (outcome !== 'needLogin') alertRestoreOutcome(outcome, t);
     }
     setBusy(null);
-    if (outcome === 'success') goNext();
-    else if (outcome === 'error') Alert.alert(t('common.errorTitle'), t('auth.failed'));
+    if (signInOutcome === 'success') goNext();
+    else if (signInOutcome === 'error') Alert.alert(t('common.errorTitle'), t('auth.failed'));
   };
 
   return (
@@ -75,16 +76,8 @@ export default function LoginScreen() {
         {t('auth.terms')}
       </AppText>
       <View style={styles.links}>
-        <Button
-          title={t('paywall.terms')}
-          kind="plain"
-          onPress={() => router.push({ pathname: '/legal/[doc]', params: { doc: 'terms' } })}
-        />
-        <Button
-          title={t('paywall.privacy')}
-          kind="plain"
-          onPress={() => router.push({ pathname: '/legal/[doc]', params: { doc: 'privacy' } })}
-        />
+        <Button title={t('paywall.terms')} kind="plain" onPress={() => openLegal('terms')} />
+        <Button title={t('paywall.privacy')} kind="plain" onPress={() => openLegal('privacy')} />
       </View>
     </Screen>
   );

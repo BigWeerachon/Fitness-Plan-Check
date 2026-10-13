@@ -9,6 +9,7 @@ import {
   Chip,
   Disclaimer,
   HeroTitle,
+  LabeledRow,
   ListRow,
   Screen,
   SectionTitle,
@@ -19,23 +20,31 @@ import {
 } from '../../../components';
 import { profileRepo } from '../../../db/repos/profileRepo';
 import type { LengthUnit, WeightUnit } from '../../../db/schema';
-import { WEIGHT_STEP_OPTIONS, preferredWeightStepKg, weightStepOptionsKg } from '../../../domain/progression';
+import { isSameWeightStep, preferredWeightStepKg, weightStepChoices } from '../../../domain/progression';
 import { offersLifetimeUpgrade } from '../../../domain/entitlement/paywall';
-import { restorePurchases, signOut } from '../../../features/access/accountFlow';
+import { SignedInAsRow } from '../../../features/access/SignedInAsRow';
 import { describeSubscription } from '../../../features/access/subscriptionInfo';
 import { useAccess } from '../../../features/access/useAccess';
+import { useConfirmSignOut } from '../../../features/access/useConfirmSignOut';
 import { useManageSubscriptions } from '../../../features/access/useManageSubscriptions';
-import { AccentPicker, LanguagePicker, ThemePicker } from '../../../features/appearance/AppearancePickers';
+import { useRestorePurchases } from '../../../features/access/useRestorePurchases';
+import { AppearanceGroup } from '../../../features/appearance/AppearancePickers';
 import { useRepoQuery } from '../../../features/data/useRepoQuery';
+import { openLegal } from '../../../features/legal/openLegal';
 import { shareExport, type ExportKind } from '../../../features/settings/exportCsv';
 import { syncNow } from '../../../features/sync/engine';
-import { formatDuration, formatRelativeDay, formatTime } from '../../../i18n/format';
+import { describeSyncDetail } from '../../../features/sync/syncDetail';
+import { formatDuration } from '../../../i18n/format';
 import { useAuth } from '../../../stores/auth';
 import { useEntitlement } from '../../../stores/entitlement';
 import { useSync } from '../../../stores/sync';
 import { spacing } from '../../../theme/tokens';
 import { now } from '../../../utils/clock';
 
+/** ช่วงและก้าวของตัวจับเวลาพักเริ่มต้น (วินาที) */
+const REST_TIMER_MIN_SEC = 15;
+const REST_TIMER_MAX_SEC = 600;
+const REST_TIMER_STEP_SEC = 15;
 const WEIGHT_UNITS: WeightUnit[] = ['kg', 'lb'];
 const LENGTH_UNITS: LengthUnit[] = ['cm', 'ftin'];
 const EXPORTS: { kind: ExportKind; key: 'settings.exportWorkouts' | 'settings.exportDaily' }[] = [
@@ -54,6 +63,8 @@ export default function SettingsScreen() {
   const cached = useEntitlement((s) => s.cached);
   const access = useAccess();
   const openManage = useManageSubscriptions();
+  const onRestore = useRestorePurchases();
+  const onSignOut = useConfirmSignOut();
   const sync = useSync();
   const [exporting, setExporting] = useState(false);
   const sub = describeSubscription(user ? cached : null, t);
@@ -66,14 +77,6 @@ export default function SettingsScreen() {
     profileRepo.update({ weightUnit: u, weightStepKg: preferredWeightStepKg(u, profile.weightStepKg) });
   };
 
-  const onRestore = async () => {
-    const r = await restorePurchases();
-    if (r === 'needLogin') router.push({ pathname: '/login', params: { then: 'restore' } });
-    else if (r === 'restored') Alert.alert(t('paywall.restored'));
-    else if (r === 'none') Alert.alert(t('paywall.nothingToRestore'));
-    else Alert.alert(t('common.errorTitle'), t('errors.restoreFailed'));
-  };
-
   const onExport = async (kind: ExportKind) => {
     setExporting(false);
     try {
@@ -84,79 +87,33 @@ export default function SettingsScreen() {
     }
   };
 
-  const onSignOut = () =>
-    Alert.alert(t('account.signOut'), t('account.signOutConfirm'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('account.signOut'),
-        style: 'destructive',
-        onPress: () => {
-          void signOut().then(() => router.replace('/paywall'));
-        },
-      },
-    ]);
-
-  const syncDetail = [
-    sync.lastSyncedAt
-      ? t('sync.lastSynced', {
-          when: `${formatRelativeDay(new Date(sync.lastSyncedAt), new Date(now()))} ${formatTime(new Date(sync.lastSyncedAt))}`,
-        })
-      : t('sync.never'),
-    sync.pending > 0 ? t('sync.pending', { count: sync.pending }) : null,
-  ]
-    .filter(Boolean)
-    .join(' · ');
+  const syncDetail = describeSyncDetail(sync, t, now());
 
   return (
     <Screen withTabBar testID="settings">
       <HeroTitle title={t('settings.title')} />
 
       <SectionTitle>{t('settings.sections.appearance')}</SectionTitle>
-      <CardGroup>
-        <View style={styles.pad}>
-          <AppText variant="caption" secondary>
-            {t('appearance.language')}
-          </AppText>
-          <LanguagePicker />
-        </View>
-        <View style={styles.pad}>
-          <AppText variant="caption" secondary>
-            {t('appearance.theme')}
-          </AppText>
-          <ThemePicker />
-        </View>
-        <View style={styles.pad}>
-          <AppText variant="caption" secondary>
-            {t('appearance.accent')}
-          </AppText>
-          <AccentPicker />
-        </View>
-      </CardGroup>
+      <AppearanceGroup showLabels />
 
       <SectionTitle>{t('settings.sections.workout')}</SectionTitle>
       <CardGroup>
-        <View style={styles.pad}>
-          <AppText variant="caption" secondary>
-            {t('settings.weightUnit')}
-          </AppText>
+        <LabeledRow label={t('settings.weightUnit')}>
           <SegmentedControl
             label={t('settings.weightUnit')}
             value={unit}
             onChange={setWeightUnit}
             options={WEIGHT_UNITS.map((u) => ({ value: u, label: t(`common.units.${u}`) }))}
           />
-        </View>
-        <View style={styles.pad}>
-          <AppText variant="caption" secondary>
-            {t('settings.lengthUnit')}
-          </AppText>
+        </LabeledRow>
+        <LabeledRow label={t('settings.lengthUnit')}>
           <SegmentedControl
             label={t('settings.lengthUnit')}
             value={profile.lengthUnit}
             onChange={(u) => profileRepo.update({ lengthUnit: u })}
             options={LENGTH_UNITS.map((u) => ({ value: u, label: t(`common.units.${u}`) }))}
           />
-        </View>
+        </LabeledRow>
         <ListRow
           title={t('settings.restTimer')}
           right={
@@ -169,23 +126,20 @@ export default function SettingsScreen() {
           }
         />
         {profile.restTimerEnabled ? (
-          <View style={styles.pad}>
+          <LabeledRow>
             <Stepper
               label={t('settings.restDefault')}
               value={profile.restTimerSec}
               onChange={(v) => profileRepo.update({ restTimerSec: v })}
-              min={15}
-              max={600}
-              step={15}
+              min={REST_TIMER_MIN_SEC}
+              max={REST_TIMER_MAX_SEC}
+              step={REST_TIMER_STEP_SEC}
               format={formatDuration}
               testID="settings-rest"
             />
-          </View>
+          </LabeledRow>
         ) : null}
-        <View style={styles.pad}>
-          <AppText variant="caption" secondary>
-            {t('settings.weekStart')}
-          </AppText>
+        <LabeledRow label={t('settings.weekStart')}>
           <SegmentedControl
             label={t('settings.weekStart')}
             value={String(profile.weekStart) as '0' | '1'}
@@ -195,22 +149,19 @@ export default function SettingsScreen() {
               { value: '0', label: t('week.sunday') },
             ]}
           />
-        </View>
-        <View style={styles.pad}>
-          <AppText variant="caption" secondary>
-            {t('settings.weightStep')}
-          </AppText>
+        </LabeledRow>
+        <LabeledRow label={t('settings.weightStep')}>
           <View
             style={styles.chips}
             accessibilityRole="radiogroup"
             accessibilityLabel={t('settings.weightStep')}
           >
-            {weightStepOptionsKg(unit).map((kg, i) => (
+            {weightStepChoices(unit).map((choice, i) => (
               <Chip
-                key={kg}
-                label={`${WEIGHT_STEP_OPTIONS[unit][i]} ${t(`common.units.${unit}`)}`}
-                selected={Math.abs(kg - stepKg) < 0.01}
-                onPress={() => profileRepo.update({ weightStepKg: kg })}
+                key={choice.kg}
+                label={`${choice.display} ${t(`common.units.${unit}`)}`}
+                selected={isSameWeightStep(choice.kg, stepKg)}
+                onPress={() => profileRepo.update({ weightStepKg: choice.kg })}
                 testID={`settings-step-${i}`}
               />
             ))}
@@ -218,7 +169,7 @@ export default function SettingsScreen() {
           <AppText variant="caption" secondary>
             {t('settings.weightStepHint')}
           </AppText>
-        </View>
+        </LabeledRow>
       </CardGroup>
 
       <SectionTitle>{t('settings.sections.profile')}</SectionTitle>
@@ -299,13 +250,7 @@ export default function SettingsScreen() {
 
       <SectionTitle>{t('settings.sections.account')}</SectionTitle>
       <CardGroup>
-        {user ? (
-          <ListRow
-            title={t('account.signedInAs')}
-            value={user.isPrivateRelay ? `${user.email ?? ''} · ${t('auth.privateRelay')}` : user.email}
-            icon={user.provider === 'apple' ? 'logo-apple' : 'logo-google'}
-          />
-        ) : null}
+        {user ? <SignedInAsRow user={user} /> : null}
         <ListRow
           title={t('account.signOut')}
           icon="log-out-outline"
@@ -326,13 +271,9 @@ export default function SettingsScreen() {
         <ListRow
           title={t('account.privacy')}
           icon="shield-checkmark-outline"
-          onPress={() => router.push({ pathname: '/legal/[doc]', params: { doc: 'privacy' } })}
+          onPress={() => openLegal('privacy')}
         />
-        <ListRow
-          title={t('account.terms')}
-          icon="document-text-outline"
-          onPress={() => router.push({ pathname: '/legal/[doc]', params: { doc: 'terms' } })}
-        />
+        <ListRow title={t('account.terms')} icon="document-text-outline" onPress={() => openLegal('terms')} />
         <ListRow
           title={t('account.references')}
           icon="library-outline"
@@ -365,6 +306,5 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  pad: { padding: spacing.lg, gap: spacing.sm },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
 });

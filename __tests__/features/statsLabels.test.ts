@@ -1,5 +1,6 @@
 import { afterAll, describe, expect, it } from '@jest/globals';
-import { groupLabels, sessionLine } from '@/features/stats/labels';
+import { buildShareItems, groupLabels, sessionLine } from '@/features/stats/labels';
+import type { BreakdownView } from '@/features/stats/statsView';
 import { setLanguage, t } from '@/i18n';
 
 afterAll(() => setLanguage('en'));
@@ -66,5 +67,65 @@ describe('groupLabels (I5)', () => {
       fmt,
     );
     expect(new Set(labels.values()).size).toBe(2);
+  });
+});
+
+describe('buildShareItems (I2)', () => {
+  const colors = ['#c1', '#c2'];
+  const ctx = (metric: 'sets' | 'volume' = 'sets') => ({
+    t,
+    metric,
+    unit: 'kg' as const,
+    chartColors: colors,
+    groupLabel: (key: string, name: string | null) => `g:${key}:${name}`,
+  });
+
+  it('returns null while the routine-type view still needs a group', () => {
+    expect(buildShareItems({ view: 'needsGroup' }, ctx())).toBeNull();
+  });
+
+  it('labels program shares with the disambiguated group label and cycles chart colours', () => {
+    setLanguage('en');
+    const breakdown: BreakdownView = {
+      view: 'program',
+      breakdown: {
+        metric: 'sets',
+        total: 6,
+        entries: [
+          { key: 'a', programId: 'a', programName: 'PPL', value: 3, percent: 50 },
+          { key: 'b', programId: 'b', programName: null, value: 2, percent: 33 },
+          { key: 'c', programId: 'c', programName: 'X', value: 1, percent: 17 },
+        ],
+      },
+    };
+    const result = buildShareItems(breakdown, ctx())!;
+    expect(result.total).toBe(6);
+    expect(result.items.map((i) => [i.key, i.label, i.color, i.valueLabel])).toEqual([
+      ['a', 'g:a:PPL', '#c1', '3 sets'],
+      ['b', 'g:b:null', '#c2', '2 sets'],
+      ['c', 'g:c:X', '#c1', '1 set'],
+    ]);
+  });
+
+  it('labels routine types and muscles from translations', () => {
+    setLanguage('en');
+    const routineType = buildShareItems(
+      {
+        view: 'routineType',
+        breakdown: { metric: 'sets', total: 4, entries: [{ key: 'push', value: 4, percent: 100 }] },
+      },
+      ctx(),
+    )!;
+    expect(routineType.items[0].label).toBe(t('programs.types.push'));
+    const muscle = buildShareItems(
+      {
+        view: 'muscle',
+        breakdown: { metric: 'volume', total: 500, entries: [{ key: 'chest', value: 500, percent: 100 }] },
+      },
+      ctx('volume'),
+    )!;
+    expect(muscle.items[0].label).toBe(t('exercises.muscles.chest'));
+    expect(muscle.items[0].valueLabel).toBe('500 kg lifted');
+    expect(muscle.total).toBe(500);
   });
 });

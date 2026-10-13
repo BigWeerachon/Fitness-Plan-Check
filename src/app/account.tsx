@@ -2,16 +2,17 @@ import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, StyleSheet, View } from 'react-native';
 import { CardGroup, HeroTitle, ListRow, Screen, SectionTitle, StackHeader } from '../components';
-import { restorePurchases, signOut } from '../features/access/accountFlow';
+import { SignedInAsRow } from '../features/access/SignedInAsRow';
 import { describeSubscription } from '../features/access/subscriptionInfo';
 import { useAccess } from '../features/access/useAccess';
+import { useConfirmSignOut } from '../features/access/useConfirmSignOut';
 import { useManageSubscriptions } from '../features/access/useManageSubscriptions';
-import { AccentPicker, LanguagePicker, ThemePicker } from '../features/appearance/AppearancePickers';
+import { useRestorePurchases } from '../features/access/useRestorePurchases';
+import { AppearanceGroup } from '../features/appearance/AppearancePickers';
+import { openLegal } from '../features/legal/openLegal';
 import { useAuth } from '../stores/auth';
 import { useEntitlement } from '../stores/entitlement';
-import { spacing } from '../theme/tokens';
 
 /**
  * ศูนย์รวมสิ่งที่เข้าถึงได้เสมอแม้ไม่มีสิทธิ์ (SPEC B3): ภาษา/ธีม/สีหลัก, ล็อกอิน/ล็อกเอาต์,
@@ -24,53 +25,20 @@ export default function AccountScreen() {
   const access = useAccess();
   const openManage = useManageSubscriptions();
   const sub = describeSubscription(user ? cached : null, t);
-
-  const onRestore = async () => {
-    const r = await restorePurchases();
-    if (r === 'needLogin') router.push({ pathname: '/login', params: { then: 'restore' } });
-    else if (r === 'restored') Alert.alert(t('paywall.restored'));
-    else if (r === 'none') Alert.alert(t('paywall.nothingToRestore'));
-    else Alert.alert(t('common.errorTitle'), t('errors.restoreFailed'));
-  };
-
-  const onSignOut = () => {
-    Alert.alert(t('account.signOut'), t('account.signOutConfirm'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('account.signOut'),
-        style: 'destructive',
-        onPress: () => {
-          void signOut().then(() => router.replace('/paywall'));
-        },
-      },
-    ]);
-  };
+  const onRestore = useRestorePurchases();
+  const onSignOut = useConfirmSignOut();
 
   return (
     <Screen header={<StackHeader />} testID="account">
       <HeroTitle title={t('account.title')} compact />
 
       <SectionTitle>{t('account.sections.appearance')}</SectionTitle>
-      <CardGroup>
-        <View style={styles.pad}>
-          <LanguagePicker />
-        </View>
-        <View style={styles.pad}>
-          <ThemePicker />
-        </View>
-        <View style={styles.pad}>
-          <AccentPicker />
-        </View>
-      </CardGroup>
+      <AppearanceGroup showLabels={false} />
 
       <SectionTitle>{t('account.sections.account')}</SectionTitle>
       <CardGroup>
         {user ? (
-          <ListRow
-            title={t('account.signedInAs')}
-            value={user.isPrivateRelay ? `${user.email ?? ''} · ${t('auth.privateRelay')}` : user.email}
-            icon={user.provider === 'apple' ? 'logo-apple' : 'logo-google'}
-          />
+          <SignedInAsRow user={user} />
         ) : (
           <ListRow
             title={t('account.signIn')}
@@ -129,13 +97,9 @@ export default function AccountScreen() {
         <ListRow
           title={t('account.privacy')}
           icon="shield-checkmark-outline"
-          onPress={() => router.push({ pathname: '/legal/[doc]', params: { doc: 'privacy' } })}
+          onPress={() => openLegal('privacy')}
         />
-        <ListRow
-          title={t('account.terms')}
-          icon="document-text-outline"
-          onPress={() => router.push({ pathname: '/legal/[doc]', params: { doc: 'terms' } })}
-        />
+        <ListRow title={t('account.terms')} icon="document-text-outline" onPress={() => openLegal('terms')} />
         <ListRow
           title={t('account.references')}
           icon="library-outline"
@@ -156,7 +120,3 @@ export default function AccountScreen() {
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  pad: { padding: spacing.lg },
-});

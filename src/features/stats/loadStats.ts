@@ -2,7 +2,7 @@ import { dailyLogRepo } from '../../db/repos/dailyLogRepo';
 import { profileRepo } from '../../db/repos/profileRepo';
 import { sessionRepo } from '../../db/repos/sessionRepo';
 import type { DailyLog, SessionSet, WeightUnit, WorkoutSession } from '../../db/schema';
-import { toLocalDate, type LocalDate } from '../../domain/dates';
+import { DEFAULT_WEEK_START, toLocalDate, type LocalDate } from '../../domain/dates';
 import { nutritionSummary, type NutritionSummary } from '../../domain/nutrition';
 import type { StatsData } from '../../domain/stats';
 import { now } from '../../utils/clock';
@@ -32,7 +32,7 @@ export function loadStats(): StatsModel {
     data: { sessions, sets },
     dailyLogs: dailyLogRepo.listAll(),
     unit: profile?.weightUnit ?? 'kg',
-    weekStart: profile?.weekStart ?? 1,
+    weekStart: profile?.weekStart ?? DEFAULT_WEEK_START,
     today: toLocalDate(now()),
     nutrition: profile ? nutritionSummary(profile) : null,
     currentWeightKg: profile?.weightKg ?? null,

@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
@@ -23,7 +23,7 @@ import {
 import { profileRepo } from '../../../db/repos/profileRepo';
 import { programRepo } from '../../../db/repos/programRepo';
 import { weekPlanRepo } from '../../../db/repos/weekPlanRepo';
-import { parseLocalDate, toLocalDate } from '../../../domain/dates';
+import { DEFAULT_WEEK_START, parseLocalDate, toLocalDate } from '../../../domain/dates';
 import { useRepoQuery } from '../../../features/data/useRepoQuery';
 import { loadPrograms } from '../../../features/programs/usePrograms';
 import { formatRelativeDay } from '../../../i18n/format';
@@ -35,19 +35,24 @@ import { usePalette } from '../../../theme/useTheme';
 export default function ProgramsScreen() {
   const { t } = useTranslation();
   const p = usePalette();
-  const data = useRepoQuery(loadPrograms);
-  const weekStart = useRepoQuery(() => profileRepo.get()?.weekStart ?? 1);
-  const [creating, setCreating] = useState(false);
-  const [menu, setMenu] = useState(false);
+  const programsOverview = useRepoQuery(loadPrograms);
+  const weekStart = useRepoQuery(() => profileRepo.get()?.weekStart ?? DEFAULT_WEEK_START);
+  const [isCreateSheetOpen, setIsCreateSheetOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [name, setName] = useState('');
-  const active = data.cards.find((c) => c.isActive);
+  const active = programsOverview.cards.find((c) => c.isActive);
   const today = parseLocalDate(toLocalDate(now()));
 
-  const create = () => {
+  const goFromMenu = (href: Href) => {
+    setIsMenuOpen(false);
+    router.push(href);
+  };
+
+  const createProgramAndOpen = () => {
     if (!name.trim()) return;
     const program = programRepo.create(name);
-    if (!data.activeId) weekPlanRepo.setActiveProgram(program.id);
-    setCreating(false);
+    if (!programsOverview.activeId) weekPlanRepo.setActiveProgram(program.id);
+    setIsCreateSheetOpen(false);
     setName('');
     router.push({ pathname: '/program/[id]', params: { id: program.id } });
   };
@@ -62,13 +67,13 @@ export default function ProgramsScreen() {
         <IconButton
           icon="add"
           label={t('programs.newProgram')}
-          onPress={() => setCreating(true)}
+          onPress={() => setIsCreateSheetOpen(true)}
           testID="programs-add"
         />
         <IconButton
           icon="ellipsis-vertical"
           label={t('a11y.menu')}
-          onPress={() => setMenu(true)}
+          onPress={() => setIsMenuOpen(true)}
           testID="programs-menu"
         />
       </ActionBar>
@@ -77,7 +82,11 @@ export default function ProgramsScreen() {
         <BigRow
           title={t('programs.weekCard')}
           below={
-            <WeekdayDots active={data.activeDays} weekStart={weekStart} label={t('programs.weekCard')} />
+            <WeekdayDots
+              active={programsOverview.activeDays}
+              weekStart={weekStart}
+              label={t('programs.weekCard')}
+            />
           }
           right={<Icon name="chevron-forward" size={22} color={p.textSecondary} />}
           onPress={() => router.push('/week')}
@@ -87,7 +96,7 @@ export default function ProgramsScreen() {
       </CardGroup>
 
       <SectionTitle>{t('programs.groups')}</SectionTitle>
-      {data.cards.length === 0 ? (
+      {programsOverview.cards.length === 0 ? (
         <EmptyState
           icon="albums-outline"
           title={t('programs.emptyPrograms')}
@@ -97,7 +106,7 @@ export default function ProgramsScreen() {
         />
       ) : (
         <CardGroup>
-          {data.cards.map((c) => (
+          {programsOverview.cards.map((c) => (
             <BigRow
               key={c.program.id}
               title={c.program.name}
@@ -146,7 +155,11 @@ export default function ProgramsScreen() {
         />
       </View>
 
-      <Sheet visible={creating} onClose={() => setCreating(false)} title={t('programs.newProgram')}>
+      <Sheet
+        visible={isCreateSheetOpen}
+        onClose={() => setIsCreateSheetOpen(false)}
+        title={t('programs.newProgram')}
+      >
         <TextField
           label={t('programs.newProgramName')}
           placeholder={t('programs.newProgramPlaceholder')}
@@ -157,37 +170,28 @@ export default function ProgramsScreen() {
         />
         <Button
           title={t('common.create')}
-          onPress={create}
+          onPress={createProgramAndOpen}
           disabled={!name.trim()}
           testID="new-program-create"
         />
       </Sheet>
 
-      <Sheet visible={menu} onClose={() => setMenu(false)} title={t('today.menu.title')}>
+      <Sheet visible={isMenuOpen} onClose={() => setIsMenuOpen(false)} title={t('today.menu.title')}>
         <CardGroup>
           <ListRow
             title={t('programs.fromTemplate')}
             icon="copy-outline"
-            onPress={() => {
-              setMenu(false);
-              router.push('/program/templates');
-            }}
+            onPress={() => goFromMenu('/program/templates')}
           />
           <ListRow
             title={t('programs.library')}
             icon="library-outline"
-            onPress={() => {
-              setMenu(false);
-              router.push('/exercises');
-            }}
+            onPress={() => goFromMenu('/exercises')}
           />
           <ListRow
             title={t('programs.weekCard')}
             icon="calendar-outline"
-            onPress={() => {
-              setMenu(false);
-              router.push('/week');
-            }}
+            onPress={() => goFromMenu('/week')}
           />
         </CardGroup>
       </Sheet>

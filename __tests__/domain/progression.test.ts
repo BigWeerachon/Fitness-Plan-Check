@@ -1,7 +1,9 @@
 import { describe, expect, it } from '@jest/globals';
 import {
   adjustTarget,
+  isSameWeightStep,
   preferredWeightStepKg,
+  weightStepChoices,
   weightStepOptionsKg,
   applySuggestion,
   changeProgressionMode,
@@ -570,5 +572,19 @@ describe('preferredWeightStepKg (default step for new exercises)', () => {
   it('lists options converted to kg', () => {
     expect(weightStepOptionsKg('kg')).toEqual([2.5, 1.25]);
     expect(weightStepOptionsKg('lb')[0]).toBeCloseTo(2.268, 3);
+  });
+  it('pairs each displayed step with its stored kg value', () => {
+    expect(weightStepChoices('kg')).toEqual([
+      { display: 2.5, kg: 2.5 },
+      { display: 1.25, kg: 1.25 },
+    ]);
+    const lb = weightStepChoices('lb');
+    expect(lb.map((c) => c.display)).toEqual([5, 2.5]);
+    expect(lb[0].kg).toBeCloseTo(2.268, 3);
+    expect(lb.map((c) => c.kg)).toEqual(weightStepOptionsKg('lb'));
+  });
+  it('matches a stored step despite lb ↔ kg rounding noise', () => {
+    expect(isSameWeightStep(lbToKg(5), 2.27)).toBe(true);
+    expect(isSameWeightStep(2.5, 2.52)).toBe(false);
   });
 });

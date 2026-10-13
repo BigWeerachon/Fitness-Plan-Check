@@ -27,7 +27,7 @@ export default function OnboardingProgram() {
     router.replace('/');
   };
 
-  const isTemplate = (key: string) => choice?.kind === 'template' && choice.key === key;
+  const isTemplateSelected = (key: string) => choice?.kind === 'template' && choice.key === key;
 
   return (
     <OnboardingFrame
@@ -47,7 +47,7 @@ export default function OnboardingProgram() {
             title={tpl.name[lang]}
             value={`${t('onboarding.daysPerWeek', { count: trainingDaysPerWeek(tpl) })} · ${tpl.description[lang]}`}
             onPress={() => setChoice({ kind: 'template', key: tpl.key })}
-            right={<RadioIndicator selected={isTemplate(tpl.key)} />}
+            right={<RadioIndicator selected={isTemplateSelected(tpl.key)} />}
             testID={`template-${tpl.key}`}
           />
         ))}
