@@ -1,6 +1,7 @@
 import React, { useEffect, useId, useState } from 'react';
 import { Animated, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
+import { type Palette } from '../theme/tokens';
 import { usePalette } from '../theme/useTheme';
 
 interface Layer {
@@ -9,10 +10,18 @@ interface Layer {
   opacity: number;
 }
 
+/** แสงใหม่ค่อยๆ ซ้อนทับแสงเดิมภายในเวลานี้ (มิลลิวินาที) */
+const GLOW_CROSSFADE_MS = 350;
+/** ความสูงของแสงเป็นเท่าของความกว้างจอ */
+const GLOW_HEIGHT_RATIO = 1.25;
+
+const toIdSafe = (s: string) => s.replace(/[^a-zA-Z0-9]/g, '');
+const layerFor = (p: Palette, key: string): Layer => ({ key, color: p.glow, opacity: p.glowOpacity });
+
 function GlowLayer({ layer, width, height }: { layer: Layer; width: number; height: number }) {
   // id ต้องไม่ซ้ำกันทั้งเอกสาร (บนเว็บทุกหน้าอยู่ใน DOM เดียว ถ้าซ้ำจะไปอ้างไล่สีของหน้าที่ซ่อนอยู่)
-  const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
-  const id = `glow-${uid}-${layer.key.replace(/[^a-zA-Z0-9]/g, '')}`;
+  const uid = toIdSafe(useId());
+  const id = `glow-${uid}-${toIdSafe(layer.key)}`;
   return (
     <Svg width={width} height={height}>
       <Defs>
@@ -34,25 +43,25 @@ function GlowLayer({ layer, width, height }: { layer: Layer; width: number; heig
 export function GlowBackground() {
   const p = usePalette();
   const { width } = useWindowDimensions();
-  const height = width * 1.25;
+  const height = width * GLOW_HEIGHT_RATIO;
   const key = `${p.glow}|${p.mode}`;
-  const [current, setCurrent] = useState<Layer>({ key, color: p.glow, opacity: p.glowOpacity });
-  const [previous, setPrevious] = useState<Layer | null>(null);
+  const [current, setCurrent] = useState<Layer>(layerFor(p, key));
+  const [fadingOutLayer, setFadingOutLayer] = useState<Layer | null>(null);
   const [fade] = useState(() => new Animated.Value(1));
 
   // ปรับ state ตาม props ระหว่าง render (รูปแบบที่ React แนะนำสำหรับ derived state)
   if (current.key !== key) {
-    setPrevious(current);
-    setCurrent({ key, color: p.glow, opacity: p.glowOpacity });
+    setFadingOutLayer(current);
+    setCurrent(layerFor(p, key));
   }
 
   useEffect(() => {
-    if (!previous) return;
+    if (!fadingOutLayer) return;
     fade.setValue(0);
-    const anim = Animated.timing(fade, { toValue: 1, duration: 350, useNativeDriver: true });
-    anim.start(() => setPrevious(null));
+    const anim = Animated.timing(fade, { toValue: 1, duration: GLOW_CROSSFADE_MS, useNativeDriver: true });
+    anim.start(() => setFadingOutLayer(null));
     return () => anim.stop();
-  }, [previous, fade]);
+  }, [fadingOutLayer, fade]);
 
   return (
     <View
@@ -60,12 +69,12 @@ export function GlowBackground() {
       pointerEvents="none"
       testID="glow-background"
     >
-      {previous ? (
+      {fadingOutLayer ? (
         <View style={styles.glow}>
-          <GlowLayer layer={previous} width={width} height={height} />
+          <GlowLayer layer={fadingOutLayer} width={width} height={height} />
         </View>
       ) : null}
-      <Animated.View style={[styles.glow, { opacity: previous ? fade : 1 }]}>
+      <Animated.View style={[styles.glow, { opacity: fadingOutLayer ? fade : 1 }]}>
         <GlowLayer layer={current} width={width} height={height} />
       </Animated.View>
     </View>

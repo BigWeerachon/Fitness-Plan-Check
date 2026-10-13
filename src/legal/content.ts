@@ -16,7 +16,7 @@ export const LEGAL_KEYS: LegalKey[] = ['privacy', 'terms'];
 
 /**
  * ข้อความตัวแทนต้นฉบับ — ห้ามแก้ (ใช้ตรวจว่าเอกสารยังเป็นเทมเพลตอยู่หรือไม่)
- * เจ้าของโปรเจกต์แก้ค่าใน PLACEHOLDERS ด้านล่างแทน แล้ว hasPlaceholders() จะเป็น false เองเมื่อกรอกครบ
+ * เจ้าของโปรเจกต์แก้ค่าใน PLACEHOLDERS ด้านล่างแทน (ตอนนี้เป็นค่าจริงที่กรอกแล้ว) แล้ว hasPlaceholders() จะเป็น false เองเมื่อกรอกครบ
  */
 export const MARKERS = Object.freeze({
   developer: '[ชื่อผู้พัฒนา / Developer name]',
@@ -24,7 +24,7 @@ export const MARKERS = Object.freeze({
   address: '[ที่อยู่ / Address]',
 });
 
-/** เจ้าของโปรเจกต์แทนที่ MARKERS.xxx แต่ละบรรทัดด้วยค่าจริง */
+/** ค่าจริงของเจ้าของโปรเจกต์ที่กรอกแล้ว (แทนที่ MARKERS.xxx แต่ละบรรทัด) — ชื่อ export คงไว้เพราะเอกสารปล่อยแอปอ้างถึง */
 export const PLACEHOLDERS: Record<keyof typeof MARKERS, string> = {
   developer: 'Weerachon Kammoon',
   contact: 'weerachon.work@gmail.com',
@@ -37,12 +37,29 @@ const EFFECTIVE = {
   en: '15 October 2026',
 };
 
-const P = PLACEHOLDERS;
+const owner = PLACEHOLDERS;
+
+/** บล็อกช่องทางติดต่อ (ผู้พัฒนา ที่อยู่ อีเมล) ที่ใช้ซ้ำในหัวข้อติดต่อของทุกเอกสาร */
+const contactBlock = () => [owner.developer, owner.address, owner.contact].join('\n');
+
+/** ภาษาที่มีเอกสารกฎหมาย (ตรงกับ Language ใน i18n แต่ไม่ import runtime เพื่อให้สคริปต์ Node ใช้ได้) */
+export const LEGAL_LANGUAGES = ['th', 'en'] as const satisfies readonly Language[];
+
+/** ข้อความทั้งหมดของเอกสารต่อกันด้วยบรรทัดใหม่ */
+export function docText(doc: LegalDoc): string {
+  return [doc.title, doc.updated, ...doc.sections.flatMap((s) => [s.heading, s.body])].join('\n');
+}
 
 /** เอกสารยังมีค่าตัวแทนต้นฉบับ (MARKERS) ที่เจ้าของโปรเจกต์ยังไม่ได้กรอกหรือไม่ */
 export function hasPlaceholders(doc: LegalDoc): boolean {
-  const text = [doc.title, doc.updated, ...doc.sections.flatMap((s) => [s.heading, s.body])].join('\n');
+  const text = docText(doc);
   return Object.values(MARKERS).some((value) => text.includes(value));
+}
+
+/** ค่าตัวแทนต้นฉบับที่ยังเหลืออยู่ในเอกสารที่ให้มา (ไม่ซ้ำ ตามลำดับ MARKERS) */
+export function unfilledMarkers(docs: LegalDoc[]): string[] {
+  const allText = docs.map(docText).join('\n');
+  return Object.values(MARKERS).filter((marker) => allText.includes(marker));
 }
 
 export const LEGAL: Record<LegalKey, Record<Language, LegalDoc>> = {
@@ -105,7 +122,7 @@ export const LEGAL: Record<LegalKey, Record<Language, LegalDoc>> = {
         },
         {
           heading: 'ติดต่อ',
-          body: `ติดต่อเรื่องข้อมูลส่วนบุคคลและการใช้สิทธิ์ของเจ้าของข้อมูล:\n${P.developer}\n${P.address}\n${P.contact}\nหากเรามีเจ้าหน้าที่คุ้มครองข้อมูลส่วนบุคคลหรือตัวแทนในสหภาพยุโรป/สหราชอาณาจักร จะระบุไว้ที่นี่`,
+          body: `ติดต่อเรื่องข้อมูลส่วนบุคคลและการใช้สิทธิ์ของเจ้าของข้อมูล:\n${contactBlock()}\nหากเรามีเจ้าหน้าที่คุ้มครองข้อมูลส่วนบุคคลหรือตัวแทนในสหภาพยุโรป/สหราชอาณาจักร จะระบุไว้ที่นี่`,
         },
       ],
     },
@@ -167,7 +184,7 @@ export const LEGAL: Record<LegalKey, Record<Language, LegalDoc>> = {
         },
         {
           heading: 'Contact',
-          body: `Contact for personal data matters and exercising your rights:\n${P.developer}\n${P.address}\n${P.contact}\nIf we appoint a data protection officer or an EU/UK representative, they will be listed here.`,
+          body: `Contact for personal data matters and exercising your rights:\n${contactBlock()}\nIf we appoint a data protection officer or an EU/UK representative, they will be listed here.`,
         },
       ],
     },
@@ -227,7 +244,7 @@ export const LEGAL: Record<LegalKey, Record<Language, LegalDoc>> = {
         },
         {
           heading: 'ติดต่อ',
-          body: `${P.developer}\n${P.address}\n${P.contact}\nปัญหาการใช้งานหรือบัญชี ติดต่อเราทางอีเมลข้างต้น ส่วนการชำระเงินและการคืนเงินให้ติดต่อ Apple หรือ Google`,
+          body: `${contactBlock()}\nปัญหาการใช้งานหรือบัญชี ติดต่อเราทางอีเมลข้างต้น ส่วนการชำระเงินและการคืนเงินให้ติดต่อ Apple หรือ Google`,
         },
       ],
     },
@@ -285,7 +302,7 @@ export const LEGAL: Record<LegalKey, Record<Language, LegalDoc>> = {
         },
         {
           heading: 'Contact',
-          body: `${P.developer}\n${P.address}\n${P.contact}\nFor app or account problems, email us above. For billing and refunds, contact Apple or Google.`,
+          body: `${contactBlock()}\nFor app or account problems, email us above. For billing and refunds, contact Apple or Google.`,
         },
       ],
     },

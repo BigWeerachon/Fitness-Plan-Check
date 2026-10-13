@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { MIN_TOUCH, radius, spacing } from '../theme/tokens';
+import { BIG_TEXT_MAX_SCALE } from '../theme/typography';
 import { usePalette } from '../theme/useTheme';
 import { AppText } from './AppText';
 import { Icon, type IconName } from './Icon';
@@ -73,15 +74,10 @@ export function ListRow({
   testID?: string;
 }) {
   const p = usePalette();
+  const leadingNode = icon ? <Icon name={icon} size={20} color={danger ? p.danger : p.accent} /> : leading;
   const content = (
     <View style={[styles.row, disabled && { opacity: 0.45 }]}>
-      {icon ? (
-        <View style={styles.rowIcon}>
-          <Icon name={icon} size={20} color={danger ? p.danger : p.accent} />
-        </View>
-      ) : leading ? (
-        <View style={styles.rowIcon}>{leading}</View>
-      ) : null}
+      {leadingNode ? <View style={styles.rowIcon}>{leadingNode}</View> : null}
       <View style={styles.rowText}>
         <AppText color={danger ? p.danger : undefined}>{title}</AppText>
         {value ? (
@@ -142,7 +138,7 @@ export function BigRow({
         <AppText
           variant="rowTitle"
           numberOfLines={2}
-          maxFontSizeMultiplier={1.4}
+          maxFontSizeMultiplier={BIG_TEXT_MAX_SCALE}
           color={dimmed ? p.textSecondary : p.text}
         >
           {title}

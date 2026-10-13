@@ -23,7 +23,7 @@
 │  entitlement/machine (state machine สิทธิ์), entitlement/paywall (B4–B6)   │
 │  nutrition (H2), progression (G2), schedule (D/E), stats/periods (I),     │
 │  onboardingResume (C), recordMerge (L), sessionEdit/sessionSummary (G),   │
-│  effort (RIR/RPE), csv, dates, units, profileInput                        │
+│  effort (RIR/RPE), csv, dates, units, profileInput, numberEntry           │
 ├──────────────────────────────────────────────────────────────────────────┤
 │ Data (src/db/*) — expo-sqlite + Drizzle = แหล่งความจริงหลัก (offline-first) │
 │  schema, migrate (user_version), transaction (ซ้อนได้), mutations          │

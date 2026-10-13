@@ -68,6 +68,11 @@ export function Screen({
   );
 }
 
+function goBackOrHome() {
+  if (router.canGoBack()) router.back();
+  else router.replace('/');
+}
+
 /** หัวของหน้าที่ซ้อนเข้ามา (stack): ปุ่มย้อนกลับ + ชื่อหน้าสีหลัก + ปุ่มด้านขวา */
 export function StackHeader({
   title,
@@ -81,7 +86,7 @@ export function StackHeader({
   backIcon?: 'chevron-back' | 'close';
 }) {
   const { t } = useTranslation();
-  const goBack = onBack ?? (() => (router.canGoBack() ? router.back() : router.replace('/')));
+  const goBack = onBack ?? goBackOrHome;
   return (
     <View style={styles.header}>
       <IconButton

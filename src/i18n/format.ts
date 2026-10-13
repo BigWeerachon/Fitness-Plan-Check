@@ -1,12 +1,18 @@
 /* eslint-disable import/no-named-as-default-member -- ใช้ instance ของ i18next โดยตรง */
-import i18n from './index';
+import i18n, { currentLanguage } from './index';
+import { now as clockNow } from '../utils/clock';
 
 /**
  * การจัดรูปแบบวันที่/ตัวเลขแบบกำหนดเอง (ไม่พึ่ง Intl ของแต่ละเครื่อง ผลลัพธ์จึงเหมือนกันทุกแพลตฟอร์มและเทสต์ได้)
  * ภาษาไทยแสดงปี พ.ศ.
  */
 
-function arr(key: string): string[] {
+const MS_PER_DAY = 86_400_000;
+const DAYS_PER_WEEK = 7;
+/** เกินกี่วันแล้วแสดงเป็นวันที่แทน "N สัปดาห์ที่แล้ว" */
+const RELATIVE_DAYS_LIMIT = 28;
+
+function translatedList(key: string): string[] {
   return i18n.t(key, { returnObjects: true }) as unknown as string[];
 }
 
@@ -16,35 +22,35 @@ function displayYear(year: number): number {
 
 /** ลำดับวันในสัปดาห์เริ่มจากวันเริ่มต้นที่ตั้งไว้ (0 = อาทิตย์, 1 = จันทร์) */
 export function weekOrder(weekStart: number): number[] {
-  return Array.from({ length: 7 }, (_, i) => (weekStart + i) % 7);
+  return Array.from({ length: DAYS_PER_WEEK }, (_, i) => (weekStart + i) % 7);
 }
 
 export function weekdayShort(day: number): string {
-  return arr('date.weekdaysShort')[day];
+  return translatedList('date.weekdaysShort')[day];
 }
 
 export function weekdayMedium(day: number): string {
-  return arr('date.weekdaysMedium')[day];
+  return translatedList('date.weekdaysMedium')[day];
 }
 
 export function weekdayLong(day: number): string {
-  return arr('date.weekdaysLong')[day];
+  return translatedList('date.weekdaysLong')[day];
 }
 
 export function monthShort(month: number): string {
-  return arr('date.monthsShort')[month];
+  return translatedList('date.monthsShort')[month];
 }
 
 export function monthLong(month: number): string {
-  return arr('date.monthsLong')[month];
+  return translatedList('date.monthsLong')[month];
 }
 
 /** "พฤ. 9 ต.ค." / "Thu, Oct 9" (ใส่ปีถ้าไม่ใช่ปีปัจจุบัน) */
-export function formatDateShort(d: Date, now: Date = new Date()): string {
+export function formatDateShort(d: Date, now: Date = new Date(clockNow())): string {
   const wd = weekdayMedium(d.getDay());
   const mo = monthShort(d.getMonth());
   const year = d.getFullYear() !== now.getFullYear() ? displayYear(d.getFullYear()) : null;
-  if (i18n.language === 'th') return `${wd} ${d.getDate()} ${mo}${year ? ` ${year}` : ''}`;
+  if (currentLanguage() === 'th') return `${wd} ${d.getDate()} ${mo}${year ? ` ${year}` : ''}`;
   return `${wd}, ${mo} ${d.getDate()}${year ? `, ${year}` : ''}`;
 }
 
@@ -52,7 +58,7 @@ export function formatDateShort(d: Date, now: Date = new Date()): string {
 export function formatDateLong(d: Date): string {
   const mo = monthShort(d.getMonth());
   const year = displayYear(d.getFullYear());
-  return i18n.language === 'th' ? `${d.getDate()} ${mo} ${year}` : `${mo} ${d.getDate()}, ${year}`;
+  return currentLanguage() === 'th' ? `${d.getDate()} ${mo} ${year}` : `${mo} ${d.getDate()}, ${year}`;
 }
 
 /** "ตุลาคม 2569" / "October 2026" */
@@ -86,13 +92,16 @@ export function formatDuration(totalSec: number): string {
 }
 
 /** "วันนี้" / "เมื่อวาน" / "3 วันที่แล้ว" / วันที่ */
-export function formatRelativeDay(d: Date, now: Date = new Date()): string {
+export function formatRelativeDay(d: Date, now: Date = new Date(clockNow())): string {
   const day = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const diff = Math.round((today - day) / 86_400_000);
+  const diff = Math.round((today - day) / MS_PER_DAY);
   if (diff === 0) return i18n.t('date.today');
   if (diff === 1) return i18n.t('date.yesterday');
-  if (diff > 1 && diff < 7) return i18n.t('date.daysAgo', { count: diff });
-  if (diff >= 7 && diff < 28) return i18n.t('date.weeksAgo', { count: Math.floor(diff / 7) });
+  // diff ติดลบ (วันที่ในอนาคต) ต้องไม่เข้าสองกิ่งนี้ จึงคง diff > 1 ไว้
+  if (diff > 1 && diff < DAYS_PER_WEEK) return i18n.t('date.daysAgo', { count: diff });
+  if (diff >= DAYS_PER_WEEK && diff < RELATIVE_DAYS_LIMIT) {
+    return i18n.t('date.weeksAgo', { count: Math.floor(diff / DAYS_PER_WEEK) });
+  }
   return formatDateShort(d, now);
 }

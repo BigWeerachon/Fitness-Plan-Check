@@ -10,7 +10,7 @@ import {
   BRAND,
   buildPalette,
   contrastReport,
-  passesAA,
+  failingChecks,
   type ThemeMode,
 } from '../src/theme/tokens';
 
@@ -26,8 +26,10 @@ for (const a of ACCENT_PRESETS) {
   for (const mode of MODES) {
     const p = buildPalette(mode, a.id);
     const r = contrastReport(p);
-    const ok = passesAA(r);
+    const failing = failingChecks(r);
+    const ok = failing.length === 0;
     failed ||= !ok;
+    if (!ok) console.error(`${a.id}/${mode} failing checks: ${failing.join(', ')}`);
     console.log(
       `| ${a.id} \`${a.base}\` | ${mode} | \`${p.accent}\` / ปุ่ม \`${p.accentFill}\` | ${f(r.accentOnBackground)} | ${f(r.accentOnCard)} | ${f(r.heroOnGlow)} / ${f(r.secondaryOnGlow)} | ${f(r.onAccentOnFill)} | ${f(r.fillOnCard)} | ${f(r.secondaryOnCard)} / ${f(r.secondaryOnElevated)} | ${f(r.accentOnSoft)} | ${ok ? 'ผ่าน' : '**ไม่ผ่าน**'} |`,
     );

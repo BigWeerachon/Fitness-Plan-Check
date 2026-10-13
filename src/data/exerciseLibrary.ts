@@ -93,21 +93,33 @@ export function fromCustom(
   };
 }
 
+type CustomExerciseSource = Parameters<typeof fromCustom>[0];
+
 /** รวมท่าในคลังกับท่าที่สร้างเอง (ท่าที่สร้างเองมาก่อน) */
-export function mergeExercises(customs: Parameters<typeof fromCustom>[0][]): ExerciseInfo[] {
+export function mergeExercises(customs: CustomExerciseSource[]): ExerciseInfo[] {
   return [...customs.map(fromCustom), ...BUILT_IN_EXERCISES.map(fromBuiltIn)];
 }
+
+/** เครื่องหมายกำกับที่แยกออกจากตัวอักษรหลัง NFD (U+0300–U+036F) */
+const COMBINING_MARKS = /[\u0300-\u036F]/g;
+/** ไม้ไต่คู้ วรรณยุกต์ ฯลฯ ของไทย (U+0E47–U+0E4E) */
+const THAI_TONE_MARKS = /[\u0E47-\u0E4E]/g;
+/** ทุกอย่างที่ไม่ใช่ a-z 0-9 หรืออักษรไทย (U+0E00–U+0E7F) */
+const NON_SEARCHABLE = /[^a-z0-9\u0E00-\u0E7F]+/g;
 
 /** ตัดวรรณยุกต์/เครื่องหมาย และตัวพิมพ์ เพื่อค้นหาแบบยืดหยุ่น (ไทยตัดวรรณยุกต์และไม้ไต่คู้) */
 export function normalizeSearch(text: string): string {
   return text
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[็-๎]/g, '')
-    .replace(/[^a-z0-9฀-๿]+/g, ' ')
+    .replace(COMBINING_MARKS, '')
+    .replace(THAI_TONE_MARKS, '')
+    .replace(NON_SEARCHABLE, ' ')
     .trim();
 }
+
+/** อันดับการจับคู่ในผลค้นหา (น้อย = มาก่อน) */
+const MATCH_RANK = { prefix: 0, contains: 1, noQuery: 2 } as const;
 
 export interface ExerciseFilter {
   muscle?: MuscleGroup | null;
@@ -136,7 +148,7 @@ export function searchExercises(
       if (!hit) continue;
     }
     if (!q) {
-      scored.push({ ex, score: 2 });
+      scored.push({ ex, score: MATCH_RANK.noQuery });
       continue;
     }
     const names =
@@ -144,8 +156,9 @@ export function searchExercises(
         ? [normalizeSearch(ex.name)]
         : [normalizeSearch(ex.name.en), normalizeSearch(ex.name.th)];
     const id = normalizeSearch(ex.id.replace(/_/g, ' '));
-    if (names.some((n) => n.startsWith(q))) scored.push({ ex, score: 0 });
-    else if (names.some((n) => n.includes(q)) || id.includes(q)) scored.push({ ex, score: 1 });
+    if (names.some((n) => n.startsWith(q))) scored.push({ ex, score: MATCH_RANK.prefix });
+    else if (names.some((n) => n.includes(q)) || id.includes(q))
+      scored.push({ ex, score: MATCH_RANK.contains });
   }
   return scored
     .sort((a, b) => a.score - b.score || exerciseName(a.ex, lang).localeCompare(exerciseName(b.ex, lang)))

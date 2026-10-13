@@ -14,6 +14,16 @@ export interface Hsl {
   l: number;
 }
 
+/** เกณฑ์ contrast ตาม WCAG 2.x AA (อยู่ที่นี่เพราะ onColor ใช้ และ tokens.ts import color.ts) */
+export const AA_TEXT = 4.5;
+export const AA_LARGE = 3;
+export const AA_GRAPHIC = 3;
+
+/** จำกัดค่า v ให้อยู่ระหว่าง lo ถึง hi (ต้อง lo <= hi) */
+export function clamp(v: number, lo: number, hi: number): number {
+  return Math.min(hi, Math.max(lo, v));
+}
+
 const HEX_RE = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i;
 
 export function isHexColor(value: string): boolean {
@@ -35,7 +45,7 @@ export function hexToRgb(hex: string): Rgb {
 
 export function rgbToHex({ r, g, b }: Rgb): string {
   const c = (v: number) =>
-    Math.round(Math.min(255, Math.max(0, v)))
+    Math.round(clamp(v, 0, 255))
       .toString(16)
       .padStart(2, '0');
   return `#${c(r)}${c(g)}${c(b)}`.toUpperCase();
@@ -58,6 +68,7 @@ export function rgbToHsl({ r, g, b }: Rgb): Hsl {
   return { h: h * 60, s, l };
 }
 
+/** แปลง HSL เป็น RGB ตามสูตรมาตรฐาน W3C (q, p, conv ตามสูตรนั้น) */
 export function hslToRgb({ h, s, l }: Hsl): Rgb {
   const hh = (((h % 360) + 360) % 360) / 360;
   if (s === 0) return { r: l * 255, g: l * 255, b: l * 255 };
@@ -118,6 +129,13 @@ export function withAlpha(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
+/** ฉากหลังที่ luminance ต่ำกว่านี้ถือว่ามืด (ปรับสีให้สว่างขึ้นแทนมืดลง) */
+const DARK_BACKGROUND_LUMINANCE = 0.2;
+const LIGHTNESS_STEP = 0.01;
+const MAX_LIGHTNESS_STEPS = 100;
+/** ความสว่าง HSL ของสีเข้มอมโทนเดียวกับ fill ที่ onColor ใช้เป็นตัวเลือกแรก */
+const DARK_TINT_LIGHTNESS = 0.08;
+
 /**
  * ปรับความสว่างของสี fg (คงโทนสีเดิม) จนผ่าน contrast ขั้นต่ำกับพื้นทุกสีที่ให้มา
  * พื้นเข้ม → ทำให้สว่างขึ้น, พื้นสว่าง → ทำให้เข้มขึ้น
@@ -126,11 +144,11 @@ export function withAlpha(hex: string, alpha: number): string {
 export function ensureContrast(fg: string, backgrounds: string[], min: number): string {
   const passes = (c: string) => backgrounds.every((bg) => contrastRatio(c, bg) >= min);
   if (passes(fg)) return normalizeHex(fg);
-  const darkBg = backgrounds.every((bg) => relativeLuminance(bg) < 0.2);
+  const backgroundsAreDark = backgrounds.every((bg) => relativeLuminance(bg) < DARK_BACKGROUND_LUMINANCE);
   const hsl = hexToHsl(fg);
-  const step = 0.01;
-  for (let i = 1; i <= 100; i++) {
-    const l = darkBg ? Math.min(1, hsl.l + step * i) : Math.max(0, hsl.l - step * i);
+  for (let i = 1; i <= MAX_LIGHTNESS_STEPS; i++) {
+    const offset = LIGHTNESS_STEP * i;
+    const l = backgroundsAreDark ? Math.min(1, hsl.l + offset) : Math.max(0, hsl.l - offset);
     const candidate = hslToHex({ ...hsl, l });
     if (passes(candidate)) return candidate;
   }
@@ -144,9 +162,9 @@ export function ensureContrast(fg: string, backgrounds: string[], min: number): 
  * สีตัวอักษรบนพื้น fill (เช่น ข้อความบนปุ่ม) เลือกระหว่างสีเข้มอมโทนเดียวกับ fill หรือขาว
  * แล้วรับประกันว่าผ่าน min (ค่าเริ่มต้น AA 4.5)
  */
-export function onColor(fill: string, min = 4.5): string {
+export function onColor(fill: string, min = AA_TEXT): string {
   const hsl = hexToHsl(fill);
-  const darkTint = hslToHex({ h: hsl.h, s: Math.min(1, hsl.s * 0.9), l: 0.08 });
+  const darkTint = hslToHex({ h: hsl.h, s: Math.min(1, hsl.s * 0.9), l: DARK_TINT_LIGHTNESS });
   const candidates = [darkTint, '#FFFFFF', '#000000'];
   const best = candidates.reduce((a, b) => (contrastRatio(b, fill) > contrastRatio(a, fill) ? b : a));
   if (contrastRatio(best, fill) >= min) return best;

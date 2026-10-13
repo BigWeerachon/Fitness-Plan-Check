@@ -38,19 +38,23 @@ const THU = 4;
 const FRI = 5;
 const SAT = 6;
 
+const REST_COMPOUND_SEC = 150;
+const REST_ACCESSORY_SEC = 75;
+const REST_LINEAR_SEC = 180;
+
 /** ท่าหลัก (compound) — เซ็ตน้อยครั้งน้อย พักนาน */
-function main(exerciseId: string, sets = 4, repMin = 6, repMax = 10): TemplateExercise {
-  return { exerciseId, sets, repMin, repMax, progressionMode: 'double', restSec: 150 };
+function compoundLift(exerciseId: string, sets = 4, repMin = 6, repMax = 10): TemplateExercise {
+  return { exerciseId, sets, repMin, repMax, progressionMode: 'double', restSec: REST_COMPOUND_SEC };
 }
 
 /** ท่าเสริม (accessory) */
-function acc(exerciseId: string, sets = 3, repMin = 10, repMax = 15): TemplateExercise {
-  return { exerciseId, sets, repMin, repMax, progressionMode: 'double', restSec: 75 };
+function accessoryLift(exerciseId: string, sets = 3, repMin = 10, repMax = 15): TemplateExercise {
+  return { exerciseId, sets, repMin, repMax, progressionMode: 'double', restSec: REST_ACCESSORY_SEC };
 }
 
 /** 5x5 แบบ linear */
-function fiveByFive(exerciseId: string, sets = 5): TemplateExercise {
-  return { exerciseId, sets, repMin: 5, repMax: 5, progressionMode: 'linear', restSec: 180 };
+function linear5x5Lift(exerciseId: string, sets = 5): TemplateExercise {
+  return { exerciseId, sets, repMin: 5, repMax: 5, progressionMode: 'linear', restSec: REST_LINEAR_SEC };
 }
 
 const pushA = (days: number[], key = 'push'): TemplateRoutine => ({
@@ -59,11 +63,11 @@ const pushA = (days: number[], key = 'push'): TemplateRoutine => ({
   type: 'push',
   days,
   exercises: [
-    main('barbell_bench_press'),
-    main('overhead_press', 3),
-    acc('incline_dumbbell_press', 3, 8, 12),
-    acc('lateral_raise'),
-    acc('triceps_pushdown'),
+    compoundLift('barbell_bench_press'),
+    compoundLift('overhead_press', 3),
+    accessoryLift('incline_dumbbell_press', 3, 8, 12),
+    accessoryLift('lateral_raise'),
+    accessoryLift('triceps_pushdown'),
   ],
 });
 
@@ -73,11 +77,11 @@ const pullA = (days: number[], key = 'pull'): TemplateRoutine => ({
   type: 'pull',
   days,
   exercises: [
-    main('barbell_row'),
-    main('lat_pulldown', 3, 8, 12),
-    acc('seated_cable_row', 3, 8, 12),
-    acc('face_pull'),
-    acc('dumbbell_curl', 3, 8, 12),
+    compoundLift('barbell_row'),
+    compoundLift('lat_pulldown', 3, 8, 12),
+    accessoryLift('seated_cable_row', 3, 8, 12),
+    accessoryLift('face_pull'),
+    accessoryLift('dumbbell_curl', 3, 8, 12),
   ],
 });
 
@@ -87,11 +91,11 @@ const legsA = (days: number[], key = 'legs'): TemplateRoutine => ({
   type: 'legs',
   days,
   exercises: [
-    main('back_squat'),
-    main('romanian_deadlift', 3, 8, 10),
-    acc('leg_press', 3, 10, 12),
-    acc('lying_leg_curl'),
-    acc('standing_calf_raise', 4),
+    compoundLift('back_squat'),
+    compoundLift('romanian_deadlift', 3, 8, 10),
+    accessoryLift('leg_press', 3, 10, 12),
+    accessoryLift('lying_leg_curl'),
+    accessoryLift('standing_calf_raise', 4),
   ],
 });
 
@@ -122,11 +126,11 @@ export const PROGRAM_TEMPLATES: ProgramTemplate[] = [
         type: 'push',
         days: [THU],
         exercises: [
-          main('seated_dumbbell_press', 4, 8, 10),
-          main('incline_barbell_bench_press', 3, 6, 10),
-          acc('cable_crossover'),
-          acc('cable_lateral_raise'),
-          acc('overhead_cable_extension'),
+          compoundLift('seated_dumbbell_press', 4, 8, 10),
+          compoundLift('incline_barbell_bench_press', 3, 6, 10),
+          accessoryLift('cable_crossover'),
+          accessoryLift('cable_lateral_raise'),
+          accessoryLift('overhead_cable_extension'),
         ],
       },
       {
@@ -135,11 +139,11 @@ export const PROGRAM_TEMPLATES: ProgramTemplate[] = [
         type: 'pull',
         days: [FRI],
         exercises: [
-          main('pull_up', 4, 5, 10),
-          main('one_arm_dumbbell_row', 3, 8, 12),
-          acc('straight_arm_pulldown'),
-          acc('rear_delt_fly'),
-          acc('hammer_curl', 3, 8, 12),
+          compoundLift('pull_up', 4, 5, 10),
+          compoundLift('one_arm_dumbbell_row', 3, 8, 12),
+          accessoryLift('straight_arm_pulldown'),
+          accessoryLift('rear_delt_fly'),
+          accessoryLift('hammer_curl', 3, 8, 12),
         ],
       },
       {
@@ -148,11 +152,11 @@ export const PROGRAM_TEMPLATES: ProgramTemplate[] = [
         type: 'legs',
         days: [SAT],
         exercises: [
-          main('deadlift', 3, 4, 6),
-          main('bulgarian_split_squat', 3, 8, 12),
-          acc('leg_extension'),
-          acc('seated_leg_curl'),
-          acc('seated_calf_raise', 4),
+          compoundLift('deadlift', 3, 4, 6),
+          compoundLift('bulgarian_split_squat', 3, 8, 12),
+          accessoryLift('leg_extension'),
+          accessoryLift('seated_leg_curl'),
+          accessoryLift('seated_calf_raise', 4),
         ],
       },
     ],
@@ -171,12 +175,12 @@ export const PROGRAM_TEMPLATES: ProgramTemplate[] = [
         type: 'upper',
         days: [MON],
         exercises: [
-          main('barbell_bench_press'),
-          main('barbell_row'),
-          acc('seated_dumbbell_press', 3, 8, 12),
-          acc('lat_pulldown', 3, 8, 12),
-          acc('barbell_curl'),
-          acc('triceps_pushdown'),
+          compoundLift('barbell_bench_press'),
+          compoundLift('barbell_row'),
+          accessoryLift('seated_dumbbell_press', 3, 8, 12),
+          accessoryLift('lat_pulldown', 3, 8, 12),
+          accessoryLift('barbell_curl'),
+          accessoryLift('triceps_pushdown'),
         ],
       },
       {
@@ -185,12 +189,12 @@ export const PROGRAM_TEMPLATES: ProgramTemplate[] = [
         type: 'lower',
         days: [TUE],
         exercises: [
-          main('back_squat'),
-          main('romanian_deadlift', 3, 8, 10),
-          acc('leg_press', 3, 10, 12),
-          acc('lying_leg_curl'),
-          acc('standing_calf_raise', 4),
-          acc('cable_crunch'),
+          compoundLift('back_squat'),
+          compoundLift('romanian_deadlift', 3, 8, 10),
+          accessoryLift('leg_press', 3, 10, 12),
+          accessoryLift('lying_leg_curl'),
+          accessoryLift('standing_calf_raise', 4),
+          accessoryLift('cable_crunch'),
         ],
       },
       {
@@ -199,12 +203,12 @@ export const PROGRAM_TEMPLATES: ProgramTemplate[] = [
         type: 'upper',
         days: [THU],
         exercises: [
-          main('overhead_press'),
-          main('pull_up', 4, 5, 10),
-          acc('incline_dumbbell_press', 3, 8, 12),
-          acc('seated_cable_row', 3, 8, 12),
-          acc('lateral_raise'),
-          acc('hammer_curl'),
+          compoundLift('overhead_press'),
+          compoundLift('pull_up', 4, 5, 10),
+          accessoryLift('incline_dumbbell_press', 3, 8, 12),
+          accessoryLift('seated_cable_row', 3, 8, 12),
+          accessoryLift('lateral_raise'),
+          accessoryLift('hammer_curl'),
         ],
       },
       {
@@ -213,12 +217,12 @@ export const PROGRAM_TEMPLATES: ProgramTemplate[] = [
         type: 'lower',
         days: [FRI],
         exercises: [
-          main('deadlift', 3, 4, 6),
-          main('front_squat', 3, 6, 10),
-          acc('walking_lunge', 3, 10, 12),
-          acc('hip_thrust', 3, 8, 12),
-          acc('seated_calf_raise', 4),
-          acc('hanging_leg_raise'),
+          compoundLift('deadlift', 3, 4, 6),
+          compoundLift('front_squat', 3, 6, 10),
+          accessoryLift('walking_lunge', 3, 10, 12),
+          accessoryLift('hip_thrust', 3, 8, 12),
+          accessoryLift('seated_calf_raise', 4),
+          accessoryLift('hanging_leg_raise'),
         ],
       },
     ],
@@ -237,11 +241,11 @@ export const PROGRAM_TEMPLATES: ProgramTemplate[] = [
         type: 'full_body',
         days: [MON],
         exercises: [
-          main('back_squat', 3),
-          main('barbell_bench_press', 3),
-          main('barbell_row', 3),
-          acc('lateral_raise'),
-          acc('crunch', 3, 12, 20),
+          compoundLift('back_squat', 3),
+          compoundLift('barbell_bench_press', 3),
+          compoundLift('barbell_row', 3),
+          accessoryLift('lateral_raise'),
+          accessoryLift('crunch', 3, 12, 20),
         ],
       },
       {
@@ -250,11 +254,11 @@ export const PROGRAM_TEMPLATES: ProgramTemplate[] = [
         type: 'full_body',
         days: [WED],
         exercises: [
-          main('deadlift', 3, 4, 6),
-          main('overhead_press', 3),
-          main('lat_pulldown', 3, 8, 12),
-          acc('goblet_squat'),
-          acc('dumbbell_curl'),
+          compoundLift('deadlift', 3, 4, 6),
+          compoundLift('overhead_press', 3),
+          compoundLift('lat_pulldown', 3, 8, 12),
+          accessoryLift('goblet_squat'),
+          accessoryLift('dumbbell_curl'),
         ],
       },
       {
@@ -263,11 +267,11 @@ export const PROGRAM_TEMPLATES: ProgramTemplate[] = [
         type: 'full_body',
         days: [FRI],
         exercises: [
-          main('front_squat', 3),
-          main('incline_dumbbell_press', 3, 8, 12),
-          main('one_arm_dumbbell_row', 3, 8, 12),
-          acc('hip_thrust'),
-          acc('triceps_pushdown'),
+          compoundLift('front_squat', 3),
+          compoundLift('incline_dumbbell_press', 3, 8, 12),
+          compoundLift('one_arm_dumbbell_row', 3, 8, 12),
+          accessoryLift('hip_thrust'),
+          accessoryLift('triceps_pushdown'),
         ],
       },
     ],
@@ -286,11 +290,11 @@ export const PROGRAM_TEMPLATES: ProgramTemplate[] = [
         type: 'push',
         days: [MON],
         exercises: [
-          main('barbell_bench_press'),
-          main('incline_dumbbell_press', 4, 8, 12),
-          acc('dumbbell_fly'),
-          acc('cable_crossover'),
-          acc('chest_dip', 3, 8, 12),
+          compoundLift('barbell_bench_press'),
+          compoundLift('incline_dumbbell_press', 4, 8, 12),
+          accessoryLift('dumbbell_fly'),
+          accessoryLift('cable_crossover'),
+          accessoryLift('chest_dip', 3, 8, 12),
         ],
       },
       {
@@ -299,11 +303,11 @@ export const PROGRAM_TEMPLATES: ProgramTemplate[] = [
         type: 'pull',
         days: [TUE],
         exercises: [
-          main('deadlift', 3, 4, 6),
-          main('pull_up', 4, 5, 10),
-          acc('barbell_row', 3, 8, 12),
-          acc('seated_cable_row'),
-          acc('straight_arm_pulldown'),
+          compoundLift('deadlift', 3, 4, 6),
+          compoundLift('pull_up', 4, 5, 10),
+          accessoryLift('barbell_row', 3, 8, 12),
+          accessoryLift('seated_cable_row'),
+          accessoryLift('straight_arm_pulldown'),
         ],
       },
       {
@@ -312,11 +316,11 @@ export const PROGRAM_TEMPLATES: ProgramTemplate[] = [
         type: 'push',
         days: [WED],
         exercises: [
-          main('overhead_press'),
-          acc('arnold_press', 3, 8, 12),
-          acc('lateral_raise', 4),
-          acc('rear_delt_fly', 4),
-          acc('dumbbell_shrug'),
+          compoundLift('overhead_press'),
+          accessoryLift('arnold_press', 3, 8, 12),
+          accessoryLift('lateral_raise', 4),
+          accessoryLift('rear_delt_fly', 4),
+          accessoryLift('dumbbell_shrug'),
         ],
       },
       {
@@ -325,12 +329,12 @@ export const PROGRAM_TEMPLATES: ProgramTemplate[] = [
         type: 'other',
         days: [THU],
         exercises: [
-          main('close_grip_bench_press', 3, 6, 10),
-          acc('barbell_curl', 3, 8, 12),
-          acc('skull_crusher', 3, 8, 12),
-          acc('hammer_curl'),
-          acc('rope_pushdown'),
-          acc('wrist_curl', 2, 12, 20),
+          compoundLift('close_grip_bench_press', 3, 6, 10),
+          accessoryLift('barbell_curl', 3, 8, 12),
+          accessoryLift('skull_crusher', 3, 8, 12),
+          accessoryLift('hammer_curl'),
+          accessoryLift('rope_pushdown'),
+          accessoryLift('wrist_curl', 2, 12, 20),
         ],
       },
       {
@@ -339,12 +343,12 @@ export const PROGRAM_TEMPLATES: ProgramTemplate[] = [
         type: 'legs',
         days: [FRI],
         exercises: [
-          main('back_squat'),
-          main('romanian_deadlift', 3, 8, 10),
-          acc('leg_press'),
-          acc('leg_extension'),
-          acc('lying_leg_curl'),
-          acc('standing_calf_raise', 4),
+          compoundLift('back_squat'),
+          compoundLift('romanian_deadlift', 3, 8, 10),
+          accessoryLift('leg_press'),
+          accessoryLift('leg_extension'),
+          accessoryLift('lying_leg_curl'),
+          accessoryLift('standing_calf_raise', 4),
         ],
       },
     ],
@@ -362,14 +366,22 @@ export const PROGRAM_TEMPLATES: ProgramTemplate[] = [
         name: { en: 'Workout A', th: 'วัน A' },
         type: 'full_body',
         days: [MON, FRI],
-        exercises: [fiveByFive('back_squat'), fiveByFive('barbell_bench_press'), fiveByFive('barbell_row')],
+        exercises: [
+          linear5x5Lift('back_squat'),
+          linear5x5Lift('barbell_bench_press'),
+          linear5x5Lift('barbell_row'),
+        ],
       },
       {
         key: 'workout_b',
         name: { en: 'Workout B', th: 'วัน B' },
         type: 'full_body',
         days: [WED],
-        exercises: [fiveByFive('back_squat'), fiveByFive('overhead_press'), fiveByFive('deadlift', 1)],
+        exercises: [
+          linear5x5Lift('back_squat'),
+          linear5x5Lift('overhead_press'),
+          linear5x5Lift('deadlift', 1),
+        ],
       },
     ],
   },

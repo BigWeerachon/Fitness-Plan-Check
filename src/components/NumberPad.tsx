@@ -2,6 +2,7 @@ import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { applyKey, type NumberKey } from '../domain/numberEntry';
 import { BIG_TEXT_MAX_SCALE } from '../theme/typography';
 import { MIN_TOUCH, radius, spacing } from '../theme/tokens';
 import { usePalette } from '../theme/useTheme';
@@ -9,7 +10,7 @@ import { AppText } from './AppText';
 import { Button } from './Button';
 import { Sheet } from './Sheet';
 
-const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', '⌫'] as const;
+const KEYS: readonly NumberKey[] = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', '⌫'];
 
 /**
  * แป้นตัวเลขใหญ่ใช้ระหว่างฝึก (SPEC G1) — ปุ่มใหญ่กดง่ายมือเดียว
@@ -38,18 +39,11 @@ export function NumberPad(props: NumberPadProps) {
 function PadContent({ initial, allowDecimal = true, suffix, onSubmit, max = 9999 }: NumberPadProps) {
   const p = usePalette();
   const { t } = useTranslation();
-  const [text, setText] = useState(initial === null || initial === undefined ? '' : String(initial));
+  const [text, setText] = useState(initial === null ? '' : String(initial));
 
-  const press = (key: (typeof KEYS)[number]) => {
+  const press = (key: NumberKey) => {
     void Haptics.selectionAsync().catch(() => undefined);
-    setText((prev) => {
-      if (key === '⌫') return prev.slice(0, -1);
-      if (key === '.') return !allowDecimal || prev.includes('.') ? prev : (prev || '0') + '.';
-      const next = prev === '0' ? key : prev + key;
-      const decimals = next.split('.')[1];
-      if (decimals && decimals.length > 2) return prev;
-      return Number(next) > max ? prev : next;
-    });
+    setText((prev) => applyKey(prev, key, { allowDecimal, max }));
   };
 
   const value = text === '' ? null : Number(text);

@@ -33,9 +33,13 @@ export function Button({
   testID?: string;
 }) {
   const p = usePalette();
-  const bg = kind === 'primary' ? p.accentFill : kind === 'secondary' ? p.card : 'transparent';
-  const fg =
-    kind === 'primary' ? p.onAccent : kind === 'danger' ? p.danger : kind === 'plain' ? p.accent : p.text;
+  const kindColors: Record<ButtonKind, { background: string; foreground: string }> = {
+    primary: { background: p.accentFill, foreground: p.onAccent },
+    secondary: { background: p.card, foreground: p.text },
+    plain: { background: 'transparent', foreground: p.accent },
+    danger: { background: 'transparent', foreground: p.danger },
+  };
+  const { background: bg, foreground: fg } = kindColors[kind];
   const inactive = disabled || loading;
   return (
     <Pressable

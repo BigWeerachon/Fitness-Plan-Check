@@ -6,6 +6,7 @@ import {
   buildPalette,
   chartColors,
   contrastReport,
+  failingChecks,
   NEUTRALS,
   passesAA,
   type ThemeMode,
@@ -56,6 +57,16 @@ describe('accent palettes (SPEC DS / N5)', () => {
       expect(passesAA(report)).toBe(true);
     },
   );
+
+  it('failingChecks names every check below its threshold', () => {
+    const report = contrastReport(buildPalette('dark', 'pink'));
+    expect(failingChecks(report)).toEqual([]);
+    const worse = { ...report, accentOnCard: 4.4, fillOnCard: 2.9 };
+    expect(failingChecks(worse)).toEqual(['accentOnCard', 'fillOnCard']);
+    expect(passesAA(worse)).toBe(false);
+    // fillOnCard ใช้เกณฑ์กราฟิก 3:1 ไม่ใช่ข้อความ 4.5:1
+    expect(failingChecks({ ...report, fillOnCard: 3 })).toEqual([]);
+  });
 
   it('keeps the dark default accent at the reference pink', () => {
     expect(buildPalette('dark', 'pink').accent).toBe('#E5A9DC');

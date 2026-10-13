@@ -4,31 +4,32 @@
  */
 import { mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import { LEGAL, LEGAL_KEYS, MARKERS, REFERENCES, hasPlaceholders } from '../src/legal/content';
+import {
+  LEGAL,
+  LEGAL_KEYS,
+  LEGAL_LANGUAGES,
+  REFERENCES,
+  hasPlaceholders,
+  unfilledMarkers,
+} from '../src/legal/content';
 
 const out = join(__dirname, '..', 'docs', 'legal');
 mkdirSync(out, { recursive: true });
 
+const allDocs = LEGAL_KEYS.flatMap((key) => LEGAL_LANGUAGES.map((lang) => LEGAL[key][lang]));
 // ป้ายเทมเพลตแสดงเฉพาะตอนที่ยังมีค่าตัวแทนเหลือ (กรอกครบแล้วไฟล์ที่ส่งออกต้องสะอาด พร้อมโฮสต์)
-const stillTemplate = LEGAL_KEYS.some((k) =>
-  (['th', 'en'] as const).some((l) => hasPlaceholders(LEGAL[k][l])),
-);
-const allText = LEGAL_KEYS.flatMap((k) =>
-  (['th', 'en'] as const).map((l) => JSON.stringify(LEGAL[k][l])),
-).join('\n');
+const isStillTemplate = allDocs.some(hasPlaceholders);
 // แสดงเฉพาะค่าตัวแทนที่ยังไม่ได้กรอก
-const markers = Object.values(MARKERS)
-  .filter((m) => allText.includes(JSON.stringify(m).slice(1, -1)))
-  .join(', ');
-const note = stillTemplate
+const unfilled = unfilledMarkers(allDocs).join(', ');
+const note = isStillTemplate
   ? {
-      th: `> เทมเพลต — เจ้าของโปรเจกต์ต้องแทนที่ ${markers} และให้ผู้เชี่ยวชาญกฎหมายตรวจทานก่อนเผยแพร่\n\n`,
-      en: `> Template — the owner must replace ${markers} and have it reviewed by a legal professional before publishing.\n\n`,
+      th: `> เทมเพลต — เจ้าของโปรเจกต์ต้องแทนที่ ${unfilled} และให้ผู้เชี่ยวชาญกฎหมายตรวจทานก่อนเผยแพร่\n\n`,
+      en: `> Template — the owner must replace ${unfilled} and have it reviewed by a legal professional before publishing.\n\n`,
     }
   : { th: '', en: '' };
 
 for (const key of LEGAL_KEYS) {
-  for (const lang of ['th', 'en'] as const) {
+  for (const lang of LEGAL_LANGUAGES) {
     const doc = LEGAL[key][lang];
     const body = doc.sections.map((s) => `## ${s.heading}\n\n${s.body.replace(/\n/g, '  \n')}`).join('\n\n');
     const file = join(out, `${key}.${lang}.md`);

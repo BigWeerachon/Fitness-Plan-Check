@@ -3,16 +3,17 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Linking, StyleSheet, View } from 'react-native';
 import { AppText, Button, Card, HeroTitle, Screen, StackHeader } from '../../components';
+import { currentLanguage } from '../../i18n';
 import { hasPlaceholders, LEGAL, type LegalKey } from '../../legal/content';
 import { env } from '../../services/config';
 import { spacing } from '../../theme/tokens';
 
 /** Privacy Policy / Terms (SPEC N4) — เข้าถึงได้เสมอ (B3) */
 export default function LegalScreen() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { doc } = useLocalSearchParams<{ doc: LegalKey }>();
   const key: LegalKey = doc === 'terms' ? 'terms' : 'privacy';
-  const content = LEGAL[key][i18n.language === 'th' ? 'th' : 'en'];
+  const content = LEGAL[key][currentLanguage()];
   const webUrl = key === 'terms' ? env.termsUrl : env.privacyUrl;
   return (
     <Screen header={<StackHeader />}>

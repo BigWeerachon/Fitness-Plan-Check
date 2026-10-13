@@ -97,7 +97,7 @@ export function Badge({
   tone?: 'accent' | 'neutral' | 'warning';
 }) {
   const p = usePalette();
-  const color = tone === 'accent' ? p.accent : tone === 'warning' ? p.warning : p.textSecondary;
+  const color = { accent: p.accent, warning: p.warning, neutral: p.textSecondary }[tone];
   return (
     <View style={[styles.badge, { borderColor: color }]}>
       <AppText variant="caption" color={color}>

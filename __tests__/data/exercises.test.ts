@@ -76,6 +76,37 @@ describe('exercise library (SPEC F7–F9)', () => {
     expect(searchExercises(all, 'push-up', {}, 'en').map((e) => e.id)).toContain('push_up');
   });
 
+  it('normalizes accents, Thai tone marks and punctuation', () => {
+    expect(normalizeSearch('  Café--Press!  ')).toBe('cafe press');
+    expect(normalizeSearch('ก็ได้')).toBe('กได');
+  });
+
+  it('ranks names starting with the query before names that only contain it', () => {
+    const all = mergeExercises([
+      {
+        id: 'c1',
+        name: 'Wide press',
+        primaryMuscle: 'chest',
+        secondaryMuscles: [],
+        equipment: 'other',
+        notes: null,
+      },
+      {
+        id: 'c2',
+        name: 'Press wide',
+        primaryMuscle: 'chest',
+        secondaryMuscles: [],
+        equipment: 'other',
+        notes: null,
+      },
+    ]);
+    const ids = searchExercises(all, 'press', {}, 'en').map((e) => e.id);
+    expect(ids.indexOf('c2')).toBeLessThan(ids.indexOf('c1'));
+    expect(ids.indexOf('c1')).toBeGreaterThanOrEqual(0);
+    // ไม่มีคำค้น = ไม่กรองตามชื่อ ทุกท่ามาครบ
+    expect(searchExercises(all, '', {}, 'en')).toHaveLength(all.length);
+  });
+
   it('filters by muscle (optionally secondary) and equipment, and merges custom exercises first', () => {
     const all = mergeExercises([
       {

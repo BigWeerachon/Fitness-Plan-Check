@@ -36,15 +36,15 @@ export function WeekdayDots({
     .join(', ');
 
   const cells = order.map((d) => {
-    const on = active.includes(d);
-    const color = on ? (dimmed ? p.textSecondary : p.accent) : p.textSecondary;
+    const isActive = active.includes(d);
+    const color = isActive && !dimmed ? p.accent : p.textSecondary;
     const cell = (
       <View style={styles.cell}>
-        <View style={[styles.dot, { backgroundColor: on ? color : 'transparent' }]} />
+        <View style={[styles.dot, { backgroundColor: isActive ? color : 'transparent' }]} />
         <AppText
-          variant={on ? 'dayLetterOn' : 'dayLetter'}
+          variant={isActive ? 'dayLetterOn' : 'dayLetter'}
           color={color}
-          style={[!on && styles.off, highlightDay === d && { textDecorationLine: 'underline' }]}
+          style={[!isActive && styles.off, highlightDay === d && { textDecorationLine: 'underline' }]}
           maxFontSizeMultiplier={1.3}
         >
           {weekdayShort(d)}
@@ -57,7 +57,7 @@ export function WeekdayDots({
         key={d}
         onPress={() => onToggleDay(d)}
         accessibilityRole="checkbox"
-        accessibilityState={{ checked: on }}
+        accessibilityState={{ checked: isActive }}
         accessibilityLabel={label ? `${label}, ${weekdayLong(d)}` : weekdayLong(d)}
         style={styles.touch}
         testID={`weekday-${d}`}

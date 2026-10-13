@@ -1,4 +1,8 @@
 import {
+  AA_GRAPHIC,
+  AA_LARGE,
+  AA_TEXT,
+  clamp,
   composite,
   contrastRatio,
   ensureContrast,
@@ -94,9 +98,7 @@ export interface AccentSet {
   softSurfaces: string[];
 }
 
-export const AA_TEXT = 4.5;
-export const AA_LARGE = 3;
-export const AA_GRAPHIC = 3;
+export { AA_GRAPHIC, AA_LARGE, AA_TEXT };
 const DARK_SOFT_ALPHA = 0.45;
 const LIGHT_SOFT_ALPHA = 0.35;
 
@@ -115,11 +117,11 @@ const GLOW_OPACITY_MIN = 0.12;
  * จุดสว่างสุดของแสงผ่าน AA 4.5:1 — สีหลักที่สว่างมาก (เหลือง/เขียวอ่อน) จึงได้แสงจางกว่าเล็กน้อย
  */
 function glowOpacityFor(glow: string, start: number, mode: ThemeMode): number {
-  const n = NEUTRALS[mode];
+  const neutrals = NEUTRALS[mode];
   let opacity = start;
   while (
     opacity > GLOW_OPACITY_MIN &&
-    contrastRatio(n.textSecondary, composite(glow, opacity, n.background)) < AA_TEXT
+    contrastRatio(neutrals.textSecondary, composite(glow, opacity, neutrals.background)) < AA_TEXT
   ) {
     opacity = Math.round((opacity - GLOW_OPACITY_STEP) * 100) / 100;
   }
@@ -129,16 +131,18 @@ function glowOpacityFor(glow: string, start: number, mode: ThemeMode): number {
 export function deriveAccent(baseHex: string, mode: ThemeMode): AccentSet {
   const base = normalizeHex(baseHex);
   const hsl = hexToHsl(base);
-  const n = NEUTRALS[mode];
+  const neutrals = NEUTRALS[mode];
   if (mode === 'dark') {
-    const glow = hslToHex({ h: hsl.h, s: Math.min(0.75, Math.max(0.35, hsl.s)), l: 0.55 });
+    const glow = hslToHex({ h: hsl.h, s: clamp(hsl.s, 0.35, 0.75), l: 0.55 });
     const glowOpacity = glowOpacityFor(glow, 0.3, mode);
     // หัวข้อใหญ่วางบนแสงเรือง จึงให้ข้อความสีหลักผ่าน 4.5:1 กับจุดที่สว่างที่สุดของแสงด้วย
-    const peak = composite(glow, glowOpacity, n.background);
-    const softBase = hslToHex({ h: hsl.h, s: Math.min(0.6, Math.max(0.25, hsl.s)), l: 0.4 });
-    const softSurfaces = [n.card, n.background].map((bg) => composite(softBase, DARK_SOFT_ALPHA, bg));
+    const peak = composite(glow, glowOpacity, neutrals.background);
+    const softBase = hslToHex({ h: hsl.h, s: clamp(hsl.s, 0.25, 0.6), l: 0.4 });
+    const softSurfaces = [neutrals.card, neutrals.background].map((bg) =>
+      composite(softBase, DARK_SOFT_ALPHA, bg),
+    );
     const text = ensureContrast(base, [...TEXT_SURFACES.dark, peak, ...softSurfaces], AA_TEXT);
-    const fill = ensureContrast(base, [n.card], AA_GRAPHIC);
+    const fill = ensureContrast(base, [neutrals.card], AA_GRAPHIC);
     return {
       text,
       fill,
@@ -149,12 +153,14 @@ export function deriveAccent(baseHex: string, mode: ThemeMode): AccentSet {
       softSurfaces,
     };
   }
-  const glow = hslToHex({ h: hsl.h, s: Math.min(0.85, Math.max(0.4, hsl.s)), l: 0.78 });
+  const glow = hslToHex({ h: hsl.h, s: clamp(hsl.s, 0.4, 0.85), l: 0.78 });
   const glowOpacity = glowOpacityFor(glow, 0.35, mode);
-  const peak = composite(glow, glowOpacity, n.background);
-  const softSurfaces = [n.card, n.background].map((bg) => composite(base, LIGHT_SOFT_ALPHA, bg));
+  const peak = composite(glow, glowOpacity, neutrals.background);
+  const softSurfaces = [neutrals.card, neutrals.background].map((bg) =>
+    composite(base, LIGHT_SOFT_ALPHA, bg),
+  );
   const text = ensureContrast(base, [...TEXT_SURFACES.light, peak, ...softSurfaces], AA_TEXT);
-  const fill = ensureContrast(text, [n.card, n.background], AA_GRAPHIC);
+  const fill = ensureContrast(text, [neutrals.card, neutrals.background], AA_GRAPHIC);
   return {
     text,
     fill,
@@ -199,34 +205,40 @@ const GOLDEN_ANGLE = 137.508;
 /** จำนวนสีกราฟ ≥ จำนวนกลุ่มกล้ามเนื้อ (11) เพื่อไม่ให้ชิ้นสุดท้ายซ้ำสีชิ้นแรก (I2) */
 export const CHART_COLOR_COUNT = 12;
 
-export function chartColors(baseHex: string, mode: ThemeMode, count = CHART_COLOR_COUNT): string[] {
+/** fillColor = สีปุ่มของสีหลักนี้ ถ้าคำนวณไว้แล้วให้ส่งมาเพื่อไม่ต้องคำนวณซ้ำ */
+export function chartColors(
+  baseHex: string,
+  mode: ThemeMode,
+  count = CHART_COLOR_COUNT,
+  fillColor: string = deriveAccent(baseHex, mode).fill,
+): string[] {
   const hsl = hexToHsl(baseHex);
-  const n = NEUTRALS[mode];
+  const neutrals = NEUTRALS[mode];
   const colors: string[] = [];
   for (let i = 0; i < count; i++) {
     const h = hsl.h + i * GOLDEN_ANGLE;
-    const s = Math.max(0.45, Math.min(0.8, hsl.s));
+    const s = clamp(hsl.s, 0.45, 0.8);
     const l = mode === 'dark' ? 0.72 : 0.42;
-    colors.push(ensureContrast(hslToHex({ h, s, l }), [n.card], AA_GRAPHIC));
+    colors.push(ensureContrast(hslToHex({ h, s, l }), [neutrals.card], AA_GRAPHIC));
   }
-  colors[0] = deriveAccent(baseHex, mode).fill;
+  colors[0] = fillColor;
   return colors;
 }
 
 export function buildPalette(mode: ThemeMode, accent: AccentSetting | string): Palette {
   const base = resolveAccentBase(accent);
-  const a = deriveAccent(base, mode);
+  const accentSet = deriveAccent(base, mode);
   return {
     mode,
     ...NEUTRALS[mode],
-    accent: a.text,
-    accentFill: a.fill,
-    onAccent: a.onFill,
-    glow: a.glow,
-    glowOpacity: a.glowOpacity,
-    accentSoft: a.soft,
-    accentSoftSurfaces: a.softSurfaces,
-    chart: chartColors(base, mode),
+    accent: accentSet.text,
+    accentFill: accentSet.fill,
+    onAccent: accentSet.onFill,
+    glow: accentSet.glow,
+    glowOpacity: accentSet.glowOpacity,
+    accentSoft: accentSet.soft,
+    accentSoftSurfaces: accentSet.softSurfaces,
+    chart: chartColors(base, mode, CHART_COLOR_COUNT, accentSet.fill),
   };
 }
 
@@ -267,18 +279,26 @@ export function contrastReport(p: Palette): ContrastReport {
   };
 }
 
+/** เกณฑ์ขั้นต่ำของแต่ละข้อ — Record บังคับให้ทุก field ของ ContrastReport มีเกณฑ์ */
+const MIN_RATIO: Record<keyof ContrastReport, number> = {
+  accentOnBackground: AA_TEXT,
+  accentOnCard: AA_TEXT,
+  onAccentOnFill: AA_TEXT,
+  fillOnCard: AA_GRAPHIC,
+  heroOnGlow: AA_TEXT,
+  secondaryOnGlow: AA_TEXT,
+  secondaryOnCard: AA_TEXT,
+  accentOnSoft: AA_TEXT,
+  secondaryOnElevated: AA_TEXT,
+};
+
+/** ชื่อข้อที่ contrast ต่ำกว่าเกณฑ์ (ว่าง = ผ่านหมด) */
+export function failingChecks(r: ContrastReport): (keyof ContrastReport)[] {
+  return (Object.keys(MIN_RATIO) as (keyof ContrastReport)[]).filter((k) => r[k] < MIN_RATIO[k]);
+}
+
 export function passesAA(r: ContrastReport): boolean {
-  return (
-    r.accentOnBackground >= AA_TEXT &&
-    r.accentOnCard >= AA_TEXT &&
-    r.onAccentOnFill >= AA_TEXT &&
-    r.fillOnCard >= AA_GRAPHIC &&
-    r.heroOnGlow >= AA_TEXT &&
-    r.secondaryOnGlow >= AA_TEXT &&
-    r.secondaryOnCard >= AA_TEXT &&
-    r.accentOnSoft >= AA_TEXT &&
-    r.secondaryOnElevated >= AA_TEXT
-  );
+  return failingChecks(r).length === 0;
 }
 
 export const radius = { card: 28, row: 20, button: 16, pill: 999, sheet: 28, input: 14 } as const;

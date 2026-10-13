@@ -14,12 +14,17 @@ export interface AppTextProps extends TextProps {
 /** ข้อความทุกตัวในแอปผ่านคอมโพเนนต์นี้ เพื่อใช้ฟอนต์/สี/การขยายฟอนต์ตาม design tokens */
 export function AppText({ variant = 'body', color, secondary, accent, align, style, ...rest }: AppTextProps) {
   const p = usePalette();
-  const c = color ?? (accent ? p.accent : secondary ? p.textSecondary : p.text);
+  const resolvedColor = color ?? (accent ? p.accent : secondary ? p.textSecondary : p.text);
   return (
     <Text
       maxFontSizeMultiplier={BODY_MAX_SCALE}
       {...rest}
-      style={[typography[variant] as TextStyle, { color: c }, align ? { textAlign: align } : null, style]}
+      style={[
+        typography[variant] as TextStyle,
+        { color: resolvedColor },
+        align ? { textAlign: align } : null,
+        style,
+      ]}
     />
   );
 }

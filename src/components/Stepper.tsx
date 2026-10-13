@@ -14,6 +14,9 @@ const HIDDEN_FROM_READERS = {
   accessibilityElementsHidden: true,
 } as const;
 
+/** ปัดเศษทศนิยม 2 ตำแหน่งกันค่าคลาดเคลื่อนของ float เมื่อ step เป็นทศนิยม */
+const roundToHundredths = (v: number) => Math.round(v * 100) / 100;
+
 /** ปุ่ม − ค่า + สำหรับตัวเลขเล็กๆ (จำนวนเซ็ต ช่วงครั้ง) รองรับ VoiceOver/TalkBack แบบ adjustable */
 export function Stepper({
   label,
@@ -35,8 +38,10 @@ export function Stepper({
   testID?: string;
 }) {
   const p = usePalette();
-  const dec = () => onChange(Math.max(min, Math.round((value - step) * 100) / 100));
-  const inc = () => onChange(Math.min(max, Math.round((value + step) * 100) / 100));
+  const decrease = () => onChange(Math.max(min, roundToHundredths(value - step)));
+  const increase = () => onChange(Math.min(max, roundToHundredths(value + step)));
+  const atMin = value <= min;
+  const atMax = value >= max;
   const text = format ? format(value) : String(value);
   return (
     <View
@@ -46,30 +51,34 @@ export function Stepper({
       accessibilityLabel={label}
       accessibilityValue={{ min, max, now: value, text }}
       accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
-      onAccessibilityAction={(e) => (e.nativeEvent.actionName === 'increment' ? inc() : dec())}
+      onAccessibilityAction={(e) => {
+        const { actionName } = e.nativeEvent;
+        if (actionName === 'increment') increase();
+        else if (actionName === 'decrement') decrease();
+      }}
       testID={testID}
     >
       <AppText style={styles.label}>{label}</AppText>
       <Pressable
-        onPress={dec}
-        disabled={value <= min}
+        onPress={decrease}
+        disabled={atMin}
         {...HIDDEN_FROM_READERS}
         style={[styles.btn, { backgroundColor: p.inputBg }]}
         testID={testID ? `${testID}-dec` : undefined}
       >
-        <Icon name="remove" size={20} color={value <= min ? p.textSecondary : p.accent} />
+        <Icon name="remove" size={20} color={atMin ? p.textSecondary : p.accent} />
       </Pressable>
       <AppText variant="tabular" style={styles.value}>
         {text}
       </AppText>
       <Pressable
-        onPress={inc}
-        disabled={value >= max}
+        onPress={increase}
+        disabled={atMax}
         {...HIDDEN_FROM_READERS}
         style={[styles.btn, { backgroundColor: p.inputBg }]}
         testID={testID ? `${testID}-inc` : undefined}
       >
-        <Icon name="add" size={20} color={value >= max ? p.textSecondary : p.accent} />
+        <Icon name="add" size={20} color={atMax ? p.textSecondary : p.accent} />
       </Pressable>
     </View>
   );
