@@ -56,14 +56,10 @@ function activeOverride(overrides: readonly OverrideEntry[], date: LocalDate): O
 
 /** routine ของวันในสัปดาห์ตามตารางหลัก: เฉพาะแถวที่เปิดอยู่ เรียงตาม sortOrder ไม่ซ้ำกัน */
 export function routinesOnWeekday(entries: readonly PlanEntry[], weekday: number): string[] {
-  const ids: string[] = [];
-  [...entries]
+  const enabledForDay = entries
     .filter((e) => e.enabled && e.deletedAt == null && e.days.includes(weekday))
-    .sort((a, b) => a.sortOrder - b.sortOrder)
-    .forEach((e) => {
-      if (!ids.includes(e.routineId)) ids.push(e.routineId);
-    });
-  return ids;
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+  return [...new Set(enabledForDay.map((e) => e.routineId))];
 }
 
 /** แผนของวันที่กำหนด: override ชนะตารางหลักเสมอ; ตารางไม่มี routine ในวันนั้น = วันพัก */

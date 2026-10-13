@@ -1,6 +1,6 @@
 import type { CustomWeek, ProgressionMode, RoutineExercise, SessionSet, WeightUnit } from '../db/schema';
 import { diffDays, toLocalDate } from './dates';
-import { lbToKg, roundTo, roundWeightToStep } from './units';
+import { lbToKg, roundTo, roundWeightToStep, sameWeight, WEIGHT_EPSILON_KG } from './units';
 
 /**
  * Progressive overload ต่อท่า (SPEC G2) — ฟังก์ชันล้วน
@@ -80,16 +80,14 @@ export interface SuggestInput {
   now: number;
 }
 
-const EPS = 1e-6;
-
 /** เซ็ตที่ติ๊กเสร็จและมีจำนวนครั้งแล้ว */
 type DoneSet = PerformedSet & { reps: number };
 
-interface Performance {
+interface LastSessionSummary {
   /** น้ำหนักทำงาน = น้ำหนักมากสุดที่ทำเสร็จ (null/0 = ไม่มีน้ำหนัก) */
   weightKg: number | null;
   /** เซ็ตที่เสร็จที่น้ำหนักทำงาน */
-  working: DoneSet[];
+  workingSets: DoneSet[];
 }
 
 function isDone(s: PerformedSet): s is DoneSet {
@@ -100,15 +98,17 @@ function isDone(s: PerformedSet): s is DoneSet {
  * สรุปผลเซสชันล่าสุด: นับเฉพาะเซ็ตที่ติ๊กเสร็จและมีจำนวนครั้ง
  * ใช้เซ็ตที่ "น้ำหนักทำงาน" (หนักสุด) เท่านั้น — เซ็ต back-off ที่เบากว่าไม่ทำให้การเพิ่มน้ำหนักพลาด
  */
-function summarize(sets: readonly PerformedSet[] | null): Performance | null {
+function summarize(sets: readonly PerformedSet[] | null): LastSessionSummary | null {
   const done = (sets ?? []).filter(isDone);
   if (done.length === 0) return null;
   const weights = done.map((s) => s.weightKg).filter((w): w is number => typeof w === 'number');
-  if (weights.length === 0) return { weightKg: null, working: done };
+  if (weights.length === 0) return { weightKg: null, workingSets: done };
   const top = Math.max(...weights);
   return {
     weightKg: top,
-    working: done.filter((s) => typeof s.weightKg === 'number' && Math.abs(s.weightKg - top) < EPS),
+    workingSets: done.filter(
+      (s) => typeof s.weightKg === 'number' && Math.abs(s.weightKg - top) < WEIGHT_EPSILON_KG,
+    ),
   };
 }
 
@@ -131,24 +131,36 @@ export function customWeekIndex(startedAt: number | null, now: number, length: n
   return Math.max(0, weeks) % length;
 }
 
-function firstSuggestion(config: ProgressionConfig, failStreak: number): Suggestion {
+function suggestion(
+  targetWeightKg: number | null,
+  targetReps: number,
+  reason: SuggestionReason,
+  failStreak = 0,
+  deloadOffered = false,
+): Suggestion {
+  return { targetWeightKg, targetReps, reason, failStreak, deloadOffered };
+}
+
+/** เป้าที่ตั้งไว้ในค่าตั้งของท่า (ไม่มี = น้ำหนักฐาน / ขอบล่างของช่วงครั้ง) */
+function configuredTarget(config: ProgressionConfig): { weightKg: number | null; reps: number } {
   return {
-    targetWeightKg: config.targetWeightKg ?? config.baseWeightKg ?? null,
-    targetReps: config.targetReps ?? config.repMin,
-    reason: 'first',
-    failStreak,
-    deloadOffered: false,
+    weightKg: config.targetWeightKg ?? config.baseWeightKg ?? null,
+    reps: config.targetReps ?? config.repMin,
   };
 }
 
-function suggestOff(config: ProgressionConfig, perf: Performance | null): Suggestion {
-  return {
-    targetWeightKg: perf ? perf.weightKg : (config.targetWeightKg ?? config.baseWeightKg ?? null),
-    targetReps: perf ? lowestReps(perf.working) : (config.targetReps ?? config.repMin),
-    reason: 'off',
-    failStreak: 0,
-    deloadOffered: false,
-  };
+function firstSuggestion(config: ProgressionConfig, failStreak: number): Suggestion {
+  const target = configuredTarget(config);
+  return suggestion(target.weightKg, target.reps, 'first', failStreak);
+}
+
+function suggestOff(config: ProgressionConfig, last: LastSessionSummary | null): Suggestion {
+  const target = configuredTarget(config);
+  return suggestion(
+    last ? last.weightKg : target.weightKg,
+    last ? lowestReps(last.workingSets) : target.reps,
+    'off',
+  );
 }
 
 /**
@@ -156,36 +168,22 @@ function suggestOff(config: ProgressionConfig, perf: Performance | null): Sugges
  * → +ก้าว แล้วกลับไปขอบล่าง; ไม่งั้นน้ำหนักเดิม เป้า = (ครั้งต่ำสุดของเซ็ตที่น้ำหนักทำงาน) + 1
  * บีบให้อยู่ในช่วง [repMin, repMax]
  */
-function suggestDouble(config: ProgressionConfig, perf: Performance, unit: WeightUnit): Suggestion {
-  const hitTop = perf.working.filter((s) => s.reps >= config.repMax).length;
-  if (hitTop >= plannedSets(config)) {
-    if (!hasLoad(perf.weightKg)) {
+function suggestDouble(config: ProgressionConfig, last: LastSessionSummary, unit: WeightUnit): Suggestion {
+  const setsAtRepMax = last.workingSets.filter((s) => s.reps >= config.repMax).length;
+  if (setsAtRepMax >= plannedSets(config)) {
+    if (!hasLoad(last.weightKg)) {
       // บอดี้เวท: เพิ่มน้ำหนักไม่ได้ คงที่เพดานช่วงครั้ง
-      return {
-        targetWeightKg: perf.weightKg,
-        targetReps: config.repMax,
-        reason: 'repeat',
-        failStreak: 0,
-        deloadOffered: false,
-      };
+      return suggestion(last.weightKg, config.repMax, 'repeat');
     }
-    return {
-      targetWeightKg: roundWeightToStep(perf.weightKg + config.weightStepKg, config.weightStepKg, unit),
-      targetReps: config.repMin,
-      reason: 'increase',
-      failStreak: 0,
-      deloadOffered: false,
-    };
+    return suggestion(
+      roundWeightToStep(last.weightKg + config.weightStepKg, config.weightStepKg, unit),
+      config.repMin,
+      'increase',
+    );
   }
-  const lowest = lowestReps(perf.working);
+  const lowest = lowestReps(last.workingSets);
   const next = Math.min(config.repMax, Math.max(config.repMin, lowest + 1));
-  return {
-    targetWeightKg: perf.weightKg,
-    targetReps: next,
-    reason: next > lowest ? 'addRep' : 'repeat',
-    failStreak: 0,
-    deloadOffered: false,
-  };
+  return suggestion(last.weightKg, next, next > lowest ? 'addRep' : 'repeat');
 }
 
 /** น้ำหนักหลังลด ~10% ปัดตามก้าว และลดอย่างน้อย 1 ก้าว (null = ลดไม่ได้แล้ว) */
@@ -194,42 +192,33 @@ function deloadWeight(weightKg: number, config: ProgressionConfig, unit: WeightU
   const tenPct = roundWeightToStep(weightKg * DELOAD_FACTOR, step, unit);
   const oneStep = roundWeightToStep(roundWeightToStep(weightKg, step, unit) - step, step, unit);
   const result = Math.min(tenPct, oneStep);
-  return result > EPS ? result : null;
+  return result > WEIGHT_EPSILON_KG ? result : null;
 }
 
 /**
  * Linear: ทุกเซ็ตที่วางแผนถึงเป้าครั้ง (เป้าของเซ็ตนั้น หรือเป้าของท่า) ที่น้ำหนักทำงาน → +ก้าว, นับพลาด = 0
  * ไม่ถึง → น้ำหนักเดิม นับพลาด +1; ครบ 2 ครั้งติดกันขึ้นไป → แนะนำลด ~10% (ปฏิเสธได้)
  */
-function suggestLinear(config: ProgressionConfig, perf: Performance, unit: WeightUnit): Suggestion {
-  const reps = config.targetReps ?? config.repMin;
-  const hit = perf.working.filter((s) => s.reps >= (s.targetReps ?? reps)).length;
-  if (hit >= plannedSets(config)) {
-    return {
-      targetWeightKg: hasLoad(perf.weightKg)
-        ? roundWeightToStep(perf.weightKg + config.weightStepKg, config.weightStepKg, unit)
-        : perf.weightKg,
-      targetReps: reps,
-      reason: hasLoad(perf.weightKg) ? 'increase' : 'repeat',
-      failStreak: 0,
-      deloadOffered: false,
-    };
+function suggestLinear(config: ProgressionConfig, last: LastSessionSummary, unit: WeightUnit): Suggestion {
+  const defaultTargetReps = configuredTarget(config).reps;
+  const setsHittingTarget = last.workingSets.filter(
+    (s) => s.reps >= (s.targetReps ?? defaultTargetReps),
+  ).length;
+  const weightKg = last.weightKg;
+  const loaded = hasLoad(weightKg);
+  if (setsHittingTarget >= plannedSets(config)) {
+    return suggestion(
+      loaded ? roundWeightToStep(weightKg + config.weightStepKg, config.weightStepKg, unit) : weightKg,
+      defaultTargetReps,
+      loaded ? 'increase' : 'repeat',
+    );
   }
   const failStreak = config.failStreak + 1;
-  const deload =
-    failStreak >= LINEAR_DELOAD_AFTER && hasLoad(perf.weightKg)
-      ? deloadWeight(perf.weightKg, config, unit)
-      : null;
+  const deload = failStreak >= LINEAR_DELOAD_AFTER && loaded ? deloadWeight(weightKg, config, unit) : null;
   if (deload !== null) {
-    return { targetWeightKg: deload, targetReps: reps, reason: 'deload', failStreak, deloadOffered: true };
+    return suggestion(deload, defaultTargetReps, 'deload', failStreak, true);
   }
-  return {
-    targetWeightKg: perf.weightKg,
-    targetReps: reps,
-    reason: 'repeat',
-    failStreak,
-    deloadOffered: false,
-  };
+  return suggestion(weightKg, defaultTargetReps, 'repeat', failStreak);
 }
 
 function suggestCustom(
@@ -240,32 +229,29 @@ function suggestCustom(
 ): Suggestion {
   const week = weeks[customWeekIndex(config.progressionStartedAt, now, weeks.length)];
   const base = config.baseWeightKg;
-  return {
-    targetWeightKg:
-      base === null ? null : roundWeightToStep((base * week.percent) / 100, config.weightStepKg, unit),
-    targetReps: week.reps,
-    reason: 'custom',
-    failStreak: 0,
-    deloadOffered: false,
-  };
+  return suggestion(
+    base === null ? null : roundWeightToStep((base * week.percent) / 100, config.weightStepKg, unit),
+    week.reps,
+    'custom',
+  );
 }
 
 /** คำนวณ "เป้าหมายครั้งหน้า" ของท่าจากผลเซสชันล่าสุด */
 export function suggestNext({ config, lastSets, unit, now }: SuggestInput): Suggestion {
-  const perf = summarize(lastSets);
+  const last = summarize(lastSets);
   switch (config.progressionMode) {
     case 'custom': {
       const weeks = config.customWeeks ?? [];
       // ยังไม่ได้กำหนดสัปดาห์ → ทำตัวเหมือนปิด progression
-      return weeks.length > 0 ? suggestCustom(config, weeks, unit, now) : suggestOff(config, perf);
+      return weeks.length > 0 ? suggestCustom(config, weeks, unit, now) : suggestOff(config, last);
     }
     case 'double':
-      return perf ? suggestDouble(config, perf, unit) : firstSuggestion(config, 0);
+      return last ? suggestDouble(config, last, unit) : firstSuggestion(config, 0);
     case 'linear':
-      return perf ? suggestLinear(config, perf, unit) : firstSuggestion(config, config.failStreak);
+      return last ? suggestLinear(config, last, unit) : firstSuggestion(config, config.failStreak);
     case 'off':
     default:
-      return suggestOff(config, perf);
+      return suggestOff(config, last);
   }
 }
 
@@ -348,10 +334,7 @@ export function adjustTarget(
   if (scope === 'today') return { session, routineExercise: null };
 
   const fields: TargetFields = { targetWeightKg: target.weightKg, targetReps: target.reps };
-  const weightChanged =
-    target.weightKg === null || config.targetWeightKg === null
-      ? target.weightKg !== config.targetWeightKg
-      : Math.abs(target.weightKg - config.targetWeightKg) > EPS;
+  const weightChanged = !sameWeight(target.weightKg, config.targetWeightKg);
   if (config.progressionMode === 'linear' && weightChanged) fields.failStreak = 0;
 
   const weeks = config.customWeeks ?? [];

@@ -59,6 +59,28 @@ describe('profile form parsing (SPEC C step 2, H1)', () => {
     expect(parseProfileForm({ ...base, age: '30.5' }).errors.age).toBeDefined();
   });
 
+  it('treats a single empty ft/in box as zero but flags an unreadable one', () => {
+    const ftin = { ...base, lengthUnit: 'ftin' as const, heightFt: '5', heightIn: '' };
+    const onlyFeet = parseProfileForm(ftin);
+    expect(onlyFeet.errors).toEqual({});
+    expect(onlyFeet.values.heightCm).toBeCloseTo(152.4, 1);
+    expect(parseProfileForm({ ...ftin, heightFt: '', heightIn: '' }).values.heightCm).toBeNull();
+    const ok = parseProfileForm({ ...ftin, heightFt: '6', heightIn: '' });
+    expect(ok.errors).toEqual({});
+    expect(ok.values.heightCm).toBeCloseTo(182.9, 1);
+    expect(parseProfileForm({ ...ftin, heightFt: '5', heightIn: 'x' }).errors.height).toEqual({
+      min: 100,
+      max: 250,
+    });
+  });
+
+  it('accepts a comma decimal and rejects fractional or non-numeric age', () => {
+    expect(parseProfileForm({ ...base, weight: '60,5' }).values.weightKg).toBe(60.5);
+    expect(parseProfileForm({ ...base, age: 'x' }).errors.age).toBeDefined();
+    expect(parseProfileForm({ ...base, age: '0' }).errors.age).toBeDefined();
+    expect(parseProfileForm({ ...base, age: '' }).values.age).toBeNull();
+  });
+
   it('round-trips stored values back into the form in the chosen units', () => {
     const f = formFromValues({ heightCm: 180, weightKg: 80, weightUnit: 'lb', lengthUnit: 'ftin', age: 25 });
     expect(f).toMatchObject({ heightFt: '5', heightIn: '11', weight: '176.4', age: '25' });
@@ -82,6 +104,26 @@ describe('switchFormUnits', () => {
     expect(imperial).toMatchObject({ lengthUnit: 'ftin', heightFt: '5', heightIn: '11' });
     const metric = switchFormUnits(imperial, { lengthUnit: 'cm' });
     expect(Number(metric.heightCm)).toBeCloseTo(180, 0);
+  });
+
+  it('switches weight and length units in one call', () => {
+    const both = switchFormUnits(metricForm, { weightUnit: 'lb', lengthUnit: 'ftin' });
+    expect(both).toMatchObject({
+      weightUnit: 'lb',
+      lengthUnit: 'ftin',
+      weight: '154.3',
+      heightFt: '5',
+      heightIn: '11',
+    });
+  });
+
+  it('converts ft/in to cm when only one box is filled, and keeps cm when one is unreadable', () => {
+    const feetOnly = { ...metricForm, lengthUnit: 'ftin' as const, heightFt: '6', heightIn: '' };
+    expect(Number(switchFormUnits(feetOnly, { lengthUnit: 'cm' }).heightCm)).toBeCloseTo(182.9, 1);
+    const junk = { ...feetOnly, heightIn: 'x' };
+    expect(switchFormUnits(junk, { lengthUnit: 'cm' }).heightCm).toBe(metricForm.heightCm);
+    const noneFilled = { ...feetOnly, heightFt: '', heightIn: '' };
+    expect(switchFormUnits(noneFilled, { lengthUnit: 'cm' }).heightCm).toBe(metricForm.heightCm);
   });
 
   it('keeps empty or unreadable values untouched', () => {

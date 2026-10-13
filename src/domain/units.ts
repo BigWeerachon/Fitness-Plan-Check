@@ -9,6 +9,14 @@ import type { WeightUnit } from '../db/schema';
 export const KG_PER_LB = 0.45359237;
 export const CM_PER_INCH = 2.54;
 export const INCHES_PER_FOOT = 12;
+/** ความต่างน้ำหนัก (kg) ที่ถือว่าเท่ากัน — กันเลขทศนิยมคลาดเคลื่อน */
+export const WEIGHT_EPSILON_KG = 1e-6;
+
+/** น้ำหนักเท่ากันหรือไม่ (null ทั้งคู่ = เท่ากัน; null กับตัวเลข = ไม่เท่ากัน) */
+export function sameWeight(a: number | null, b: number | null): boolean {
+  if (a === null || b === null) return a === b;
+  return Math.abs(a - b) < WEIGHT_EPSILON_KG;
+}
 
 /**
  * ปัดเป็นทศนิยม n ตำแหน่งแบบ "ปัดครึ่งออกจากศูนย์"

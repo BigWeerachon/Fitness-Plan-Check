@@ -59,7 +59,3 @@ export function startOfWeek(value: LocalDate, weekStart: number): LocalDate {
   const back = (wd - weekStart + 7) % 7;
   return addDays(value, -back);
 }
-
-export function compareLocalDate(a: LocalDate, b: LocalDate): number {
-  return a < b ? -1 : a > b ? 1 : 0;
-}

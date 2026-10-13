@@ -36,8 +36,8 @@ export const ADULT_AGE = 18;
 /** โปรตีน g/kg/วัน ค่าเริ่มต้นตามเป้าหมาย (อยู่ในช่วง 1.6–2.2, ลดไขมัน = ปลายสูง) */
 export const PROTEIN_PER_KG_DEFAULT: Readonly<Record<Goal, number>> = { lose: 2.2, maintain: 1.8, gain: 2.0 };
 export const PROTEIN_PER_KG_RANGE = { min: 1.6, max: 2.2 } as const;
-/** ไขมัน % ของแคลอรี่เป้าหมาย */
-export const FAT_PCT_DEFAULT = 25;
+/** ไขมัน % ของแคลอรี่เป้าหมาย (ค่าเริ่มต้น 25 ปรับได้ 0–100) */
+export const FAT_PCT = { default: 25, min: 0, max: 100 } as const;
 
 export const KCAL_PER_G = { protein: 4, carbs: 4, fat: 9 } as const;
 
@@ -156,24 +156,15 @@ export function macros(input: MacroInput): Macros {
   const proteinPerKg = isPositive(input.proteinPerKg)
     ? input.proteinPerKg
     : PROTEIN_PER_KG_DEFAULT[input.goal];
-  const fatPct =
-    typeof input.fatPct === 'number' && Number.isFinite(input.fatPct)
-      ? clamp(input.fatPct, 0, 100)
-      : FAT_PCT_DEFAULT;
-  const total = Math.max(0, input.targetKcal);
+  const fatPct = pctOrDefault(input.fatPct, FAT_PCT);
+  const budgetKcal = Math.max(0, input.targetKcal);
 
-  let proteinKcal = proteinPerKg * input.weightKg * KCAL_PER_G.protein;
-  let fatKcal = (total * fatPct) / 100;
-  let clamped = false;
-  if (proteinKcal > total) {
-    proteinKcal = total;
-    fatKcal = 0;
-    clamped = true;
-  } else if (proteinKcal + fatKcal > total) {
-    fatKcal = total - proteinKcal;
-    clamped = true;
-  }
-  const carbsKcal = Math.max(0, total - proteinKcal - fatKcal);
+  const wantedProteinKcal = proteinPerKg * input.weightKg * KCAL_PER_G.protein;
+  const wantedFatKcal = (budgetKcal * fatPct) / 100;
+  const proteinKcal = Math.min(wantedProteinKcal, budgetKcal);
+  const fatKcal = Math.min(wantedFatKcal, budgetKcal - proteinKcal);
+  const clamped = wantedProteinKcal + wantedFatKcal > budgetKcal;
+  const carbsKcal = Math.max(0, budgetKcal - proteinKcal - fatKcal);
 
   return {
     proteinG: Math.round(proteinKcal / KCAL_PER_G.protein),
@@ -228,10 +219,7 @@ export interface DailyExpenditure {
  * ค่าคำนวณ = ผลรวมแคลอรี่ออกกำลังกายของวันนั้น (ไม่บวก TDEE พื้นฐาน) — ค่าที่กรอกเองหมายถึงทั้งวัน
  */
 export function dailyExpenditure({ manualKcal, sessionKcals }: DailyExpenditureInput): DailyExpenditure {
-  const sum = sessionKcals.reduce<number>(
-    (acc, k) => (typeof k === 'number' && Number.isFinite(k) && k > 0 ? acc + k : acc),
-    0,
-  );
+  const sum = sessionKcals.reduce<number>((acc, k) => (isPositive(k) ? acc + k : acc), 0);
   const exercise = Math.round(sum);
   const isManual = typeof manualKcal === 'number' && Number.isFinite(manualKcal) && manualKcal >= 0;
   return { kcal: isManual ? Math.round(manualKcal) : exercise, isManual, exerciseKcal: exercise };

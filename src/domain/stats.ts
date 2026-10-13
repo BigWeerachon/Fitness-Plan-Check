@@ -1,4 +1,5 @@
 import type { DailyLog, MuscleGroup, RoutineType, SessionSet, WorkoutSession } from '../db/schema';
+import { compareStrings } from './compare';
 import type { LocalDate } from './dates';
 import {
   intersectRange,
@@ -38,38 +39,34 @@ const EPS = 1e-9;
 interface Quota<K extends string> {
   key: K;
   value: number;
-  units: number;
+  allocatedUnits: number;
   /** เศษที่เหลือหลังปัดลง (ใช้เทียบกันภายในการคำนวณครั้งเดียวกันเท่านั้น) */
   rem: number;
 }
 
-function compareKeys(a: string, b: string): number {
-  return a < b ? -1 : a > b ? 1 : 0;
-}
-
 /**
- * แบ่ง units ตามสัดส่วน แล้วคืนส่วนปัดลง + เศษของแต่ละรายการ
+ * แบ่ง totalUnits ตามสัดส่วน แล้วคืนส่วนปัดลง + เศษของแต่ละรายการ
  * ค่าเป็นจำนวนเต็มทั้งหมด (เซ็ต/เซสชัน) → คิดแบบจำนวนเต็มล้วน เศษเทียบกันได้ตรงทุกหลัก
  * ค่ามีทศนิยม (ปริมาณรวม) → คิดแบบทศนิยม แล้วปัดเศษให้หยาบลง 1e-9 กันความคลาดเคลื่อนของเลขทศนิยมทำให้การตัดสินเสมอกันเพี้ยน
  */
 function quotas<K extends string>(
   items: { key: K; value: number }[],
   total: number,
-  units: number,
+  totalUnits: number,
 ): Quota<K>[] {
   const integral =
     Number.isSafeInteger(total) &&
-    Number.isSafeInteger(total * units) &&
+    Number.isSafeInteger(total * totalUnits) &&
     items.every((i) => Number.isInteger(i.value));
   return items.map(({ key, value }) => {
     if (integral) {
-      const scaled = value * units;
+      const scaled = value * totalUnits;
       const floor = Math.floor(scaled / total);
-      return { key, value, units: floor, rem: scaled - floor * total };
+      return { key, value, allocatedUnits: floor, rem: scaled - floor * total };
     }
-    const exact = (value / total) * units;
+    const exact = (value / total) * totalUnits;
     const floor = Math.floor(exact + EPS);
-    return { key, value, units: floor, rem: Math.max(0, Math.round((exact - floor) / EPS)) };
+    return { key, value, allocatedUnits: floor, rem: Math.max(0, Math.round((exact - floor) / EPS)) };
   });
 }
 
@@ -94,17 +91,17 @@ export function percentages<K extends string>(values: readonly ShareInput<K>[], 
   if (!(total > 0) || !Number.isFinite(total)) return [];
 
   const scale = 10 ** decimals;
-  const units = 100 * scale;
-  const rows = quotas(items, total, units);
-  let left = units - rows.reduce((s, r) => s + r.units, 0);
-  const order = [...rows].sort((a, b) => b.rem - a.rem || b.value - a.value || compareKeys(a.key, b.key));
-  for (let i = 0; left > 0; i = (i + 1) % order.length) {
-    order[i].units += 1;
-    left -= 1;
+  const totalUnits = 100 * scale;
+  const rows = quotas(items, total, totalUnits);
+  let unitsLeft = totalUnits - rows.reduce((s, r) => s + r.allocatedUnits, 0);
+  const order = [...rows].sort((a, b) => b.rem - a.rem || b.value - a.value || compareStrings(a.key, b.key));
+  for (let i = 0; unitsLeft > 0; i = (i + 1) % order.length) {
+    order[i].allocatedUnits += 1;
+    unitsLeft -= 1;
   }
   return rows
-    .map((r) => ({ key: r.key, value: r.value, percent: r.units / scale }))
-    .sort((a, b) => b.value - a.value || compareKeys(a.key, b.key));
+    .map((r) => ({ key: r.key, value: r.value, percent: r.allocatedUnits / scale }))
+    .sort((a, b) => b.value - a.value || compareStrings(a.key, b.key));
 }
 
 // ───────────── ข้อมูลเข้าและการคัดกรอง ─────────────
@@ -178,7 +175,7 @@ export function matchesGroup(
 }
 
 function compareSessions(a: StatsSession, b: StatsSession): number {
-  return compareKeys(a.date, b.date) || a.startedAt - b.startedAt || compareKeys(a.id, b.id);
+  return compareStrings(a.date, b.date) || a.startedAt - b.startedAt || compareStrings(a.id, b.id);
 }
 
 /** คัดเซสชันที่เสร็จแล้ว/ไม่ถูกลบ/อยู่ในช่วง/ตรงกรุ๊ป และเซ็ตที่ done ของเซสชันเหล่านั้น */
@@ -199,7 +196,7 @@ export function selectStatsData(data: StatsData, filter: StatsFilter = {}): Sele
     setsBySession.get(set.sessionId)?.push(set);
   }
   // เรียงเซ็ตตาม id ให้ลำดับการบวกเลขทศนิยม (ปริมาณรวม) เหมือนกันทุกครั้ง ไม่ขึ้นกับลำดับแถวจากฐานข้อมูล
-  for (const list of setsBySession.values()) list.sort((a, b) => compareKeys(a.id, b.id));
+  for (const list of setsBySession.values()) list.sort((a, b) => compareStrings(a.id, b.id));
   return { sessions, setsBySession };
 }
 
@@ -309,7 +306,7 @@ function groupsOf(sessions: readonly StatsSession[]): ProgramGroup[] {
     if (s.programName != null) g.programName = s.programName;
   }
   return [...groups.values()].sort(
-    (a, b) => compareKeys(b.lastDate, a.lastDate) || compareKeys(a.key, b.key),
+    (a, b) => compareStrings(b.lastDate, a.lastDate) || compareStrings(a.key, b.key),
   );
 }
 
@@ -439,7 +436,7 @@ function validDaily(field: DailyField, value: number | null): value is number {
 export function dailyValues(logs: readonly StatsDailyLog[], range?: DateRange | null): DailyValues[] {
   const sorted = logs
     .filter((l) => l.deletedAt == null && (!range || isInRange(l.date, range)))
-    .sort((a, b) => a.updatedAt - b.updatedAt || compareKeys(a.id, b.id));
+    .sort((a, b) => a.updatedAt - b.updatedAt || compareStrings(a.id, b.id));
   const byDate = new Map<LocalDate, DailyValues>();
   const fields: DailyField[] = ['kcalExpenditureOverride', 'kcalIntake', 'bodyWeightKg'];
   for (const log of sorted) {
@@ -455,7 +452,7 @@ export function dailyValues(logs: readonly StatsDailyLog[], range?: DateRange | 
   }
   return [...byDate.values()]
     .filter((d) => fields.some((f) => d[f] != null))
-    .sort((a, b) => compareKeys(a.date, b.date));
+    .sort((a, b) => compareStrings(a.date, b.date));
 }
 
 // ───────────── พลังงาน (I3) ─────────────
@@ -527,6 +524,10 @@ function countedDays(range: DateRange, today: LocalDate | null | undefined): num
   return clipped ? rangeDays(clipped) : 0;
 }
 
+function scaleByDays(perDay: number | null, days: number): number | null {
+  return perDay == null ? null : perDay * days;
+}
+
 function sumOrNull(values: (number | null)[]): number | null {
   const present = values.filter((v): v is number => v != null);
   return present.length ? present.reduce((s, v) => s + v, 0) : null;
@@ -542,41 +543,41 @@ export function energySummary<M>(
   const tdee = positiveOrNull(options.tdee);
   const target = positiveOrNull(options.targetKcal);
   const { sessions } = selectStatsData({ sessions: data.sessions, sets: [] }, { range });
-  const days = dailyValues(data.dailyLogs, range);
+  const dailyEntries = dailyValues(data.dailyLogs, range);
 
   const series = periodBuckets(options.period, options.anchor, weekStart).map((bucket): EnergyPoint => {
     const inBucket = (date: LocalDate) => isInRange(date, bucket);
-    const bucketDays = days.filter((d) => inBucket(d.date));
-    const counted = countedDays(bucket, options.today);
+    const bucketEntries = dailyEntries.filter((d) => inBucket(d.date));
+    const bucketCountedDays = countedDays(bucket, options.today);
     return {
       key: bucket.key,
       start: bucket.start,
       end: bucket.end,
-      days: counted,
+      days: bucketCountedDays,
       exerciseKcal: sessions
         .filter((s) => inBucket(s.date))
         .reduce((sum, s) => sum + (positiveOrNull(s.kcal) ?? 0), 0),
-      expenditureKcal: sumOrNull(bucketDays.map((d) => d.kcalExpenditureOverride)),
-      intakeKcal: sumOrNull(bucketDays.map((d) => d.kcalIntake)),
-      tdeeKcal: tdee == null ? null : tdee * counted,
-      targetKcal: target == null ? null : target * counted,
+      expenditureKcal: sumOrNull(bucketEntries.map((d) => d.kcalExpenditureOverride)),
+      intakeKcal: sumOrNull(bucketEntries.map((d) => d.kcalIntake)),
+      tdeeKcal: scaleByDays(tdee, bucketCountedDays),
+      targetKcal: scaleByDays(target, bucketCountedDays),
     };
   });
 
   const entered = (field: 'kcalExpenditureOverride' | 'kcalIntake'): EnteredTotal => {
-    const values = days.map((d) => d[field]).filter((v): v is number => v != null);
+    const values = dailyEntries.map((d) => d[field]).filter((v): v is number => v != null);
     return { totalKcal: values.reduce((s, v) => s + v, 0), days: values.length };
   };
-  const counted = countedDays(range, options.today);
+  const rangeCountedDays = countedDays(range, options.today);
   return {
     range,
-    days: counted,
+    days: rangeCountedDays,
     exerciseKcal: series.reduce((s, p) => s + p.exerciseKcal, 0),
     sessions: sessions.length,
     expenditure: entered('kcalExpenditureOverride'),
     intake: entered('kcalIntake'),
-    tdeeKcal: tdee == null ? null : tdee * counted,
-    targetKcal: target == null ? null : target * counted,
+    tdeeKcal: scaleByDays(tdee, rangeCountedDays),
+    targetKcal: scaleByDays(target, rangeCountedDays),
     macrosPerDay: options.macrosPerDay ?? null,
     series,
   };
@@ -617,6 +618,14 @@ export interface StrengthPoint {
   programName: string | null;
 }
 
+/** เซ็ต c ดีกว่า p ไหม: 1RM สูงกว่าชนะ เท่ากัน → เลือกน้ำหนักมากกว่า (เซ็ตหนักสะท้อนแรงจริงกว่าเซ็ตครั้งเยอะ) */
+function isBetterSet(
+  c: { e1rmKg: number; weightKg: number },
+  p: { e1rmKg: number; weightKg: number },
+): boolean {
+  return c.e1rmKg !== p.e1rmKg ? c.e1rmKg > p.e1rmKg : c.weightKg > p.weightKg;
+}
+
 /** กราฟความแข็งแรงของท่า: 1RM (Epley) ที่ดีที่สุดต่อวันที่ของเซสชัน เรียงจากเก่าไปใหม่ */
 export function strengthSeries(
   data: StatsData,
@@ -631,10 +640,7 @@ export function strengthSeries(
       const e1rmKg = epley1RM(set.weightKg, set.reps);
       if (e1rmKg <= 0) continue;
       const prev = best.get(s.date);
-      // เท่ากัน → เลือกน้ำหนักมากกว่า (เซ็ตหนักสะท้อนแรงจริงกว่าเซ็ตครั้งเยอะ)
-      if (prev && (prev.e1rmKg > e1rmKg || (prev.e1rmKg === e1rmKg && prev.weightKg >= set.weightKg))) {
-        continue;
-      }
+      if (prev && !isBetterSet({ e1rmKg, weightKg: set.weightKg }, prev)) continue;
       best.set(s.date, {
         date: s.date,
         e1rmKg,
@@ -645,5 +651,5 @@ export function strengthSeries(
       });
     }
   }
-  return [...best.values()].sort((a, b) => compareKeys(a.date, b.date));
+  return [...best.values()].sort((a, b) => compareStrings(a.date, b.date));
 }

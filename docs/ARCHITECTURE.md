@@ -23,7 +23,7 @@
 │  entitlement/machine (state machine สิทธิ์), entitlement/paywall (B4–B6)   │
 │  nutrition (H2), progression (G2), schedule (D/E), stats/periods (I),     │
 │  onboardingResume (C), recordMerge (L), sessionEdit/sessionSummary (G),   │
-│  effort (RIR/RPE), csv, dates, units, profileInput, numberEntry           │
+│  effort (RIR/RPE), csv, compare, dates, units, profileInput, numberEntry           │
 ├──────────────────────────────────────────────────────────────────────────┤
 │ Data (src/db/*) — expo-sqlite + Drizzle = แหล่งความจริงหลัก (offline-first) │
 │  schema, migrate (user_version), transaction (ซ้อนได้), mutations          │
@@ -259,7 +259,7 @@
 
 | โฟลเดอร์ใน `__tests__/` | ชุด | ทดสอบอะไร |
 |---|---|---|
-| `domain/` | 16 | ฟังก์ชันล้วนใน `src/domain/` (SPEC ซ, N8): csv, dates, effort, entitlement (ตารางเปลี่ยนสถานะ + offline), nutrition, onboardingResume, paywall, periods, profileInput, progression, recordMerge, schedule, sessionEdit, sessionSummary, stats, units |
+| `domain/` | 17 | ฟังก์ชันล้วนใน `src/domain/` (SPEC ซ, N8): compare, csv, dates, effort, entitlement (ตารางเปลี่ยนสถานะ + offline), nutrition, onboardingResume, paywall, periods, profileInput, progression, recordMerge, schedule, sessionEdit, sessionSummary, stats, units |
 | `data/` | 2 | คลังท่า (สองภาษา กลุ่มกล้ามเนื้อครบ) และเทมเพลตโปรแกรม |
 | `db/` | 3 | migration runner, repo ทั้งหมด, transaction ซ้อน — ใช้ SQLite จริงในหน่วยความจำผ่าน better-sqlite3 (`jest.setup.js` mock `src/db/driver.ts`; SQL, migration และ Drizzle เป็นของจริง) |
 | `sync/` | 4 | engine (push/pull/LWW/outbox version/ส่งทีละแถว/รวมแถวซ้ำ/แถวเสียครบ 5 ครั้ง), เคอร์เซอร์ (`cursor`), `SupabaseSyncBackend` (เช่น `hasSyncAccess` ผ่าน RPC) |

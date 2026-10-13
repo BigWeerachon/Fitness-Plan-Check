@@ -1,5 +1,5 @@
 import type { ActivityLevel, Goal, LengthUnit, Sex, WeightUnit } from '../db/schema';
-import { cmToFtIn, displayWeight, ftInToCm, roundTo, weightToKg } from './units';
+import { cmToFtIn, displayWeight, ftInToCm, kgToLb, roundTo, weightToKg } from './units';
 
 /**
  * แปลงและตรวจค่าที่ผู้ใช้กรอกในฟอร์มโปรไฟล์ (SPEC C ขั้น 2, H1) — ทุกช่องไม่บังคับ แต่ถ้ากรอกต้องอยู่ในช่วงที่สมเหตุสมผล
@@ -39,11 +39,20 @@ export interface ProfileForm {
 export type ProfileField = 'age' | 'height' | 'weight';
 export type ProfileErrors = Partial<Record<ProfileField, { min: number; max: number }>>;
 
-function num(text: string): number | null {
+/**
+ * อ่านข้อความที่ผู้ใช้กรอกเป็นตัวเลข (รับจุลภาคเป็นจุดทศนิยม)
+ * null = ช่องว่าง, NaN = กรอกผิด (อ่านเป็นตัวเลขไม่ได้) — ค่าสองแบบนี้ต่างกัน
+ */
+function parseNumberInput(text: string): number | null {
   const t = text.trim().replace(',', '.');
   if (t === '') return null;
   const n = Number(t);
   return Number.isFinite(n) ? n : NaN;
+}
+
+/** มีตัวเลขที่อ่านได้ (ไม่ว่างและไม่ใช่ NaN) */
+function isReadable(n: number | null): n is number {
+  return n !== null && !Number.isNaN(n);
 }
 
 export function formFromValues(v: Partial<ProfileValues>): ProfileForm {
@@ -64,35 +73,48 @@ export function formFromValues(v: Partial<ProfileValues>): ProfileForm {
   };
 }
 
+/** ส่วนสูงเป็น cm จากช่องที่กรอก (ftin: ว่างข้างเดียวนับเป็น 0; ช่องใดกรอกผิด → NaN) */
+function parseHeightCm(f: ProfileForm): number | null {
+  if (f.lengthUnit === 'cm') return parseNumberInput(f.heightCm);
+  const ft = parseNumberInput(f.heightFt);
+  const inches = parseNumberInput(f.heightIn);
+  if (Number.isNaN(ft) || Number.isNaN(inches)) return NaN;
+  return ft === null && inches === null ? null : ftInToCm(ft ?? 0, inches ?? 0);
+}
+
+/** น้ำหนักเป็น kg จากช่องที่กรอก (ว่าง → null, กรอกผิด → NaN) */
+function parseWeightKg(f: ProfileForm): number | null {
+  const w = parseNumberInput(f.weight);
+  return isReadable(w) ? weightToKg(w, f.weightUnit) : w;
+}
+
 /** ตรวจและแปลงเป็นค่าที่บันทึก (kg/cm) — คืน errors ถ้ามีช่องที่อยู่นอกช่วง */
 export function parseProfileForm(f: ProfileForm): { values: ProfileValues; errors: ProfileErrors } {
   const errors: ProfileErrors = {};
-  const age = num(f.age);
-  let heightCm: number | null;
-  if (f.lengthUnit === 'cm') heightCm = num(f.heightCm);
-  else {
-    const ft = num(f.heightFt);
-    const inches = num(f.heightIn);
-    heightCm = ft === null && inches === null ? null : ftInToCm(ft ?? 0, inches ?? 0);
-    if (Number.isNaN(ft) || Number.isNaN(inches)) heightCm = NaN;
-  }
-  const w = num(f.weight);
-  const weightKg = w === null || Number.isNaN(w) ? w : weightToKg(w, f.weightUnit);
+  const age = parseNumberInput(f.age);
+  const heightCm = parseHeightCm(f);
+  const weightKg = parseWeightKg(f);
 
-  const check = (
+  // displayScale: ตัวคูณแปลงช่วง (kg/cm) เป็นหน่วยที่ผู้ใช้เห็น เพื่อใส่ในข้อความ error
+  const recordIfOutOfRange = (
     field: ProfileField,
     value: number | null,
     range: { min: number; max: number },
-    factor = 1,
+    displayScale = 1,
   ) => {
     if (value === null) return;
     if (Number.isNaN(value) || value < range.min || value > range.max) {
-      errors[field] = { min: roundTo(range.min * factor, 0), max: roundTo(range.max * factor, 0) };
+      errors[field] = {
+        min: roundTo(range.min * displayScale, 0),
+        max: roundTo(range.max * displayScale, 0),
+      };
     }
   };
-  check('age', age === null || Number.isNaN(age) || Number.isInteger(age) ? age : NaN, PROFILE_RANGES.age);
-  check('height', heightCm, PROFILE_RANGES.heightCm);
-  check('weight', weightKg, PROFILE_RANGES.weightKg, f.weightUnit === 'lb' ? 1 / 0.45359237 : 1);
+  // อายุต้องเป็นจำนวนเต็ม — ทศนิยมนับเป็นกรอกผิด
+  const ageInput = age === null || Number.isInteger(age) ? age : NaN;
+  recordIfOutOfRange('age', ageInput, PROFILE_RANGES.age);
+  recordIfOutOfRange('height', heightCm, PROFILE_RANGES.heightCm);
+  recordIfOutOfRange('weight', weightKg, PROFILE_RANGES.weightKg, f.weightUnit === 'lb' ? kgToLb(1) : 1);
 
   return {
     values: {
@@ -109,6 +131,39 @@ export function parseProfileForm(f: ProfileForm): { values: ProfileValues; error
   };
 }
 
+function switchWeightUnit(f: ProfileForm, unit: WeightUnit): ProfileForm {
+  if (unit === f.weightUnit) return f;
+  const w = parseNumberInput(f.weight);
+  return {
+    ...f,
+    weightUnit: unit,
+    weight: isReadable(w) ? String(displayWeight(weightToKg(w, f.weightUnit), unit)) : f.weight,
+  };
+}
+
+function switchLengthUnit(f: ProfileForm, unit: LengthUnit): ProfileForm {
+  if (unit === f.lengthUnit) return f;
+  if (unit === 'ftin') {
+    const cm = parseNumberInput(f.heightCm);
+    const ftIn = isReadable(cm) ? cmToFtIn(cm) : null;
+    return {
+      ...f,
+      lengthUnit: 'ftin',
+      heightFt: ftIn ? String(ftIn.ft) : f.heightFt,
+      heightIn: ftIn ? String(ftIn.in) : f.heightIn,
+    };
+  }
+  const ft = parseNumberInput(f.heightFt);
+  const inches = parseNumberInput(f.heightIn);
+  // ว่างได้ข้างเดียว (นับเป็น 0) แต่ต้องไม่มีช่องที่กรอกผิด
+  const valid = !Number.isNaN(ft) && !Number.isNaN(inches) && (ft !== null || inches !== null);
+  return {
+    ...f,
+    lengthUnit: 'cm',
+    heightCm: valid ? String(roundTo(ftInToCm(ft ?? 0, inches ?? 0), 1)) : f.heightCm,
+  };
+}
+
 /**
  * สลับหน่วยในฟอร์มโดยแปลงค่าที่กรอกไว้ให้ด้วย (เช่น 70 kg → 154.3 lb) ไม่ให้ตัวเลขเดิมถูกตีความเป็นหน่วยใหม่
  * ค่าที่อ่านไม่ได้คงไว้ตามเดิมเพื่อให้ผู้ใช้เห็นและแก้เอง
@@ -117,38 +172,8 @@ export function switchFormUnits(
   f: ProfileForm,
   next: { weightUnit?: WeightUnit; lengthUnit?: LengthUnit },
 ): ProfileForm {
-  let out = { ...f };
-  if (next.weightUnit && next.weightUnit !== f.weightUnit) {
-    const w = num(f.weight);
-    out = {
-      ...out,
-      weightUnit: next.weightUnit,
-      weight:
-        w === null || Number.isNaN(w)
-          ? f.weight
-          : String(displayWeight(weightToKg(w, f.weightUnit), next.weightUnit)),
-    };
-  }
-  if (next.lengthUnit && next.lengthUnit !== f.lengthUnit) {
-    if (next.lengthUnit === 'ftin') {
-      const cm = num(f.heightCm);
-      const ftIn = cm === null || Number.isNaN(cm) ? null : cmToFtIn(cm);
-      out = {
-        ...out,
-        lengthUnit: 'ftin',
-        heightFt: ftIn ? String(ftIn.ft) : f.heightFt,
-        heightIn: ftIn ? String(ftIn.in) : f.heightIn,
-      };
-    } else {
-      const ft = num(f.heightFt);
-      const inches = num(f.heightIn);
-      const valid = !Number.isNaN(ft) && !Number.isNaN(inches) && (ft !== null || inches !== null);
-      out = {
-        ...out,
-        lengthUnit: 'cm',
-        heightCm: valid ? String(roundTo(ftInToCm(ft ?? 0, inches ?? 0), 1)) : f.heightCm,
-      };
-    }
-  }
-  return out;
+  return switchLengthUnit(
+    switchWeightUnit(f, next.weightUnit ?? f.weightUnit),
+    next.lengthUnit ?? f.lengthUnit,
+  );
 }

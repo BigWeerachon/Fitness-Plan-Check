@@ -1,13 +1,7 @@
 import type { SessionSet } from '../db/schema';
+import { sameWeight } from './units';
 
 /** การแก้เซ็ตระหว่างเซสชัน (SPEC G1, G2) — ฟังก์ชันล้วน */
-
-const EPS = 1e-6;
-
-function sameWeight(a: number | null, b: number | null): boolean {
-  if (a === null || b === null) return a === b;
-  return Math.abs(a - b) < EPS;
-}
 
 export type RetargetableSet = Pick<
   SessionSet,

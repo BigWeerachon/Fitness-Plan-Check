@@ -1,4 +1,5 @@
 import type { DailyLog, SessionSet, WorkoutSession } from '../db/schema';
+import { compareStrings } from './compare';
 import { dailyValues } from './stats';
 
 /**
@@ -101,7 +102,7 @@ export interface WorkoutCsvInput {
 export function workoutCsv(input: WorkoutCsvInput): string {
   const sessions = input.sessions
     .filter((s) => s.status === 'completed' && s.deletedAt == null)
-    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.startedAt - b.startedAt));
+    .sort((a, b) => compareStrings(a.date, b.date) || a.startedAt - b.startedAt);
   const bySession = new Map<string, WorkoutCsvInput['sets'][number][]>();
   for (const set of input.sets) {
     if (set.deletedAt != null) continue;
@@ -115,7 +116,7 @@ export function workoutCsv(input: WorkoutCsvInput): string {
     const sets = (bySession.get(s.id) ?? []).sort(
       (a, b) =>
         order(a.sessionExerciseId) - order(b.sessionExerciseId) ||
-        (a.exerciseId < b.exerciseId ? -1 : a.exerciseId > b.exerciseId ? 1 : 0) ||
+        compareStrings(a.exerciseId, b.exerciseId) ||
         a.setIndex - b.setIndex,
     );
     for (const set of sets) {
