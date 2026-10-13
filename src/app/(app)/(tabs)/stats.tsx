@@ -400,7 +400,7 @@ export default function StatsScreen() {
         title={t('stats.enterWeight')}
         initial={model.currentWeightKg != null ? displayWeight(model.currentWeightKg, unit) : null}
         suffix={unitLabel}
-        max={displayWeight(PROFILE_RANGES.weightKg.max, unit)}
+        max={unit === 'lb' ? 700 : PROFILE_RANGES.weightKg.max}
         onClose={() => setWeighing(false)}
         onSubmit={saveBodyWeight}
       />

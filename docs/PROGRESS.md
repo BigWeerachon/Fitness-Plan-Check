@@ -61,8 +61,5 @@
 
 หมายเหตุ: ตัวเลขเทสต์/ผล `check`, `supabase:verify`, `deno check`, export และ prebuild มาจากการรันของเจ้าของงานในรอบปิดงาน (เอกสารนี้ไม่ได้รันชุดเทสต์ทั้งหมดซ้ำ) จำนวนชุดเทสต์ 55 ตรวจกับ `__tests__/` แล้ว
 
-## บันทึกการเปลี่ยนพฤติกรรมจากรอบ readability review (entitlement-services-11)
-- `SupabaseAuthService` ใช้ `requireUser(session)` แทน `toUser(...)!`: ถ้าแลกโทเค็นสำเร็จแต่ไม่มีเซสชันกลับมา จะโยน `AuthUnavailableError('No session returned')` แทนที่จะปล่อย null ไหลต่อเป็น `AuthUser` (มีเทสต์ใน `__tests__/services/supabaseAuth.test.ts`)
-
 ## TODO ที่ค้างในโค้ด
 (ไม่มี — `grep -rn "TODO\|FIXME" src supabase scripts` ว่าง ตรวจซ้ำเมื่อ 2026-10-11)

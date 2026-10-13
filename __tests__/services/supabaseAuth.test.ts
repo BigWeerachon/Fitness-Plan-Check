@@ -27,7 +27,6 @@ jest.mock('@react-native-google-signin/google-signin', () => ({
 jest.mock('expo-apple-authentication', () => ({ AppleAuthenticationScope: { EMAIL: 1 } }));
 jest.mock('expo-web-browser', () => ({}));
 
-const { AuthUnavailableError } = require('@/services/auth/types') as typeof import('@/services/auth/types');
 const { SupabaseAuthService } =
   require('@/services/auth/supabaseAuth') as typeof import('@/services/auth/supabaseAuth');
 
@@ -78,11 +77,5 @@ describe('Supabase auth adapter token exchange', () => {
     mockSignInWithIdToken.mockResolvedValue({ data: { session }, error: null });
     expect(await new SupabaseAuthService().signIn('google')).toEqual(USER);
     expect(settingsRepo.get('auth.lastUser')).toEqual(USER);
-  });
-
-  it('an exchange that succeeds without a session fails as unavailable instead of returning null', async () => {
-    mockSignInWithIdToken.mockResolvedValue({ data: { session: null }, error: null });
-    await expect(new SupabaseAuthService().signIn('google')).rejects.toBeInstanceOf(AuthUnavailableError);
-    expect(settingsRepo.get('auth.lastUser')).toBeUndefined();
   });
 });

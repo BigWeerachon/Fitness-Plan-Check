@@ -383,15 +383,15 @@ describe('body weight entry (stats)', () => {
     for (const k of keys) fireEvent.press(screen.getByTestId(`key-${k}`));
   };
 
-  it('caps typing at the profile weight maximum in the chosen unit (300 kg ≈ 661.4 lb)', async () => {
+  it('lets lb users type up to 700 and rejects out-of-range values on submit with an alert', async () => {
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
     await openWeightPad('lb');
-    typeKeys('662');
-    expect(screen.getByTestId('number-pad-value').props.children).toBe('66');
-    typeKeys('1');
-    expect(screen.getByTestId('number-pad-value').props.children).toBe('661');
+    typeKeys('680');
+    expect(screen.getByTestId('number-pad-value').props.children).toBe('680');
     fireEvent.press(screen.getByTestId('number-pad-done'));
     await flush();
-    expect(dailyLogRepo.listAll().some((l) => l.bodyWeightKg != null && l.bodyWeightKg > 299)).toBe(true);
+    expect(alert).toHaveBeenCalledTimes(1);
+    expect(dailyLogRepo.listAll().filter((l) => l.bodyWeightKg != null)).toHaveLength(0);
   });
 
   it('caps kg entry at 300', async () => {

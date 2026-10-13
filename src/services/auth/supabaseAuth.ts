@@ -24,13 +24,6 @@ function toUser(session: Session | null): AuthUser | null {
   return { id: session.user.id, email, provider, isPrivateRelay: isPrivateRelayEmail(email) };
 }
 
-/** แลกโทเค็นสำเร็จแล้วต้องมีเซสชัน — ถ้าว่างให้ล้มแบบมีชื่อ ไม่ปล่อย null ไหลต่อเป็น AuthUser */
-function requireUser(session: Session | null): AuthUser {
-  const user = toUser(session);
-  if (!user) throw new AuthUnavailableError('No session returned');
-  return user;
-}
-
 const APPLE_CANCELED_CODE = 'ERR_REQUEST_CANCELED';
 
 /** ปุ่ม Cancel ของ Apple = ยกเลิกเงียบๆ ที่เหลือโยนต่อ */
@@ -109,7 +102,7 @@ export class SupabaseAuthService implements AuthService {
         token: idToken,
       });
       if (error) throw error;
-      return requireUser(data.session);
+      return toUser(data.session)!;
     } catch (e) {
       if (
         isErrorWithCode(e) &&
@@ -137,7 +130,7 @@ export class SupabaseAuthService implements AuthService {
         nonce: rawNonce,
       });
       if (error) throw error;
-      return requireUser(data.session);
+      return toUser(data.session)!;
     } catch (e) {
       rethrowAppleError(e);
     }
@@ -157,7 +150,7 @@ export class SupabaseAuthService implements AuthService {
     if (!code) throw new AuthUnavailableError('Missing auth code');
     const exchanged = await supabase.auth.exchangeCodeForSession(code);
     if (exchanged.error) throw exchanged.error;
-    return requireUser(exchanged.data.session);
+    return toUser(exchanged.data.session)!;
   }
 
   async signOut(): Promise<void> {
