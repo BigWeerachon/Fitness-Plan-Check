@@ -13,6 +13,8 @@ export interface DeviceSettings {
   /** ผ่านขั้นตั้งค่าเริ่มต้นแล้ว (SPEC C) */
   onboardingDone: boolean;
   statsMetric: StatsMetric;
+  /** สำรองข้อมูลเป็นไฟล์ครั้งล่าสุด (epoch ms) — ข้อมูลอยู่ในเครื่องนี้เท่านั้น (D82) */
+  lastBackupAt: number | null;
 }
 
 const createDefaultSettings = (): DeviceSettings => ({
@@ -21,6 +23,7 @@ const createDefaultSettings = (): DeviceSettings => ({
   accent: DEFAULT_ACCENT,
   onboardingDone: false,
   statsMetric: 'sets',
+  lastBackupAt: null,
 });
 
 interface SettingsStore extends DeviceSettings {

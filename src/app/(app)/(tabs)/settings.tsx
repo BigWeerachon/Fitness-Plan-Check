@@ -27,6 +27,7 @@ import { useAccess } from '../../../features/access/useAccess';
 import { useManageSubscriptions } from '../../../features/access/useManageSubscriptions';
 import { useRestorePurchases } from '../../../features/access/useRestorePurchases';
 import { AppearanceGroup } from '../../../features/appearance/AppearancePickers';
+import { useBackup } from '../../../features/backup/useBackup';
 import { useRepoQuery } from '../../../features/data/useRepoQuery';
 import { openLegal } from '../../../features/legal/openLegal';
 import { shareExport, type ExportKind } from '../../../features/settings/exportCsv';
@@ -47,7 +48,7 @@ const EXPORTS: { kind: ExportKind; key: 'settings.exportWorkouts' | 'settings.ex
 
 /**
  * ตั้งค่า (SPEC K): ภาษา ธีม สีหลัก หน่วย ตัวจับเวลาพัก วันเริ่มต้นสัปดาห์ โปรไฟล์ สถานะสมาชิก/วันสิ้นสุดทดลอง/วันต่ออายุ
- * จัดการสมาชิก Restore ส่งออก CSV ลบข้อมูลทั้งหมดในเครื่อง Privacy Terms แหล่งอ้างอิง เวอร์ชัน + คำเตือน H5
+ * จัดการสมาชิก Restore สำรอง/กู้คืนจากไฟล์ (D82) ส่งออก CSV ลบข้อมูลทั้งหมดในเครื่อง Privacy Terms แหล่งอ้างอิง เวอร์ชัน + คำเตือน H5
  * ไม่มีบัญชี/ล็อกอิน (D81)
  */
 export default function SettingsScreen() {
@@ -58,6 +59,7 @@ export default function SettingsScreen() {
   const openManage = useManageSubscriptions();
   const onRestore = useRestorePurchases();
   const [exporting, setExporting] = useState(false);
+  const backup = useBackup({ onRestored: () => router.replace('/') });
   const sub = describeSubscription(cached, t);
   const unit = profile.weightUnit;
   const stepKg = preferredWeightStepKg(unit, profile.weightStepKg);
@@ -210,6 +212,22 @@ export default function SettingsScreen() {
       <SectionTitle>{t('settings.sections.data')}</SectionTitle>
       <CardGroup>
         <ListRow
+          title={t('backup.backUp')}
+          value={backup.lastBackupLabel}
+          icon="save-outline"
+          onPress={() => void backup.backUp()}
+          disabled={backup.busy}
+          testID="settings-backup"
+        />
+        <ListRow
+          title={t('backup.restore')}
+          value={t('backup.restoreSub')}
+          icon="folder-open-outline"
+          onPress={() => void backup.restore()}
+          disabled={backup.busy}
+          testID="settings-restore-file"
+        />
+        <ListRow
           title={t('settings.exportCsv')}
           value={t('settings.exportSub')}
           icon="download-outline"
@@ -224,6 +242,9 @@ export default function SettingsScreen() {
           testID="settings-delete"
         />
       </CardGroup>
+      <AppText variant="caption" secondary style={styles.hint} testID="settings-backup-hint">
+        {t('backup.hint')}
+      </AppText>
 
       <SectionTitle>{t('settings.sections.about')}</SectionTitle>
       <CardGroup>
@@ -266,4 +287,5 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  hint: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
 });

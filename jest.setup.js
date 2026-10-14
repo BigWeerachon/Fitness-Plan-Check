@@ -78,6 +78,10 @@ jest.mock('expo-file-system', () => {
     textSync() {
       return files.get(this.uri) ?? '';
     }
+    async text() {
+      if (!files.has(this.uri)) throw new Error(`File not found: ${this.uri}`);
+      return files.get(this.uri);
+    }
   }
   return { File, Directory, Paths: { cache: new Directory('file:///cache') }, __files: files };
 });
@@ -85,6 +89,11 @@ jest.mock('expo-file-system', () => {
 jest.mock('expo-sharing', () => ({
   isAvailableAsync: jest.fn(async () => true),
   shareAsync: jest.fn(async () => undefined),
+}));
+
+// ตัวเลือกไฟล์ของระบบ: ค่าเริ่มต้น = ผู้ใช้กดยกเลิก (เทสต์กำหนดไฟล์ที่เลือกเองผ่าน mockResolvedValueOnce)
+jest.mock('expo-document-picker', () => ({
+  getDocumentAsync: jest.fn(async () => ({ canceled: true, assets: null })),
 }));
 
 jest.mock('expo-linking', () => ({

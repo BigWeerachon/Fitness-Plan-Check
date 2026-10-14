@@ -16,6 +16,7 @@ import nutrition from './nutrition';
 import settings from './settings';
 import appearance from './appearance';
 import legal from './legal';
+import backup from './backup';
 
 // แต่ละหมวดอยู่คนละไฟล์ เพิ่ม key ในไฟล์ของหมวดนั้นๆ
 const en = {
@@ -37,6 +38,7 @@ const en = {
   settings,
   appearance,
   legal,
+  backup,
 };
 
 export default en;
