@@ -2,7 +2,6 @@ import { describe, expect, it, jest } from '@jest/globals';
 import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import { draftRepo } from '@/features/onboarding/draft';
 import { migrateDraftToAccount } from '@/features/onboarding/migrate';
-import { setOwner } from '@/db/owner';
 import { profileRepo } from '@/db/repos/profileRepo';
 import { programRepo, routineRepo } from '@/db/repos/programRepo';
 import { weekPlanRepo } from '@/db/repos/weekPlanRepo';
@@ -91,7 +90,6 @@ describe('onboarding (SPEC C) → paywall (B4)', () => {
       goal: null,
     });
     // ย้ายเข้าบัญชีแล้วไม่มีข้อมูลร่างกายหลุดเข้าไป
-    setOwner('u1');
     migrateDraftToAccount('u1');
     expect(profileRepo.get()).toMatchObject({ sex: null, age: null, weightKg: null, goal: null });
   });
@@ -139,7 +137,6 @@ describe('draft migration into the account (B4 last step)', () => {
       goal: 'gain',
       quickStart: { kind: 'template', key: 'ppl3' },
     });
-    setOwner('u1');
     expect(migrateDraftToAccount('u1')).toBe('migrated');
     expect(profileRepo.get()).toMatchObject({ sex: 'male', age: 35, weightKg: 80, goal: 'gain' });
     const [p] = programRepo.list();
@@ -153,15 +150,13 @@ describe('draft migration into the account (B4 last step)', () => {
 
   it('ignores body fields when the profile step was skipped (C-2)', () => {
     freshEnv();
-    setOwner('u1');
     draftRepo.save({ age: 35, weightKg: 80, goal: 'gain', weightUnit: 'lb', profileSkipped: true });
     migrateDraftToAccount('u1');
     expect(profileRepo.get()).toMatchObject({ age: null, weightKg: null, goal: null, weightUnit: 'lb' });
   });
 
-  it('does not overwrite data that already came from the cloud (B11)', () => {
+  it('does not overwrite data already on the device', () => {
     freshEnv();
-    setOwner('u1');
     profileRepo.update({ weightKg: 90, age: 40 });
     programRepo.create('Existing');
     draftRepo.save({ weightKg: 70, sex: 'male', quickStart: { kind: 'template', key: 'ppl6' } });

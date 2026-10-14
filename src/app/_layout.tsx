@@ -17,7 +17,6 @@ import { warmUpDatabase } from '../db/warmup';
 import { bootstrapAccount, refreshEntitlement } from '../features/access/accountFlow';
 import { useEntitlementExpiryRecheck } from '../features/access/expiryRecheck';
 import { registerAppHooks } from '../features/bootstrap';
-import { requestSync } from '../features/sync/engine';
 import '../i18n';
 import { useEntitlement } from '../stores/entitlement';
 import { useSettings } from '../stores/settings';
@@ -59,9 +58,7 @@ export default function RootLayout() {
   useEffect(() => {
     // กลับเข้าแอป → ตรวจสิทธิ์กับ RevenueCat ใหม่ (สิทธิ์อาจหมด/ต่ออายุระหว่างที่ปิดแอป)
     const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') {
-        void refreshEntitlement().then(() => requestSync(0));
-      }
+      if (state === 'active') void refreshEntitlement();
     });
     return () => sub.remove();
   }, []);
@@ -72,7 +69,7 @@ export default function RootLayout() {
       const online = state.isConnected !== false && state.isInternetReachable !== false;
       const wasOnline = useEntitlement.getState().online;
       useEntitlement.getState().set({ online });
-      if (online && !wasOnline) void refreshEntitlement().then(() => requestSync(0));
+      if (online && !wasOnline) void refreshEntitlement();
     });
     return () => sub.remove();
   }, []);

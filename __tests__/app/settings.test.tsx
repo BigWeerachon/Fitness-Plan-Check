@@ -14,7 +14,6 @@ import { finishSession } from '@/features/session/finish';
 import { startSession } from '@/features/session/sessionFlow';
 import { useAuth } from '@/stores/auth';
 import { useSettings } from '@/stores/settings';
-import { useSync } from '@/stores/sync';
 import { setClockForTests } from '@/utils/clock';
 import { entitledApp, flush } from '../helpers/app';
 
@@ -32,23 +31,16 @@ function typeKeys(keys: string) {
 }
 
 describe('settings tab (SPEC K)', () => {
-  it('changes units, rest timer, week start and weight step; shows membership and sync status', async () => {
+  it('changes units, rest timer, week start and weight step; shows membership and no sync status', async () => {
     await entitledApp();
-    useSync
-      .getState()
-      .set({ status: 'idle', lastSyncedAt: new Date('2026-10-09T08:30:00').getTime(), pending: 2 });
     renderRouter('./src/app', { initialUrl: '/settings' });
     expect(await screen.findByTestId('settings')).toBeTruthy();
 
-    // สถานะสมาชิก (B7) และซิงก์
+    // สถานะสมาชิก (B7) — แอปออฟไลน์ล้วน ไม่มีแถวสถานะซิงก์ (D81)
     expect(within(screen.getByTestId('settings-membership')).getByText('Lifetime')).toBeTruthy();
     expect(within(screen.getByTestId('settings-membership')).getByText('Lifetime access')).toBeTruthy();
-    expect(within(screen.getByTestId('settings-sync')).getByText('Up to date')).toBeTruthy();
-    expect(
-      within(screen.getByTestId('settings-sync')).getByText(
-        /^Last synced Today 08:30 · \d+ changes? waiting to upload$/,
-      ),
-    ).toBeTruthy();
+    expect(screen.queryByTestId('settings-sync')).toBeNull();
+    expect(screen.queryByTestId('settings-sync-now')).toBeNull();
 
     // ตัวจับเวลาพัก
     fireEvent.press(screen.getByTestId('settings-rest-inc', { includeHiddenElements: true }));

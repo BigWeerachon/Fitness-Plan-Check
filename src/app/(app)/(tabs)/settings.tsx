@@ -32,14 +32,10 @@ import { AppearanceGroup } from '../../../features/appearance/AppearancePickers'
 import { useRepoQuery } from '../../../features/data/useRepoQuery';
 import { openLegal } from '../../../features/legal/openLegal';
 import { shareExport, type ExportKind } from '../../../features/settings/exportCsv';
-import { syncNow } from '../../../features/sync/engine';
-import { describeSyncDetail } from '../../../features/sync/syncDetail';
 import { formatDuration } from '../../../i18n/format';
 import { useAuth } from '../../../stores/auth';
 import { useEntitlement } from '../../../stores/entitlement';
-import { useSync } from '../../../stores/sync';
 import { spacing } from '../../../theme/tokens';
-import { now } from '../../../utils/clock';
 
 /** ช่วงและก้าวของตัวจับเวลาพักเริ่มต้น (วินาที) */
 const REST_TIMER_MIN_SEC = 15;
@@ -54,7 +50,7 @@ const EXPORTS: { kind: ExportKind; key: 'settings.exportWorkouts' | 'settings.ex
 
 /**
  * ตั้งค่า (SPEC K): ภาษา ธีม สีหลัก หน่วย ตัวจับเวลาพัก วันเริ่มต้นสัปดาห์ โปรไฟล์ สถานะสมาชิก/วันสิ้นสุดทดลอง/วันต่ออายุ
- * จัดการสมาชิก Restore ส่งออก CSV สถานะซิงก์ ล็อกเอาต์ ลบบัญชี Privacy Terms แหล่งอ้างอิง เวอร์ชัน + คำเตือน H5
+ * จัดการสมาชิก Restore ส่งออก CSV ล็อกเอาต์ ลบบัญชี Privacy Terms แหล่งอ้างอิง เวอร์ชัน + คำเตือน H5
  */
 export default function SettingsScreen() {
   const { t } = useTranslation();
@@ -65,7 +61,6 @@ export default function SettingsScreen() {
   const openManage = useManageSubscriptions();
   const onRestore = useRestorePurchases();
   const onSignOut = useConfirmSignOut();
-  const sync = useSync();
   const [exporting, setExporting] = useState(false);
   const sub = describeSubscription(user ? cached : null, t);
   const unit = profile.weightUnit;
@@ -86,8 +81,6 @@ export default function SettingsScreen() {
       Alert.alert(t('common.errorTitle'), t('settings.exportFailed'));
     }
   };
-
-  const syncDetail = describeSyncDetail(sync, t, now());
 
   return (
     <Screen withTabBar testID="settings">
@@ -227,25 +220,6 @@ export default function SettingsScreen() {
           onPress={() => setExporting(true)}
           testID="settings-export"
         />
-        <ListRow
-          title={t(`sync.status.${sync.status}`)}
-          value={syncDetail}
-          icon={
-            sync.status === 'error' || sync.status === 'offline'
-              ? 'cloud-offline-outline'
-              : 'cloud-done-outline'
-          }
-          testID="settings-sync"
-        />
-        {sync.status !== 'disabled' ? (
-          <ListRow
-            title={t('sync.syncNow')}
-            icon="sync-outline"
-            onPress={() => void syncNow()}
-            disabled={sync.status === 'syncing'}
-            testID="settings-sync-now"
-          />
-        ) : null}
       </CardGroup>
 
       <SectionTitle>{t('settings.sections.account')}</SectionTitle>

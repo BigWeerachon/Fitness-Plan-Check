@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
-import { setOwner } from '@/db/owner';
 import { profileRepo } from '@/db/repos/profileRepo';
 import { programRepo, routineRepo } from '@/db/repos/programRepo';
 import { routineExerciseRepo } from '@/db/repos/routineExerciseRepo';
@@ -19,7 +18,6 @@ let t = new Date('2026-10-05T18:00:00').getTime();
 
 function setup(config: Parameters<typeof routineExerciseRepo.add>[2]) {
   freshEnv();
-  setOwner('11111111-1111-4111-8111-111111111111');
   profileRepo.update({ weightKg: 70 });
   const program = programRepo.create('Strength');
   const routine = routineRepo.create(program.id, 'Bench day', 'push');

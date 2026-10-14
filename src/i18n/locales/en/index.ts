@@ -15,7 +15,6 @@ import session from './session';
 import stats from './stats';
 import nutrition from './nutrition';
 import settings from './settings';
-import sync from './sync';
 import appearance from './appearance';
 import legal from './legal';
 
@@ -38,7 +37,6 @@ const en = {
   stats,
   nutrition,
   settings,
-  sync,
   appearance,
   legal,
 };

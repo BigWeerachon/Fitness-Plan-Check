@@ -59,5 +59,28 @@ export const MIGRATIONS: EmbeddedMigration[] = [
     "statements": [
       "ALTER TABLE `sync_outbox` ADD `version` integer DEFAULT 1 NOT NULL;"
     ]
+  },
+  {
+    "tag": "0004_drop_sync_tables",
+    "statements": [
+      "DROP TABLE `sync_outbox`;",
+      "DROP TABLE `sync_state`;"
+    ]
+  },
+  {
+    "tag": "0005_reown_local_rows",
+    "statements": [
+      "-- แอปออฟไลน์ล้วน (D81): ย้ายแถวที่เคยผูก id ผู้ใช้ (ยุคซิงก์) มาเป็นเจ้าของ 'local' เพื่อให้ยังมองเห็น\nUPDATE `profile` SET `owner_id` = 'local' WHERE `owner_id` <> 'local';",
+      "UPDATE `custom_exercise` SET `owner_id` = 'local' WHERE `owner_id` <> 'local';",
+      "UPDATE `program` SET `owner_id` = 'local' WHERE `owner_id` <> 'local';",
+      "UPDATE `routine` SET `owner_id` = 'local' WHERE `owner_id` <> 'local';",
+      "UPDATE `routine_exercise` SET `owner_id` = 'local' WHERE `owner_id` <> 'local';",
+      "UPDATE `week_plan` SET `owner_id` = 'local' WHERE `owner_id` <> 'local';",
+      "UPDATE `day_override` SET `owner_id` = 'local' WHERE `owner_id` <> 'local';",
+      "UPDATE `workout_session` SET `owner_id` = 'local' WHERE `owner_id` <> 'local';",
+      "UPDATE `session_exercise` SET `owner_id` = 'local' WHERE `owner_id` <> 'local';",
+      "UPDATE `session_set` SET `owner_id` = 'local' WHERE `owner_id` <> 'local';",
+      "UPDATE `daily_log` SET `owner_id` = 'local' WHERE `owner_id` <> 'local';"
+    ]
   }
 ];

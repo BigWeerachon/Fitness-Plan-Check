@@ -1,16 +1,16 @@
-import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 /**
- * Schema ฐานข้อมูลในเครื่อง (แหล่งความจริงหลัก offline-first, SPEC L/M)
- * - ตารางที่ซิงก์ทุกตารางมี id (UUID), owner_id, created_at, updated_at, deleted_at (soft delete)
- * - เวลาเก็บเป็น epoch ms (integer) เทียบ last-write-wins ได้ตรงๆ
+ * Schema ฐานข้อมูลในเครื่อง — แหล่งข้อมูลเดียวของแอป (ออฟไลน์ล้วน ไม่มีคลาวด์ D81)
+ * - ตารางข้อมูลผู้ใช้ทุกตารางมี id (UUID), owner_id, created_at, updated_at, deleted_at (soft delete)
+ * - เวลาเก็บเป็น epoch ms (integer)
  * - น้ำหนักเก็บเป็น kg เสมอ แปลงหน่วยตอนแสดงผล
  * แก้ schema แล้วรัน `npm run db:generate` เพื่อสร้าง migration ใหม่ (ห้ามแก้ migration เก่า)
  */
 
-const syncColumns = {
+const rowColumns = {
   id: text('id').primaryKey(),
-  /** 'local' = ยังไม่ผูกบัญชี, ไม่งั้นเป็น id ผู้ใช้ (Supabase auth.uid) */
+  /** คงไว้จากยุคซิงก์ — ปัจจุบันเป็น 'local' เสมอ (ดู db/owner.ts) */
   ownerId: text('owner_id').notNull().default('local'),
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull(),
@@ -68,7 +68,7 @@ export interface CustomWeek {
 export const profile = sqliteTable(
   'profile',
   {
-    ...syncColumns,
+    ...rowColumns,
     sex: text('sex').$type<Sex>(),
     age: integer('age'),
     heightCm: real('height_cm'),
@@ -102,7 +102,7 @@ export const profile = sqliteTable(
 export const customExercise = sqliteTable(
   'custom_exercise',
   {
-    ...syncColumns,
+    ...rowColumns,
     name: text('name').notNull(),
     primaryMuscle: text('primary_muscle').$type<MuscleGroup>().notNull(),
     secondaryMuscles: text('secondary_muscles', { mode: 'json' })
@@ -118,7 +118,7 @@ export const customExercise = sqliteTable(
 export const program = sqliteTable(
   'program',
   {
-    ...syncColumns,
+    ...rowColumns,
     name: text('name').notNull(),
     /** เทมเพลตต้นทาง (ถ้าสร้างจากเทมเพลต) */
     templateKey: text('template_key'),
@@ -130,7 +130,7 @@ export const program = sqliteTable(
 export const routine = sqliteTable(
   'routine',
   {
-    ...syncColumns,
+    ...rowColumns,
     programId: text('program_id').notNull(),
     name: text('name').notNull(),
     type: text('type').$type<RoutineType>().notNull().default('other'),
@@ -145,7 +145,7 @@ export const DEFAULT_SET_COUNT = 3;
 export const routineExercise = sqliteTable(
   'routine_exercise',
   {
-    ...syncColumns,
+    ...rowColumns,
     routineId: text('routine_id').notNull(),
     exerciseId: text('exercise_id').notNull(),
     sortOrder: integer('sort_order').notNull().default(0),
@@ -178,7 +178,7 @@ export const routineExercise = sqliteTable(
 export const weekPlan = sqliteTable(
   'week_plan',
   {
-    ...syncColumns,
+    ...rowColumns,
     programId: text('program_id').notNull(),
     routineId: text('routine_id').notNull(),
     /** วันในสัปดาห์ที่ทำ routine นี้ (0 = อาทิตย์ … 6 = เสาร์ ตาม Date.getDay) */
@@ -192,7 +192,7 @@ export const weekPlan = sqliteTable(
 export const dayOverride = sqliteTable(
   'day_override',
   {
-    ...syncColumns,
+    ...rowColumns,
     /** วันที่ตามเวลาท้องถิ่น YYYY-MM-DD */
     date: text('date').notNull(),
     kind: text('kind').$type<OverrideKind>().notNull(),
@@ -204,7 +204,7 @@ export const dayOverride = sqliteTable(
 export const workoutSession = sqliteTable(
   'workout_session',
   {
-    ...syncColumns,
+    ...rowColumns,
     date: text('date').notNull(),
     routineId: text('routine_id'),
     programId: text('program_id'),
@@ -233,7 +233,7 @@ export const workoutSession = sqliteTable(
 export const sessionExercise = sqliteTable(
   'session_exercise',
   {
-    ...syncColumns,
+    ...rowColumns,
     sessionId: text('session_id').notNull(),
     exerciseId: text('exercise_id').notNull(),
     /** snapshot ชื่อท่าและกลุ่มกล้ามเนื้อหลัก */
@@ -249,7 +249,7 @@ export const sessionExercise = sqliteTable(
 export const sessionSet = sqliteTable(
   'session_set',
   {
-    ...syncColumns,
+    ...rowColumns,
     sessionId: text('session_id').notNull(),
     sessionExerciseId: text('session_exercise_id').notNull(),
     exerciseId: text('exercise_id').notNull(),
@@ -274,7 +274,7 @@ export const sessionSet = sqliteTable(
 export const dailyLog = sqliteTable(
   'daily_log',
   {
-    ...syncColumns,
+    ...rowColumns,
     date: text('date').notNull(),
     /** แคลอรี่ที่ใช้ทั้งวันที่ผู้ใช้กรอกเอง (มีค่า = ใช้แทนค่าที่คำนวณ SPEC H3) */
     kcalExpenditureOverride: real('kcal_expenditure_override'),
@@ -284,7 +284,7 @@ export const dailyLog = sqliteTable(
   (t) => [index('daily_log_owner_date_idx').on(t.ownerId, t.date)],
 );
 
-// ───────────── ตารางในเครื่องเท่านั้น (ไม่ซิงก์) ─────────────
+// ───────────── ตารางระดับเครื่อง (ไม่ใช่ข้อมูลการฝึก) ─────────────
 
 /** การตั้งค่าของเครื่อง (ภาษา ธีม สีหลัก ฯลฯ) */
 export const appSettings = sqliteTable('app_settings', {
@@ -315,31 +315,8 @@ export const entitlementCache = sqliteTable('entitlement_cache', {
   alsoRenewingMonthly: integer('also_renewing_monthly', { mode: 'boolean' }).notNull().default(false),
 });
 
-/** คิวการเปลี่ยนแปลงที่รอส่งขึ้นคลาวด์ ลบออกเมื่อส่งสำเร็จเท่านั้น */
-export const syncOutbox = sqliteTable(
-  'sync_outbox',
-  {
-    id: integer('id').primaryKey({ autoIncrement: true }),
-    tableName: text('table_name').notNull(),
-    rowId: text('row_id').notNull(),
-    ownerId: text('owner_id').notNull(),
-    queuedAt: integer('queued_at').notNull(),
-    /** เพิ่มทุกครั้งที่แถวถูกใส่คิวซ้ำ — push ลบเฉพาะรายการที่ version ตรงกับที่อ่านไว้ (ไม่พึ่งนาฬิกา) */
-    version: integer('version').notNull().default(1),
-    attempts: integer('attempts').notNull().default(0),
-    lastError: text('last_error'),
-  },
-  (t) => [uniqueIndex('sync_outbox_row_idx').on(t.tableName, t.rowId)],
-);
-
-/** เคอร์เซอร์การดึงข้อมูลต่อตาราง/บัญชี */
-export const syncState = sqliteTable('sync_state', {
-  key: text('key').primaryKey(),
-  value: text('value').notNull(),
-});
-
-/** ตารางที่ซิงก์ขึ้นคลาวด์ เรียงตามลำดับที่ต้องส่ง (พ่อก่อนลูก) */
-export const SYNCED_TABLES = {
+/** ตารางข้อมูลผู้ใช้ (เขียนผ่าน db/mutations) เรียงพ่อก่อนลูก — ใช้เป็นรายการตารางของสำรองข้อมูล/ลบข้อมูลในเครื่อง */
+export const USER_TABLES = {
   profile,
   custom_exercise: customExercise,
   program,
@@ -353,8 +330,8 @@ export const SYNCED_TABLES = {
   daily_log: dailyLog,
 } as const;
 
-export type SyncedTableName = keyof typeof SYNCED_TABLES;
-export const SYNCED_TABLE_NAMES = Object.keys(SYNCED_TABLES) as SyncedTableName[];
+export type UserTableName = keyof typeof USER_TABLES;
+export const USER_TABLE_NAMES = Object.keys(USER_TABLES) as UserTableName[];
 
 export type Profile = typeof profile.$inferSelect;
 export type CustomExercise = typeof customExercise.$inferSelect;

@@ -3,13 +3,10 @@ import type { AuthService } from './auth/types';
 import { env, shouldUseMocks } from './config';
 import { MockPurchasesService, type MockScenario } from './purchases/mockPurchases';
 import type { PurchasesService } from './purchases/types';
-import { MemorySyncBackend } from './sync/memoryBackend';
-import type { SyncBackend } from './sync/types';
 
 export interface Services {
   auth: AuthService;
   purchases: PurchasesService;
-  sync: SyncBackend;
   mode: 'mock' | 'live';
 }
 
@@ -25,7 +22,6 @@ export function getServices(): Services {
     services = {
       auth: new MockAuthService(),
       purchases: new MockPurchasesService(env.mockScenario as MockScenario),
-      sync: new MemorySyncBackend(),
       mode: 'mock',
     };
   } else {
@@ -33,13 +29,10 @@ export function getServices(): Services {
     const { SupabaseAuthService } = require('./auth/supabaseAuth') as typeof import('./auth/supabaseAuth');
     const { RevenueCatPurchasesService } =
       require('./purchases/revenueCat') as typeof import('./purchases/revenueCat');
-    const { SupabaseSyncBackend } =
-      require('./sync/supabaseBackend') as typeof import('./sync/supabaseBackend');
     /* eslint-enable @typescript-eslint/no-require-imports */
     services = {
       auth: new SupabaseAuthService(),
       purchases: new RevenueCatPurchasesService(),
-      sync: new SupabaseSyncBackend(),
       mode: 'live',
     };
   }

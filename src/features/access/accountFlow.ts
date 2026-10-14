@@ -1,5 +1,4 @@
 import { entitlementRepo } from '../../db/repos/entitlementRepo';
-import { setOwner } from '../../db/owner';
 import { deriveSnapshot, hasAccess, type CustomerInfoLike } from '../../domain/entitlement/machine';
 import { assertCanPurchase, type StorePlan, type TrialEligibility } from '../../domain/entitlement/paywall';
 import { AuthCancelledError, type AuthProvider, type AuthUser } from '../../services/auth/types';
@@ -16,24 +15,17 @@ import { getAccess } from './useAccess';
  * เปิดแอป → โหลดเซสชันที่จำไว้ + แคชสิทธิ์ → ตรวจกับ RevenueCat เมื่อออนไลน์
  * ล็อกอิน → RevenueCat logIn(userId) → สิทธิ์ของบัญชีกลับมาทันที (เครื่องใหม่/ติดตั้งใหม่)
  * ซื้อ → ต้องล็อกอินและ logIn RevenueCat ด้วย id เดียวกันก่อนเสมอ
- * ได้สิทธิ์ → เรียก hook "onEntitled" (ย้ายข้อมูลตั้งค่าเริ่มต้นเข้าบัญชี + เริ่มซิงก์)
+ * ได้สิทธิ์ → เรียก hook "onEntitled" (ย้ายข้อมูลตั้งค่าเริ่มต้นเข้าข้อมูลหลัก)
  */
 
 type Hook = (userId: string) => void | Promise<void>;
 const entitledHooks = new Set<Hook>();
-const signOutHooks = new Set<Hook>();
 const deleteHooks = new Set<Hook>();
 
 /** ลงทะเบียนงานที่ต้องทำเมื่อบัญชีมีสิทธิ์ใช้งาน (เรียกซ้ำได้ ต้อง idempotent) */
 export function onEntitled(hook: Hook): () => void {
   entitledHooks.add(hook);
   return () => entitledHooks.delete(hook);
-}
-
-/** งานก่อนล็อกเอาต์ (เช่น ส่งคิวซิงก์ที่ค้าง) */
-export function onBeforeSignOut(hook: Hook): () => void {
-  signOutHooks.add(hook);
-  return () => signOutHooks.delete(hook);
 }
 
 /** งานลบข้อมูลในเครื่องของบัญชีที่ถูกลบ */
@@ -104,7 +96,6 @@ async function linkPurchases(user: AuthUser): Promise<void> {
 }
 
 function adoptUser(user: AuthUser | null): void {
-  setOwner(user?.id ?? null);
   useAuth.getState().setUser(user);
   const cached = user ? entitlementRepo.get(user.id) : null;
   useEntitlement.getState().set({ cached, fresh: false });
@@ -218,18 +209,16 @@ export async function restorePurchases(): Promise<RestoreOutcome> {
   }
 }
 
-/** ล็อกเอาต์: ข้อมูลในเครื่องของบัญชียังอยู่ (กรองตาม owner) กลับมาครบเมื่อล็อกอินใหม่ */
+/** ล็อกเอาต์: ข้อมูลในเครื่องยังอยู่ครบ (ข้อมูลไม่ผูกกับบัญชีแล้ว D81) */
 export async function signOut(): Promise<void> {
-  const user = useAuth.getState().user;
   const { auth, purchases } = getServices();
-  if (user) await runHooks(signOutHooks, user.id);
   await purchases.logOut();
   await auth.signOut();
   adoptUser(null);
 }
 
 /**
- * ลบบัญชีและข้อมูลทั้งหมด (SPEC B12): ลบบนเซิร์ฟเวอร์ (เพิกถอนโทเค็น Apple) → ลบข้อมูลในเครื่องของบัญชีนี้
+ * ลบบัญชีและข้อมูลทั้งหมด (SPEC B12): ลบบนเซิร์ฟเวอร์ (เพิกถอนโทเค็น Apple) → ลบข้อมูลผู้ใช้ทั้งหมดในเครื่อง
  * การลบบัญชีไม่ยกเลิกการสมัครในสโตร์ — หน้าจอต้องแจ้งก่อนยืนยัน
  */
 export async function deleteAccount(): Promise<void> {

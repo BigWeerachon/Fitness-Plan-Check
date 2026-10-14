@@ -4,7 +4,7 @@ import { useDataVersion } from '../../stores/dataVersion';
 
 /**
  * อ่านข้อมูลจาก repository (SQLite แบบ synchronous) แล้วคำนวณใหม่เมื่อ
- * ข้อมูลเปลี่ยน (เขียนในเครื่อง/ซิงก์), key เปลี่ยน หรือกลับมาที่หน้านี้
+ * ข้อมูลเปลี่ยน (เขียนในเครื่อง), key เปลี่ยน หรือกลับมาที่หน้านี้
  * (อ่าน SQLite ในเครื่องเร็วพอที่จะคำนวณใหม่ทุก render ที่เกิดจากสามเหตุนี้)
  */
 export function useRepoQuery<T>(fn: () => T, key: string = ''): T {

@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { getDb } from '../client';
 import { appSettings } from '../schema';
 
-/** การตั้งค่าระดับเครื่อง (key/value JSON) — ไม่ซิงก์ */
+/** การตั้งค่าระดับเครื่อง (key/value JSON) — ไม่ใช่ข้อมูลการฝึก */
 export const settingsRepo = {
   get<T>(key: string): T | undefined {
     const row = getDb().select().from(appSettings).where(eq(appSettings.key, key)).get();

@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it, jest } from '@jest/globals';
 import { act, fireEvent, renderRouter, screen, within } from 'expo-router/testing-library';
 import { Alert, Linking, StyleSheet } from 'react-native';
 import { entitlementRepo } from '@/db/repos/entitlementRepo';
-import { setOwner } from '@/db/owner';
 import { deriveSnapshot } from '@/domain/entitlement/machine';
 import type { MockScenario } from '@/services/purchases/mockPurchases';
 import { useAuth } from '@/stores/auth';
@@ -41,7 +40,6 @@ async function signedIn(scenario: MockScenario) {
   useSettings.getState().set('language', 'en');
   const user = await s.auth.signIn('google');
   const info = await s.purchases.logIn(user.id);
-  setOwner(user.id);
   entitlementRepo.save(user.id, deriveSnapshot(info, now()));
   useAuth.setState({ user, status: 'signedIn' });
   useEntitlement.setState({

@@ -43,7 +43,7 @@ export default function LoginScreen() {
       if (!useSettings.getState().onboardingDone) {
         useSettings.getState().set('onboardingDone', true);
         // ร่างที่กรอกไว้ก่อนกด "มีบัญชีแล้ว" ย้ายเข้าบัญชีตอนนี้ (hook ตอนได้สิทธิ์ข้ามไปเพราะยังไม่เสร็จขั้นตั้งค่า)
-        if (access.userId) void migrateDraftWhenReady(access.userId);
+        if (access.userId) migrateDraftWhenReady(access.userId);
       }
       router.replace('/');
     } else if (router.canGoBack()) router.back();

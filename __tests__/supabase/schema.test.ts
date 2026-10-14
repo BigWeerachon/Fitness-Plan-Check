@@ -2,7 +2,7 @@ import { describe, expect, it } from '@jest/globals';
 import { getTableColumns } from 'drizzle-orm';
 import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
-import { SYNCED_TABLES, type SyncedTableName } from '@/db/schema';
+import { USER_TABLES, type UserTableName } from '@/db/schema';
 
 /**
  * ตรวจว่าตารางบน Supabase ตรงกับ schema ในเครื่องทุกคอลัมน์ (ชื่อ ชนิด และ not null)
@@ -58,12 +58,12 @@ function expectedType(columnType: string): string {
 }
 
 describe('Supabase schema mirrors the local schema (SPEC L, M)', () => {
-  const names = Object.keys(SYNCED_TABLES) as SyncedTableName[];
+  const names = Object.keys(USER_TABLES) as UserTableName[];
 
   it.each(names)('%s has every local column with a matching type', (name) => {
     const remote = remoteTable(name);
     expect(remote).not.toBeNull();
-    const local = getTableColumns(SYNCED_TABLES[name]) as Record<
+    const local = getTableColumns(USER_TABLES[name]) as Record<
       string,
       { name: string; columnType: string; notNull: boolean }
     >;

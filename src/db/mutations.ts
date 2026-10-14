@@ -1,65 +1,44 @@
-import { and, eq, isNull, sql, type InferInsertModel, type InferSelectModel } from 'drizzle-orm';
+import { and, eq, isNull, type InferInsertModel, type InferSelectModel } from 'drizzle-orm';
 import { now } from '../utils/clock';
 import { newId } from '../utils/id';
 import { getDb } from './client';
 import { getOwner } from './owner';
-import { SYNCED_TABLES, syncOutbox, type SyncedTableName } from './schema';
+import { USER_TABLES, type UserTableName } from './schema';
 
 /**
- * จุดเดียวที่เขียนข้อมูลตารางที่ซิงก์ — ทุกการเขียนจะ:
- * 1) ประทับ owner/updatedAt (last-write-wins ต่อระเบียน)
- * 2) ใส่คิว sync_outbox ในเครื่อง (ลบออกเมื่อส่งขึ้นคลาวด์สำเร็จเท่านั้น → ซิงก์ล้มเหลวข้อมูลไม่หาย)
- * การลบเป็น soft delete (deletedAt) เพื่อให้การลบซิงก์ไปเครื่องอื่นได้
+ * จุดเดียวที่เขียนข้อมูลตารางผู้ใช้ — ทุกการเขียนประทับ owner/createdAt/updatedAt ให้อัตโนมัติ
+ * แล้วแจ้ง listener ให้หน้าจอรีเฟรช (ไม่มีคิวซิงก์แล้ว — แอปออฟไลน์ล้วน D81)
+ * การลบเป็น soft delete (deletedAt) ตามโครงสร้างเดิม
  */
 
-type TableOf<N extends SyncedTableName> = (typeof SYNCED_TABLES)[N];
-export type RowOf<N extends SyncedTableName> = InferSelectModel<TableOf<N>>;
-type InsertOf<N extends SyncedTableName> = InferInsertModel<TableOf<N>>;
+type TableOf<N extends UserTableName> = (typeof USER_TABLES)[N];
+export type RowOf<N extends UserTableName> = InferSelectModel<TableOf<N>>;
+type InsertOf<N extends UserTableName> = InferInsertModel<TableOf<N>>;
 /** ฟิลด์ที่ระบบจัดการเอง (ผู้เรียกไม่ต้องใส่ และต้องตัดออกเมื่อคัดลอกแถว) */
 export const MANAGED_FIELDS = ['id', 'ownerId', 'createdAt', 'updatedAt', 'deletedAt'] as const;
 export type Managed = (typeof MANAGED_FIELDS)[number];
-export type CreateInput<N extends SyncedTableName> = Omit<InsertOf<N>, Managed> & { id?: string };
-export type PatchInput<N extends SyncedTableName> = Partial<Omit<InsertOf<N>, Managed>>;
+export type CreateInput<N extends UserTableName> = Omit<InsertOf<N>, Managed> & { id?: string };
+export type PatchInput<N extends UserTableName> = Partial<Omit<InsertOf<N>, Managed>>;
 
 // Drizzle ไม่ infer ชนิดได้ดีเมื่อ table เป็น union ของหลายตาราง จึงใช้ตัวแทนแบบหลวมภายในไฟล์นี้เท่านั้น
 type AnyTable = any;
-function tableOf(name: SyncedTableName): AnyTable {
-  return SYNCED_TABLES[name];
+function tableOf(name: UserTableName): AnyTable {
+  return USER_TABLES[name];
 }
 
 const writeListeners = new Set<() => void>();
 
-/** แจ้งเมื่อมีการเขียนข้อมูลที่ต้องซิงก์ (sync engine ใช้ตั้งเวลาซิงก์แบบหน่วง) */
+/** แจ้งเมื่อมีการเขียนข้อมูลผู้ใช้ (หน้าจอใช้รีเฟรชผ่าน notifyDataChanged ดู registerAppHooks) */
 export function onLocalWrite(listener: () => void): () => void {
   writeListeners.add(listener);
   return () => writeListeners.delete(listener);
 }
 
-/** ใส่/ปรับคิวซิงก์ของแถวโดยไม่แจ้ง listener (ใช้เมื่อใส่คิวทีละหลายแถวในทรานแซกชัน) */
-export function upsertOutbox(name: SyncedTableName, rowId: string, ownerId: string): void {
-  getDb()
-    .insert(syncOutbox)
-    .values({ tableName: name, rowId, ownerId, queuedAt: now(), version: 1, attempts: 0, lastError: null })
-    .onConflictDoUpdate({
-      target: [syncOutbox.tableName, syncOutbox.rowId],
-      // version เพิ่มทุกครั้ง: push ลบคิวเฉพาะเมื่อ version ไม่เปลี่ยนระหว่างส่ง (ไม่พึ่งนาฬิกา)
-      set: {
-        queuedAt: now(),
-        version: sql`${syncOutbox.version} + 1`,
-        attempts: 0,
-        lastError: null,
-        ownerId,
-      },
-    })
-    .run();
-}
-
-export function enqueue(name: SyncedTableName, rowId: string, ownerId = getOwner()): void {
-  upsertOutbox(name, rowId, ownerId);
+function notifyWrite(): void {
   writeListeners.forEach((l) => l());
 }
 
-export function getRow<N extends SyncedTableName>(
+export function getRow<N extends UserTableName>(
   name: N,
   id: string,
   opts: { includeDeleted?: boolean } = {},
@@ -71,22 +50,22 @@ export function getRow<N extends SyncedTableName>(
   return getDb().select().from(t).where(where).get() as RowOf<N> | undefined;
 }
 
-export function createRow<N extends SyncedTableName>(name: N, values: CreateInput<N>): RowOf<N> {
+export function createRow<N extends UserTableName>(name: N, values: CreateInput<N>): RowOf<N> {
   const ts = now();
   const id = values.id ?? newId();
   const row = { ...values, id, ownerId: getOwner(), createdAt: ts, updatedAt: ts, deletedAt: null };
   getDb().insert(tableOf(name)).values(row).run();
-  enqueue(name, id);
+  notifyWrite();
   return getRow(name, id) as RowOf<N>;
 }
 
-/** เวลาแก้ไขต้องเพิ่มขึ้นเสมอ แม้นาฬิกาเครื่องถูกตั้งย้อน (ไม่งั้น LWW จะทิ้งการแก้ไขล่าสุด) */
+/** เวลาแก้ไขต้องเพิ่มขึ้นเสมอ แม้นาฬิกาเครื่องถูกตั้งย้อน (การเลือก "แถวที่แก้ล่าสุด" ใน repo พึ่งค่านี้) */
 function nextUpdatedAt(prev: number | undefined): number {
   const ts = now();
   return prev !== undefined && ts <= prev ? prev + 1 : ts;
 }
 
-export function updateRow<N extends SyncedTableName>(
+export function updateRow<N extends UserTableName>(
   name: N,
   id: string,
   patch: PatchInput<N>,
@@ -99,11 +78,11 @@ export function updateRow<N extends SyncedTableName>(
     .set({ ...patch, updatedAt: nextUpdatedAt(current.updatedAt) })
     .where(and(eq(t.id, id), eq(t.ownerId, getOwner())))
     .run();
-  enqueue(name, id);
+  notifyWrite();
   return getRow(name, id, { includeDeleted: true });
 }
 
-export function softDeleteRow(name: SyncedTableName, id: string): void {
+export function softDeleteRow(name: UserTableName, id: string): void {
   const current = getRow(name, id, { includeDeleted: true }) as
     { updatedAt: number; deletedAt: number | null } | undefined;
   if (!current || current.deletedAt !== null) return;
@@ -114,11 +93,11 @@ export function softDeleteRow(name: SyncedTableName, id: string): void {
     .set({ deletedAt: ts, updatedAt: ts })
     .where(and(eq(t.id, id), eq(t.ownerId, getOwner())))
     .run();
-  enqueue(name, id);
+  notifyWrite();
 }
 
 /** แถวทั้งหมดของเจ้าของปัจจุบันที่ยังไม่ถูกลบ */
-export function listRows<N extends SyncedTableName>(name: N): RowOf<N>[] {
+export function listRows<N extends UserTableName>(name: N): RowOf<N>[] {
   const t = tableOf(name);
   return getDb()
     .select()

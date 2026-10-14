@@ -1,6 +1,5 @@
 import { act } from 'expo-router/testing-library';
 import { entitlementRepo } from '@/db/repos/entitlementRepo';
-import { setOwner } from '@/db/owner';
 import { useSettings } from '@/stores/settings';
 import { useAuth } from '@/stores/auth';
 import { useEntitlement } from '@/stores/entitlement';
@@ -30,7 +29,6 @@ export async function entitledApp(at = '2026-10-09T09:00:00'): Promise<TestServi
   // จำลองบัญชีที่ล็อกอินค้างไว้และ RevenueCat ยืนยันสิทธิ์แล้ว
   const user = await s.auth.signIn('google');
   await s.purchases.logIn(user.id);
-  setOwner(user.id);
   entitlementRepo.save(user.id, {
     state: 'LIFETIME',
     productId: 'fitnese_lifetime',

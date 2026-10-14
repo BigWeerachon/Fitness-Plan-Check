@@ -1,8 +1,8 @@
 import { Redirect, type Href } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { LoadingState } from '../../components';
 import { Screen } from '../../components/Screen';
-import { resumeEntitledOnboarding, type EntitledResume } from '../onboarding/resume';
+import { completeEntitledOnboarding, entitledResumeStep, type EntitledResume } from '../onboarding/resume';
 import { useEntitlement } from '../../stores/entitlement';
 import { useSettings } from '../../stores/settings';
 import { useAccess } from './useAccess';
@@ -13,7 +13,6 @@ const SESSION_WAIT_MS = 3_000;
 const RESUME_HREF: Record<Exclude<EntitledResume, 'done'>, Href> = {
   profile: '/onboarding/profile',
   program: '/onboarding/program',
-  unknown: '/onboarding',
 };
 
 function FullScreenLoading() {
@@ -26,14 +25,13 @@ function FullScreenLoading() {
 
 /**
  * เครื่องนี้ยังไม่เคยผ่านตั้งค่าเริ่มต้น: ผู้ใช้ใหม่ → ขั้น 1
- * แต่ถ้าล็อกอินและมีสิทธิ์อยู่แล้ว (ติดตั้งใหม่ แล้วเซสชันกลับมา) → ดึงข้อมูลคลาวด์แล้วข้ามขั้นที่ทำไว้แล้ว (SPEC C)
+ * แต่ถ้ามีสิทธิ์อยู่แล้ว → ข้ามขั้นที่มีข้อมูลในเครื่องแล้ว (SPEC C)
  */
 function BeforeOnboarding() {
   const access = useAccess();
   // ล็อกอินแล้วแต่ยังไม่มีแคชสิทธิ์ (ติดตั้งใหม่) → รอผลตรวจกับ RevenueCat ก่อน ไม่งั้นเด้งไปขั้น 1 ทั้งที่มีสิทธิ์อยู่
   const checking = useEntitlement((s) => s.checking);
   const [graceOver, setGraceOver] = useState(false);
-  const [resume, setResume] = useState<EntitledResume | null>(null);
   const resumable = access.allowed && !!access.userId;
   const userId = access.userId;
 
@@ -42,20 +40,16 @@ function BeforeOnboarding() {
     return () => clearTimeout(id);
   }, []);
 
+  const resume = useMemo(() => (resumable && userId ? entitledResumeStep() : null), [resumable, userId]);
   useEffect(() => {
-    if (!resumable || !userId) return;
-    let alive = true;
-    void resumeEntitledOnboarding(userId).then((r) => alive && setResume(r));
-    return () => {
-      alive = false;
-    };
-  }, [resumable, userId]);
+    if (resume === 'done' && userId) completeEntitledOnboarding(userId);
+  }, [resume, userId]);
 
   if (!resumable) {
     const waitingForSession = access.pending || (!!userId && checking);
     return waitingForSession && !graceOver ? <FullScreenLoading /> : <Redirect href="/onboarding" />;
   }
-  // 'done' → resumeEntitledOnboarding ตั้ง onboardingDone แล้ว AccessGate จะผ่านเอง
+  // 'done' → completeEntitledOnboarding ตั้ง onboardingDone แล้ว AccessGate จะผ่านเอง
   if (resume === null || resume === 'done') return <FullScreenLoading />;
   return <Redirect href={RESUME_HREF[resume]} />;
 }

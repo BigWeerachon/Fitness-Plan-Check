@@ -1,16 +1,10 @@
 import { afterEach, describe, expect, it, jest } from '@jest/globals';
 import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
-import { resetDbForTests } from '@/db/client';
-import { setOwner } from '@/db/owner';
 import { profileRepo } from '@/db/repos/profileRepo';
 import { programRepo } from '@/db/repos/programRepo';
 import { bootstrapAccount, signIn } from '@/features/access/accountFlow';
 import { registerAppHooks } from '@/features/bootstrap';
 import { draftRepo } from '@/features/onboarding/draft';
-import { getAccess } from '@/features/access/useAccess';
-import { configureSync, syncNow } from '@/features/sync/engine';
-import { useAuth } from '@/stores/auth';
-import { useEntitlement } from '@/stores/entitlement';
 import { useSettings } from '@/stores/settings';
 import { setClockForTests } from '@/utils/clock';
 import { flush } from '../helpers/app';
@@ -20,50 +14,36 @@ jest.setTimeout(60_000);
 afterEach(() => setClockForTests(null));
 
 /**
- * จำลอง "ติดตั้งใหม่ แล้วเซสชันกลับมา": มีข้อมูลบนคลาวด์ตามที่ระบุ ฐานข้อมูลในเครื่องว่าง
- * แต่ Keychain ยังจำการล็อกอินไว้ และสโตร์ยืนยันสิทธิ์ (ซื้อขาด)
+ * มีข้อมูลในเครื่องตามที่ระบุ แต่ยังไม่ได้ทำเครื่องหมายว่าผ่านตั้งค่าเริ่มต้น
+ * (เช่น ข้อมูลเดิมยังอยู่แต่ค่าตั้งค่าระดับเครื่องหาย) — เซสชันกลับมาและสโตร์ยืนยันสิทธิ์ (ซื้อขาด)
  */
-async function reinstall(cloud: { profile?: boolean; program?: boolean }): Promise<TestServices> {
+async function entitledWithLocalData(local: { profile?: boolean; program?: boolean }): Promise<TestServices> {
   const s = freshEnv('lifetime');
-  const user = await s.auth.signIn('google');
-  setOwner(user.id);
-  configureSync({ userId: () => user.id, canSync: () => true });
-  if (cloud.profile) profileRepo.update({ age: 30, weightKg: 70 });
-  if (cloud.program) programRepo.create('Cloud program');
-  expect(await syncNow()).toBe('synced');
-  // ติดตั้งใหม่: ฐานข้อมูลหาย store ว่าง แต่ session ใน Keychain ยังอยู่
-  resetDbForTests();
-  setOwner(null);
+  if (local.profile) profileRepo.update({ age: 30, weightKg: 70 });
+  if (local.program) programRepo.create('Existing program');
   useSettings.setState({ onboardingDone: false });
-  useAuth.setState({ status: 'unknown', user: null });
-  useEntitlement.setState({ cached: null, fresh: false, checking: false, online: true });
   await s.auth.signIn('google');
-  // ตั้งค่า engine เหมือน registerAppHooks (ซึ่งลงทะเบียนครั้งเดียวต่อไฟล์เทสต์)
-  configureSync({
-    userId: () => useAuth.getState().user?.id ?? null,
-    canSync: () => getAccess().allowed,
-  });
   return s;
 }
 
-describe('entitled session on a fresh install skips the onboarding steps already done (SPEC C, B11)', () => {
-  it('cloud has profile and program → straight to Today, onboarding marked done', async () => {
-    await reinstall({ profile: true, program: true });
+describe('entitled session skips the onboarding steps whose data is already on the device (SPEC C)', () => {
+  it('profile and program exist → straight to Today, onboarding marked done', async () => {
+    await entitledWithLocalData({ profile: true, program: true });
     renderRouter('./src/app', { initialUrl: '/' });
     expect(await screen.findByTestId('today')).toBeTruthy();
     expect(useSettings.getState().onboardingDone).toBe(true);
     expect(profileRepo.get()?.age).toBe(30);
   });
 
-  it('cloud has a profile but no program → resumes at step 3', async () => {
-    await reinstall({ profile: true });
+  it('a profile but no program → resumes at step 3', async () => {
+    await entitledWithLocalData({ profile: true });
     renderRouter('./src/app', { initialUrl: '/' });
     expect(await screen.findByTestId('onboarding-step-3')).toBeTruthy();
     expect(useSettings.getState().onboardingDone).toBe(false);
   });
 
-  it('cloud has no body data → resumes at step 2 (even if a program exists)', async () => {
-    await reinstall({ program: true });
+  it('no body data → resumes at step 2 (even if a program exists)', async () => {
+    await entitledWithLocalData({ program: true });
     renderRouter('./src/app', { initialUrl: '/' });
     expect(await screen.findByTestId('onboarding-step-2')).toBeTruthy();
     expect(useSettings.getState().onboardingDone).toBe(false);

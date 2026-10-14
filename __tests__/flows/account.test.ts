@@ -147,8 +147,8 @@ describe('account + entitlement flow (SPEC B4, B9, B11, B12)', () => {
     createRow('program', { name: 'Upper/Lower' });
     await signOut();
     expect(getAccess().allowed).toBe(false);
-    // บัญชีอื่น/ยังไม่ล็อกอินมองไม่เห็นข้อมูลของบัญชีนี้
-    expect(listRows('program')).toHaveLength(0);
+    // ข้อมูลอยู่ในเครื่องเท่านั้นและไม่ผูกบัญชี (D81): ล็อกเอาต์แล้วข้อมูลยังอยู่ (แค่ถูกล็อกตามสิทธิ์)
+    expect(listRows('program').map((p) => p.name)).toEqual(['Upper/Lower']);
     await signIn('google');
     expect(getAccess()).toMatchObject({ allowed: true, state: 'LIFETIME' });
     expect(listRows('program').map((p) => p.name)).toEqual(['Upper/Lower']);

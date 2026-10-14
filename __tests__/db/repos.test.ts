@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from '@jest/globals';
-import { createRow } from '@/db/mutations';
-import { setOwner } from '@/db/owner';
+import { getDb, getDriver } from '@/db/client';
+import { createRow, onLocalWrite, softDeleteRow } from '@/db/mutations';
+import { LOCAL_OWNER } from '@/db/owner';
+import { customExercise, program } from '@/db/schema';
 import { customExerciseRepo } from '@/db/repos/customExerciseRepo';
 import { dailyLogRepo } from '@/db/repos/dailyLogRepo';
 import { profileRepo } from '@/db/repos/profileRepo';
@@ -8,11 +10,9 @@ import { programRepo, routineRepo } from '@/db/repos/programRepo';
 import { routineExerciseRepo } from '@/db/repos/routineExerciseRepo';
 import { sessionRepo, type ExerciseResolver } from '@/db/repos/sessionRepo';
 import { dayOverrideRepo, weekPlanRepo } from '@/db/repos/weekPlanRepo';
-import { pendingCount } from '@/features/sync/engine';
 import { setClockForTests } from '@/utils/clock';
 import { freshEnv } from '../helpers/env';
 
-const USER = '22222222-2222-4222-8222-222222222222';
 const resolve: ExerciseResolver = (id) => ({
   name: `name:${id}`,
   muscle: id.includes('squat') ? 'quads' : 'chest',
@@ -22,7 +22,6 @@ describe('repositories (T06)', () => {
   let t = 1_000_000;
   beforeEach(() => {
     freshEnv();
-    setOwner(USER);
     t = Date.parse('2026-10-09T08:00:00Z');
     setClockForTests(() => (t += 1000));
   });
@@ -316,24 +315,36 @@ describe('repositories (T06)', () => {
       secondaryMuscles: ['glutes'],
       equipment: 'other',
     });
+    expect(c.ownerId).toBe(LOCAL_OWNER);
     expect(customExerciseRepo.list().map((e) => e.name)).toEqual(['Sled push']);
-    setOwner('someone-else');
-    expect(customExerciseRepo.list()).toHaveLength(0);
-    setOwner(USER);
+    // แถวที่ไม่ใช่ของ owner ในเครื่อง (ไม่ควรมีหลัง migration 0005) ต้องไม่โผล่ในการอ่าน
+    getDb()
+      .insert(customExercise)
+      .values({ ...c, id: 'foreign', ownerId: 'someone-else', name: 'Foreign' })
+      .run();
+    expect(customExerciseRepo.list().map((e) => e.name)).toEqual(['Sled push']);
+    expect(customExerciseRepo.getAny('foreign')).toBeUndefined();
     customExerciseRepo.remove(c.id);
     expect(customExerciseRepo.list()).toHaveLength(0);
     expect(customExerciseRepo.getAny(c.id)?.name).toBe('Sled push');
-    // getAny เห็นแถวที่ถูกลบ แต่ต้องไม่ข้ามเจ้าของ
-    setOwner('someone-else');
-    expect(customExerciseRepo.getAny(c.id)).toBeUndefined();
-    setOwner(USER);
   });
 
-  it('every write is queued for sync', () => {
+  it('writes stamp owner/timestamps and notify listeners, with no sync queue', () => {
+    let writes = 0;
+    const off = onLocalWrite(() => writes++);
     const p = programRepo.create('P');
+    expect(p).toMatchObject({ ownerId: LOCAL_OWNER, deletedAt: null });
+    expect(p.updatedAt).toBe(p.createdAt);
     programRepo.rename(p.id, 'Q');
-    expect(pendingCount(USER)).toBe(1);
-    routineRepo.create(p.id, 'R');
-    expect(pendingCount(USER)).toBe(2);
+    const renamed = getDb().select().from(program).all()[0];
+    expect(renamed.updatedAt).toBeGreaterThan(p.updatedAt);
+    softDeleteRow('program', p.id);
+    expect(getDb().select().from(program).all()[0].deletedAt).not.toBeNull();
+    off();
+    expect(writes).toBe(3);
+    // ตารางคิวซิงก์/เคอร์เซอร์ถูกลบไปแล้ว (D81)
+    for (const table of ['sync_outbox', 'sync_state']) {
+      expect(() => getDriver().exec(`SELECT * FROM ${table}`)).toThrow(/no such table/);
+    }
   });
 });
