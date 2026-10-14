@@ -121,7 +121,7 @@ describe('repositories (T06)', () => {
   it('two overrides for one date (made offline on two devices) resolve to the newest and clear together', () => {
     const a = dayOverrideRepo.set('2026-10-09', 'rest');
     t += 1000;
-    // จำลองแถวที่สองจากอีกเครื่อง (ซิงก์ลงมาโดยไม่ผ่าน set)
+    // จำลองแถวซ้ำจากข้อมูลเก่ายุคซิงก์ (เขียนตรงโดยไม่ผ่าน set)
     const b = createRow('day_override', { date: '2026-10-09', kind: 'routine', routineId: 'r2' });
     expect(dayOverrideRepo.listForDate('2026-10-09').map((o) => o.id)).toEqual([b.id, a.id]);
     expect(dayOverrideRepo.getForDate('2026-10-09')).toMatchObject({ kind: 'routine', routineId: 'r2' });

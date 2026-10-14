@@ -42,7 +42,7 @@ function assertDay(day: number): void {
 
 /**
  * override ที่มีผลของวันนั้น: ข้ามแถวที่ถูกลบ และ kind = routine ที่ไม่มี routineId (ข้อมูลเสีย)
- * ถ้ามีหลายแถว (เช่น สร้างจากสองเครื่องก่อนซิงก์) ใช้แถวที่แก้ล่าสุด เท่ากันใช้แถวหลังสุด
+ * ถ้ามีหลายแถว (เช่น ข้อมูลเก่ายุคซิงก์จากสองเครื่อง) ใช้แถวที่แก้ล่าสุด เท่ากันใช้แถวหลังสุด
  */
 function activeOverride(overrides: readonly OverrideEntry[], date: LocalDate): OverrideEntry | null {
   let best: OverrideEntry | null = null;

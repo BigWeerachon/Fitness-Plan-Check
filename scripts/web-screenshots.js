@@ -1,4 +1,4 @@
-// พรีวิวหน้าจอสำหรับตรวจภาพ (T16): เดินผ่านขั้นตั้งค่าเริ่มต้น → Paywall → ล็อกอิน (mock) → ทุกแท็บ แล้วถ่ายภาพ
+// พรีวิวหน้าจอสำหรับตรวจภาพ (T16): เดินผ่านขั้นตั้งค่าเริ่มต้น → Paywall → ซื้อ (mock) → ทุกแท็บ แล้วถ่ายภาพ
 // ใช้: npm run preview:web (อีกเทอร์มินัล) แล้ว node scripts/web-screenshots.js <โฟลเดอร์ภาพ> [en|th] [dark|light] [สีหลัก]
 // ต้องมี Playwright: ตั้ง PLAYWRIGHT_MODULE=/path/to/playwright ถ้าไม่ได้ติดตั้งในโปรเจกต์
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');

@@ -26,7 +26,7 @@
 - Progressive overload (Double / Linear) ปรับได้ระหว่างฝึก
 - คำนวณ BMR / TDEE / เป้าสารอาหาร (เป็นคำแนะนำเท่านั้น)
 - สถิติ % ตามกรุ๊ป ประเภท routine และกลุ่มกล้ามเนื้อ รายวัน/สัปดาห์/เดือน/ปี
-- ล็อกอิน Google / Apple ก่อนเริ่มทดลอง
+- ออฟไลน์ล้วน: ข้อมูลอยู่บนเครื่องเท่านั้น ไม่ต้องสมัครบัญชีหรือล็อกอิน
 - ทดลองฟรี 7 วันผ่านสโตร์ จากนั้นรายเดือน (~19 บาท) หรือซื้อขาด (~99 บาท) ตามราคาขั้นต่ำของแต่ละสโตร์
 
-Tech stack: Expo (React Native) + TypeScript, expo-sqlite + Drizzle, Supabase, RevenueCat
+Tech stack: Expo (React Native) + TypeScript, expo-sqlite + Drizzle, RevenueCat (ไม่มี backend ของเราเอง)

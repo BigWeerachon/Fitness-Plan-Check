@@ -1,7 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
 import {
-  applyEvent,
-  bestSnapshot,
   deriveSnapshot,
   EMPTY_SNAPSHOT,
   ENTITLEMENT_STATES,
@@ -9,7 +7,6 @@ import {
   OFFLINE_GRACE_MS,
   resolveAccess,
   type CustomerInfoLike,
-  type EntitlementEvent,
   type EntitlementInfoLike,
   type EntitlementSnapshot,
   type EntitlementState,
@@ -177,245 +174,6 @@ describe('deriveSnapshot — lifetime owner whose monthly still renews (J5)', ()
   });
 });
 
-describe('applyEvent — transition table from RevenueCat webhook events', () => {
-  const base: EntitlementSnapshot = { ...EMPTY_SNAPSHOT };
-  const ev = (p: Partial<EntitlementEvent> & Pick<EntitlementEvent, 'type'>): EntitlementEvent => ({
-    eventAt: NOW,
-    productId: 'fitnese_monthly',
-    ...p,
-  });
-  const at = (state: EntitlementState, extra: Partial<EntitlementSnapshot> = {}): EntitlementSnapshot => ({
-    ...base,
-    state,
-    productId: state === 'LIFETIME' ? 'fitnese_lifetime' : 'fitnese_monthly',
-    expirationDate: state === 'LIFETIME' ? null : NOW + 5 * DAY,
-    willRenew: state !== 'LIFETIME',
-    ...extra,
-  });
-
-  const table: [EntitlementState, EntitlementEvent, EntitlementState][] = [
-    [
-      'NO_ENTITLEMENT',
-      ev({ type: 'INITIAL_PURCHASE', periodType: 'TRIAL', expirationAt: NOW + 7 * DAY }),
-      'TRIALING',
-    ],
-    [
-      'NO_ENTITLEMENT',
-      ev({ type: 'INITIAL_PURCHASE', periodType: 'NORMAL', expirationAt: NOW + 30 * DAY }),
-      'SUBSCRIBED_MONTHLY',
-    ],
-    ['NO_ENTITLEMENT', ev({ type: 'NON_RENEWING_PURCHASE', productId: 'fitnese_lifetime' }), 'LIFETIME'],
-    ['NO_ENTITLEMENT', ev({ type: 'INITIAL_PURCHASE', productId: 'fitnese_lifetime' }), 'LIFETIME'],
-    ['SUBSCRIBED_MONTHLY', ev({ type: 'RENEWAL', productId: 'fitnese_lifetime' }), 'LIFETIME'],
-    ['EXPIRED', ev({ type: 'INITIAL_PURCHASE', productId: 'fitnese_lifetime' }), 'LIFETIME'],
-    [
-      'TRIALING',
-      ev({ type: 'RENEWAL', periodType: 'NORMAL', expirationAt: NOW + 30 * DAY }),
-      'SUBSCRIBED_MONTHLY',
-    ],
-    ['TRIALING', ev({ type: 'CANCELLATION', cancelReason: 'UNSUBSCRIBE' }), 'TRIALING'],
-    ['TRIALING', ev({ type: 'EXPIRATION' }), 'EXPIRED'],
-    ['TRIALING', ev({ type: 'NON_RENEWING_PURCHASE', productId: 'fitnese_lifetime' }), 'LIFETIME'],
-    [
-      'SUBSCRIBED_MONTHLY',
-      ev({ type: 'RENEWAL', periodType: 'NORMAL', expirationAt: NOW + 30 * DAY }),
-      'SUBSCRIBED_MONTHLY',
-    ],
-    ['SUBSCRIBED_MONTHLY', ev({ type: 'CANCELLATION', cancelReason: 'UNSUBSCRIBE' }), 'SUBSCRIBED_MONTHLY'],
-    ['SUBSCRIBED_MONTHLY', ev({ type: 'CANCELLATION', cancelReason: 'CUSTOMER_SUPPORT' }), 'EXPIRED'],
-    [
-      'SUBSCRIBED_MONTHLY',
-      ev({ type: 'BILLING_ISSUE', gracePeriodExpirationAt: NOW + 3 * DAY }),
-      'BILLING_GRACE',
-    ],
-    [
-      'SUBSCRIBED_MONTHLY',
-      ev({ type: 'BILLING_ISSUE', gracePeriodExpirationAt: null }),
-      'SUBSCRIBED_MONTHLY',
-    ],
-    ['SUBSCRIBED_MONTHLY', ev({ type: 'EXPIRATION' }), 'EXPIRED'],
-    ['SUBSCRIBED_MONTHLY', ev({ type: 'SUBSCRIPTION_PAUSED' }), 'SUBSCRIBED_MONTHLY'],
-    ['SUBSCRIBED_MONTHLY', ev({ type: 'PRODUCT_CHANGE' }), 'SUBSCRIBED_MONTHLY'],
-    ['SUBSCRIBED_MONTHLY', ev({ type: 'NON_RENEWING_PURCHASE', productId: 'fitnese_lifetime' }), 'LIFETIME'],
-    ['SUBSCRIBED_MONTHLY', ev({ type: 'TRANSFER', transferDirection: 'from' }), 'EXPIRED'],
-    [
-      'BILLING_GRACE',
-      ev({ type: 'RENEWAL', periodType: 'NORMAL', expirationAt: NOW + 30 * DAY }),
-      'SUBSCRIBED_MONTHLY',
-    ],
-    ['BILLING_GRACE', ev({ type: 'EXPIRATION' }), 'EXPIRED'],
-    [
-      'EXPIRED',
-      ev({ type: 'RENEWAL', periodType: 'NORMAL', expirationAt: NOW + 30 * DAY }),
-      'SUBSCRIBED_MONTHLY',
-    ],
-    [
-      'EXPIRED',
-      ev({ type: 'INITIAL_PURCHASE', periodType: 'NORMAL', expirationAt: NOW + 30 * DAY }),
-      'SUBSCRIBED_MONTHLY',
-    ],
-    ['EXPIRED', ev({ type: 'NON_RENEWING_PURCHASE', productId: 'fitnese_lifetime' }), 'LIFETIME'],
-    ['LIFETIME', ev({ type: 'EXPIRATION' }), 'LIFETIME'],
-    ['LIFETIME', ev({ type: 'CANCELLATION', cancelReason: 'UNSUBSCRIBE' }), 'LIFETIME'],
-    ['LIFETIME', ev({ type: 'BILLING_ISSUE', gracePeriodExpirationAt: NOW + DAY }), 'LIFETIME'],
-    ['LIFETIME', ev({ type: 'RENEWAL', periodType: 'NORMAL' }), 'LIFETIME'],
-    [
-      'LIFETIME',
-      ev({ type: 'CANCELLATION', cancelReason: 'CUSTOMER_SUPPORT', productId: 'fitnese_lifetime' }),
-      'EXPIRED',
-    ],
-    [
-      'LIFETIME',
-      ev({ type: 'CANCELLATION', cancelReason: 'CUSTOMER_SUPPORT', productId: 'fitnese_monthly' }),
-      'LIFETIME',
-    ],
-    ['NO_ENTITLEMENT', ev({ type: 'TEST' }), 'NO_ENTITLEMENT'],
-  ];
-
-  it.each(table)('%s + %o → %s', (from, event, to) => {
-    expect(applyEvent(at(from), event).state).toBe(to);
-  });
-
-  it('user cancellation keeps the original expiration and stops renewal', () => {
-    const next = applyEvent(
-      at('SUBSCRIBED_MONTHLY'),
-      ev({ type: 'CANCELLATION', cancelReason: 'UNSUBSCRIBE' }),
-    );
-    expect(next.willRenew).toBe(false);
-    expect(next.expirationDate).toBe(NOW + 5 * DAY);
-  });
-
-  it('uncancellation restores renewal without changing the state', () => {
-    const cancelled = at('TRIALING', { willRenew: false });
-    const next = applyEvent(cancelled, ev({ type: 'UNCANCELLATION' }));
-    expect(next.state).toBe('TRIALING');
-    expect(next.willRenew).toBe(true);
-  });
-
-  it('a lifetime purchase via INITIAL_PURCHASE/RENEWAL clears the expiry and renewal', () => {
-    for (const type of ['INITIAL_PURCHASE', 'RENEWAL'] as const) {
-      const next = applyEvent(
-        at('TRIALING'),
-        ev({ type, productId: 'fitnese_lifetime', expirationAt: null }),
-      );
-      expect(next).toMatchObject({
-        state: 'LIFETIME',
-        productId: 'fitnese_lifetime',
-        expirationDate: null,
-        willRenew: false,
-      });
-    }
-  });
-
-  describe('TRANSFER', () => {
-    const transferred = at('SUBSCRIBED_MONTHLY', { expirationDate: NOW + 20 * DAY, verifiedAt: NOW - DAY });
-
-    it("'to' receives the source account's entitlement", () => {
-      const next = applyEvent(base, ev({ type: 'TRANSFER', transferDirection: 'to', transferred }));
-      expect(next).toMatchObject({
-        state: 'SUBSCRIBED_MONTHLY',
-        productId: 'fitnese_monthly',
-        expirationDate: NOW + 20 * DAY,
-        willRenew: true,
-        verifiedAt: NOW,
-      });
-      const lifetime = applyEvent(
-        base,
-        ev({ type: 'TRANSFER', transferDirection: 'to', transferred: at('LIFETIME') }),
-      );
-      expect(lifetime).toMatchObject({ state: 'LIFETIME', expirationDate: null });
-    });
-
-    it("'to' keeps a better entitlement it already had", () => {
-      const own = at('LIFETIME');
-      expect(applyEvent(own, ev({ type: 'TRANSFER', transferDirection: 'to', transferred })).state).toBe(
-        'LIFETIME',
-      );
-      const longer = at('SUBSCRIBED_MONTHLY', { expirationDate: NOW + 40 * DAY });
-      expect(
-        applyEvent(longer, ev({ type: 'TRANSFER', transferDirection: 'to', transferred })).expirationDate,
-      ).toBe(NOW + 40 * DAY);
-    });
-
-    it("'to' without a known source entitlement stays as it was", () => {
-      expect(applyEvent(base, ev({ type: 'TRANSFER', transferDirection: 'to' })).state).toBe(
-        'NO_ENTITLEMENT',
-      );
-      expect(
-        applyEvent(base, ev({ type: 'TRANSFER', transferDirection: 'to', transferred: null })).state,
-      ).toBe('NO_ENTITLEMENT');
-    });
-
-    it("'from' loses access", () => {
-      expect(applyEvent(at('LIFETIME'), ev({ type: 'TRANSFER', transferDirection: 'from' }))).toMatchObject({
-        state: 'EXPIRED',
-        productId: null,
-        alsoRenewingMonthly: false,
-      });
-    });
-
-    it('bestSnapshot prefers lifetime, then active with the latest expiry, then expired', () => {
-      const expired = at('EXPIRED', { expirationDate: NOW - DAY });
-      const short = at('TRIALING', { expirationDate: NOW + DAY });
-      const long = at('SUBSCRIBED_MONTHLY', { expirationDate: NOW + 9 * DAY });
-      const lapsed = at('SUBSCRIBED_MONTHLY', { expirationDate: NOW - 1 });
-      expect(bestSnapshot([], NOW)).toBeNull();
-      expect(bestSnapshot([base, expired], NOW)).toBe(expired);
-      expect(bestSnapshot([expired, short, long], NOW)).toBe(long);
-      expect(bestSnapshot([short, lapsed], NOW)).toBe(short);
-      expect(bestSnapshot([long, at('LIFETIME'), short], NOW)?.state).toBe('LIFETIME');
-    });
-  });
-
-  describe('lifetime owner whose monthly keeps renewing (J5)', () => {
-    const lifetimeBuy = ev({ type: 'NON_RENEWING_PURCHASE', productId: 'fitnese_lifetime' });
-
-    it('buying lifetime while monthly renews keeps a reminder until the monthly ends', () => {
-      const bought = applyEvent(at('SUBSCRIBED_MONTHLY'), lifetimeBuy);
-      expect(bought).toMatchObject({ state: 'LIFETIME', alsoRenewingMonthly: true });
-      const cancelled = applyEvent(bought, ev({ type: 'CANCELLATION', cancelReason: 'UNSUBSCRIBE' }));
-      expect(cancelled).toMatchObject({ state: 'LIFETIME', alsoRenewingMonthly: false });
-      const resumed = applyEvent(cancelled, ev({ type: 'UNCANCELLATION' }));
-      expect(resumed).toMatchObject({ state: 'LIFETIME', alsoRenewingMonthly: true });
-      expect(applyEvent(resumed, ev({ type: 'RENEWAL' })).alsoRenewingMonthly).toBe(true);
-      expect(applyEvent(resumed, ev({ type: 'BILLING_ISSUE' })).alsoRenewingMonthly).toBe(true);
-      expect(applyEvent(resumed, ev({ type: 'EXPIRATION' }))).toMatchObject({
-        state: 'LIFETIME',
-        alsoRenewingMonthly: false,
-      });
-      expect(applyEvent(resumed, ev({ type: 'SUBSCRIPTION_PAUSED' })).alsoRenewingMonthly).toBe(false);
-      expect(
-        applyEvent(resumed, ev({ type: 'CANCELLATION', cancelReason: 'CUSTOMER_SUPPORT' })),
-      ).toMatchObject({ state: 'LIFETIME', alsoRenewingMonthly: false });
-    });
-
-    it('no reminder when the monthly was already cancelled or lapsed', () => {
-      expect(
-        applyEvent(at('SUBSCRIBED_MONTHLY', { willRenew: false }), lifetimeBuy).alsoRenewingMonthly,
-      ).toBe(false);
-      expect(applyEvent(at('EXPIRED', { willRenew: false }), lifetimeBuy).alsoRenewingMonthly).toBe(false);
-      expect(applyEvent(base, lifetimeBuy).alsoRenewingMonthly).toBe(false);
-    });
-
-    it('a refunded lifetime clears the reminder with the access', () => {
-      const bought = applyEvent(at('TRIALING'), lifetimeBuy);
-      expect(bought.alsoRenewingMonthly).toBe(true);
-      const refunded = applyEvent(
-        bought,
-        ev({ type: 'CANCELLATION', cancelReason: 'CUSTOMER_SUPPORT', productId: 'fitnese_lifetime' }),
-      );
-      expect(refunded).toMatchObject({ state: 'EXPIRED', alsoRenewingMonthly: false });
-    });
-  });
-
-  it('never mutates the previous snapshot', () => {
-    const prev = at('TRIALING');
-    const copy = { ...prev };
-    applyEvent(prev, ev({ type: 'EXPIRATION' }));
-    expect(prev).toEqual(copy);
-  });
-});
-
 describe('resolveAccess — offline cache (SPEC B9)', () => {
   const cached = (state: EntitlementState, expirationDate: number | null, userId = 'u1') => ({
     ...EMPTY_SNAPSHOT,
@@ -425,14 +183,14 @@ describe('resolveAccess — offline cache (SPEC B9)', () => {
     userId,
   });
 
-  it('signed-out users never have access, even with a cache', () => {
+  it('no data owner means no access, even with a cache', () => {
     expect(
       resolveAccess({ userId: null, cached: cached('LIFETIME', null), fresh: false, online: true, now: NOW })
         .allowed,
     ).toBe(false);
   });
 
-  it('a cache from another account is ignored', () => {
+  it('a cache from another owner is ignored', () => {
     const r = resolveAccess({
       userId: 'u2',
       cached: cached('LIFETIME', null),

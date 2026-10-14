@@ -10,7 +10,6 @@ npm test              # jest (SQLite จริงผ่าน better-sqlite3, se
 npm run check         # ทั้งสามอย่าง — ต้องผ่านก่อน commit ทุกครั้ง
 npx prettier --write <files>
 npm run db:generate   # หลังแก้ src/db/schema.ts → drizzle/*.sql + src/db/migrations.generated.ts
-node scripts/sync-shared.js   # หลังแก้ src/domain/entitlement/machine.ts
 ```
 Expo SDK 57 — API อาจต่างจากที่จำได้ ให้เปิดดู `.d.ts` ใน `node_modules` ก่อนใช้ (เครือข่ายเข้า docs.expo.dev ไม่ได้)
 ถ้าทำงานใน git worktree ที่ไม่มี node_modules: `ln -s /home/user/Fitness-Plan-Check/node_modules node_modules`
@@ -18,7 +17,8 @@ Expo SDK 57 — API อาจต่างจากที่จำได้ ใ�
 ## กฎของโค้ด
 - **ข้อความที่ผู้ใช้เห็นทั้งหมดมาจาก i18n** (`t('ns.key')`) เพิ่ม key ใน `src/i18n/locales/en/<ns>.ts` และ `th/<ns>.ts` ให้ครบทั้งคู่ (ไทยถูกบังคับชนิดให้ key ตรงกับอังกฤษ) ห้ามมี literal ใน JSX หรือ prop `accessibilityLabel/placeholder/title/label`
 - **UI ใช้คอมโพเนนต์จาก `src/components`** (Screen, HeroTitle, CardGroup, BigRow, ListRow, WeekdayDots, Toggle, CircleButton, Button, Chip, SegmentedControl, Sheet, NumberPad, TextField, states) และสีจาก `usePalette()` เท่านั้น ห้ามใส่สี hex เองในหน้าจอ
-- **เขียนข้อมูลตารางที่ซิงก์ผ่าน `src/db/mutations.ts`** (createRow/updateRow/softDeleteRow) เท่านั้น — ใส่ owner, updatedAt และคิวซิงก์ให้อัตโนมัติ; อ่านข้อมูลต้องกรอง `ownerId = getOwner()` และ `deletedAt IS NULL`
+- **แอปออฟไลน์ล้วน (D81)**: ไม่มี backend/ล็อกอิน/ซิงก์ ข้อมูลอยู่ใน SQLite บนเครื่องเท่านั้น; ซื้อผ่าน RevenueCat แบบนิรนาม (ห้ามเรียก logIn/logOut)
+- **เขียนข้อมูลผู้ใช้ผ่าน `src/db/mutations.ts`** (createRow/updateRow/softDeleteRow) เท่านั้น — ใส่ owner, updatedAt และแจ้งหน้าจอให้อัตโนมัติ; อ่านข้อมูลต้องกรอง `ownerId = getOwner()` และ `deletedAt IS NULL`
 - **สิทธิ์ใช้งาน**: ตัดสินผ่าน `useAccess()`/`getAccess()` เท่านั้น หน้าใหม่ที่เป็นฟีเจอร์ต้องอยู่ใต้ `src/app/(app)/` (ถูกล็อกอัตโนมัติ)
 - ตรรกะ/สูตรเป็นฟังก์ชันล้วนใน `src/domain/` และต้องมี unit test
 - เวลาใช้ `now()` จาก `src/utils/clock.ts` (สลับได้ในเทสต์), id ใช้ `newId()`

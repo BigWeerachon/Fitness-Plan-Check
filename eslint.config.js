@@ -51,7 +51,6 @@ module.exports = defineConfig([
       'ios/*',
       'android/*',
       'coverage/*',
-      'supabase/functions/**',
       'drizzle/*',
       '.expo/*',
     ],

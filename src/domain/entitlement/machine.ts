@@ -1,11 +1,9 @@
 /**
  * State machine ของสิทธิ์การใช้งาน (SPEC B8) — โมดูลเดียวที่ทุกหน้าใช้ตัดสินสิทธิ์
  *
- * ไฟล์นี้เป็นฟังก์ชันล้วน ไม่ import อะไรจากแอป เพื่อให้ Edge Function (Deno) ใช้สำเนาเดียวกันได้
- * สำเนาอยู่ที่ supabase/functions/_shared/entitlement-machine.ts และมีเทสต์ตรวจว่าเหมือนกันทุกตัวอักษร
- * ห้ามแก้สำเนาโดยตรง ให้แก้ไฟล์นี้แล้วรัน `node scripts/sync-shared.js`
+ * ฟังก์ชันล้วน ไม่ import อะไรจากแอป — แอปออฟไลน์ล้วน (D81) ไม่มีเซิร์ฟเวอร์ของเราเอง
  *
- * ไม่มีตัวนับเวลาทดลองในแอป (SPEC B2): สถานะทั้งหมดมาจาก RevenueCat (customerInfo / webhook event)
+ * ไม่มีตัวนับเวลาทดลองในแอป (SPEC B2): สถานะทั้งหมดมาจาก customerInfo ของ RevenueCat (ผู้ใช้นิรนาม)
  */
 
 export const ENTITLEMENT_ID = 'pro';
@@ -208,189 +206,6 @@ export function deriveSnapshot(info: CustomerInfoLike, now: number): Entitlement
   return { ...EMPTY_SNAPSHOT, verifiedAt: now };
 }
 
-// ───────────── เหตุการณ์จาก RevenueCat webhook (ใช้ฝั่ง Edge Function และเทสต์ตารางเปลี่ยนสถานะ) ─────────────
-
-export type RcEventType =
-  | 'INITIAL_PURCHASE'
-  | 'RENEWAL'
-  | 'CANCELLATION'
-  | 'UNCANCELLATION'
-  | 'NON_RENEWING_PURCHASE'
-  | 'SUBSCRIPTION_PAUSED'
-  | 'EXPIRATION'
-  | 'BILLING_ISSUE'
-  | 'PRODUCT_CHANGE'
-  | 'TRANSFER'
-  | 'SUBSCRIPTION_EXTENDED'
-  | 'TEMPORARY_ENTITLEMENT_GRANT'
-  | 'REFUND_REVERSED'
-  | 'TEST';
-
-export type CancelReason =
-  'UNSUBSCRIBE' | 'BILLING_ERROR' | 'DEVELOPER_INITIATED' | 'PRICE_INCREASE' | 'CUSTOMER_SUPPORT' | 'UNKNOWN';
-
-export interface EntitlementEvent {
-  type: RcEventType;
-  eventAt: number;
-  productId?: string | null;
-  periodType?: string | null;
-  expirationAt?: number | null;
-  cancelReason?: CancelReason | null;
-  gracePeriodExpirationAt?: number | null;
-  /** สำหรับ TRANSFER: บัญชีนี้เป็นฝ่ายที่ได้สิทธิ์ ('to') หรือเสียสิทธิ์ ('from') */
-  transferDirection?: 'to' | 'from';
-  /** สำหรับ TRANSFER ฝั่ง 'to': สิทธิ์ของบัญชีต้นทางก่อนถูกย้าย (เซิร์ฟเวอร์อ่านมาก่อนเขียน) */
-  transferred?: EntitlementSnapshot | null;
-}
-
-function subscriptionStateFor(periodType: PeriodType): EntitlementState {
-  return periodType === 'TRIAL' ? 'TRIALING' : 'SUBSCRIBED_MONTHLY';
-}
-
-/** ระดับของสิทธิ์ ณ เวลา at: ซื้อขาด > ยังใช้ได้ > เคยมีแต่หมดแล้ว > ไม่เคยมี */
-function tier(s: EntitlementSnapshot, at: number): number {
-  if (s.state === 'LIFETIME') return 3;
-  if (hasAccess(s.state) && (s.expirationDate === null || s.expirationDate > at)) return 2;
-  return s.state === 'NO_ENTITLEMENT' ? 0 : 1;
-}
-
-function isBetter(a: EntitlementSnapshot, b: EntitlementSnapshot, at: number): boolean {
-  const ta = tier(a, at);
-  const tb = tier(b, at);
-  if (ta !== tb) return ta > tb;
-  return (a.expirationDate ?? 0) > (b.expirationDate ?? 0);
-}
-
-/** เลือกสิทธิ์ที่ดีที่สุด (ใช้ตอนย้ายสิทธิ์จากหลายบัญชีต้นทาง) — null ถ้าไม่มีให้เลือก */
-export function bestSnapshot(snapshots: EntitlementSnapshot[], at: number): EntitlementSnapshot | null {
-  let best: EntitlementSnapshot | null = null;
-  for (const s of snapshots) if (!best || isBetter(s, best, at)) best = s;
-  return best;
-}
-
-/**
- * ตารางเปลี่ยนสถานะ (ดู docs/ARCHITECTURE.md §4) — คืน snapshot ใหม่เสมอ ไม่แก้ของเดิม
- * กติกาหลัก:
- * - LIFETIME ไม่ถูกลดสถานะจากเหตุการณ์ของรายเดือน (ยกเว้นคืนเงินสินค้าซื้อขาดเอง)
- * - CANCELLATION แบบผู้ใช้ยกเลิก = ยังใช้ได้จนหมดรอบ (willRenew=false) SPEC J5
- * - CANCELLATION เพราะคืนเงิน (CUSTOMER_SUPPORT) = สิทธิ์หมดทันที
- * - BILLING_ISSUE ที่ยังมี grace → BILLING_GRACE, หมด grace → EXPIRATION จะตามมา
- */
-export function applyEvent(prev: EntitlementSnapshot, ev: EntitlementEvent): EntitlementSnapshot {
-  const period = normalizePeriod(ev.periodType);
-  const lifetimeEvent = isLifetimeProduct(ev.productId);
-  const next = (patch: Partial<EntitlementSnapshot>): EntitlementSnapshot => {
-    const s = { ...prev, ...patch, verifiedAt: Math.max(prev.verifiedAt, ev.eventAt) };
-    return s.state === 'LIFETIME' ? s : { ...s, alsoRenewingMonthly: false };
-  };
-  const wasLifetime = prev.state === 'LIFETIME';
-  const clearMonthlyWarning = () => next({ alsoRenewingMonthly: false });
-  // ย้ายไปซื้อขาดจากรายเดือนที่ยังต่ออายุ → สโตร์ยังเก็บเงินรายเดือนต่อ (SPEC J5)
-  const monthlyStillRenewing = wasLifetime
-    ? prev.alsoRenewingMonthly
-    : hasAccess(prev.state) && prev.willRenew;
-
-  switch (ev.type) {
-    case 'TEST':
-      return prev;
-
-    case 'NON_RENEWING_PURCHASE':
-      if (!lifetimeEvent) return prev;
-      return next({
-        state: 'LIFETIME',
-        productId: ev.productId ?? null,
-        periodType: 'NORMAL',
-        expirationDate: null,
-        willRenew: false,
-        billingIssueAt: null,
-        alsoRenewingMonthly: monthlyStillRenewing,
-      });
-
-    case 'INITIAL_PURCHASE':
-    case 'RENEWAL':
-    case 'UNCANCELLATION':
-    case 'SUBSCRIPTION_EXTENDED':
-    case 'TEMPORARY_ENTITLEMENT_GRANT':
-    case 'REFUND_REVERSED': {
-      const isUncancel = ev.type === 'UNCANCELLATION';
-      if (wasLifetime) {
-        // รายเดือนที่ซื้อซ้อนไว้เริ่ม/ต่ออายุ/กลับมาต่ออายุ → ต้องเตือนผู้ซื้อขาด
-        const startsMonthlyRenewal =
-          !lifetimeEvent && (isUncancel || ev.type === 'INITIAL_PURCHASE' || ev.type === 'RENEWAL');
-        return next(startsMonthlyRenewal ? { alsoRenewingMonthly: true } : {});
-      }
-      if (lifetimeEvent) {
-        return next({
-          state: 'LIFETIME',
-          productId: ev.productId ?? null,
-          expirationDate: null,
-          willRenew: false,
-          alsoRenewingMonthly: monthlyStillRenewing,
-        });
-      }
-      const state = isUncancel && hasAccess(prev.state) ? prev.state : subscriptionStateFor(period);
-      return next({
-        state,
-        productId: ev.productId ?? prev.productId,
-        periodType: isUncancel ? prev.periodType : period,
-        expirationDate: ev.expirationAt ?? prev.expirationDate,
-        willRenew: true,
-        billingIssueAt: isUncancel ? prev.billingIssueAt : null,
-      });
-    }
-
-    case 'CANCELLATION': {
-      if (ev.cancelReason === 'CUSTOMER_SUPPORT') {
-        // คืนเงิน: ถ้าคืนเงินสินค้าซื้อขาด หรือสถานะไม่ใช่ซื้อขาด → หมดสิทธิ์ทันที
-        if (wasLifetime && !lifetimeEvent) return clearMonthlyWarning();
-        return next({ state: 'EXPIRED', willRenew: false, expirationDate: ev.eventAt });
-      }
-      if (wasLifetime) return lifetimeEvent ? next({}) : clearMonthlyWarning();
-      // ยกเลิกต่ออายุ: ยังใช้ได้จนถึงวันหมดอายุเดิม
-      return next({ willRenew: false, expirationDate: ev.expirationAt ?? prev.expirationDate });
-    }
-
-    case 'BILLING_ISSUE': {
-      if (wasLifetime) return next({});
-      const graceEnd = ev.gracePeriodExpirationAt ?? null;
-      if (graceEnd !== null && graceEnd > ev.eventAt) {
-        return next({ state: 'BILLING_GRACE', billingIssueAt: ev.eventAt, expirationDate: graceEnd });
-      }
-      return next({ billingIssueAt: ev.eventAt });
-    }
-
-    case 'EXPIRATION':
-      if (wasLifetime) return clearMonthlyWarning();
-      return next({ state: 'EXPIRED', willRenew: false, expirationDate: ev.expirationAt ?? ev.eventAt });
-
-    case 'SUBSCRIPTION_PAUSED':
-      // Google Play: หยุดชั่วคราวมีผลเมื่อสิ้นรอบ → ระหว่างนี้ยังใช้ได้ แล้ว EXPIRATION จะตามมา
-      if (wasLifetime) return clearMonthlyWarning();
-      return next({ willRenew: false });
-
-    case 'PRODUCT_CHANGE':
-      // เปลี่ยนแพ็กเกจ: ข้อมูลจริงมากับ RENEWAL/INITIAL_PURCHASE ถัดไป
-      return next({});
-
-    case 'TRANSFER':
-      if (ev.transferDirection === 'from') {
-        return next({
-          ...EMPTY_SNAPSHOT,
-          state: 'EXPIRED',
-          verifiedAt: Math.max(prev.verifiedAt, ev.eventAt),
-        });
-      }
-      // บัญชีปลายทางได้สิทธิ์ของบัญชีต้นทาง เว้นแต่สิทธิ์ที่มีอยู่เดิมดีกว่า (เช่น ซื้อขาดไว้เอง)
-      if (ev.transferDirection === 'to' && ev.transferred && isBetter(ev.transferred, prev, ev.eventAt)) {
-        return next({ ...ev.transferred });
-      }
-      return next({});
-
-    default:
-      return prev;
-  }
-}
-
 // ───────────── การตัดสินสิทธิ์รวมกับแคชออฟไลน์ (SPEC B9) ─────────────
 
 /** ช่วงผ่อนผันหลังวันหมดอายุเมื่อออฟไลน์และยังตรวจกับ RevenueCat ไม่ได้ */
@@ -406,9 +221,9 @@ export interface AccessDecision {
 }
 
 export interface AccessInput {
-  /** ผู้ใช้ที่ล็อกอินอยู่ (สิทธิ์ผูกกับบัญชี SPEC J3) */
+  /** เจ้าของข้อมูลในเครื่อง (getOwner()) — สิทธิ์ผูกกับบัญชีสโตร์ผ่าน RevenueCat นิรนาม (D81) */
   userId: string | null;
-  /** แคชสถานะล่าสุดของผู้ใช้คนนี้ */
+  /** แคชสถานะล่าสุดของเจ้าของคนนี้ */
   cached: (EntitlementSnapshot & { userId: string }) | null;
   /** true ถ้าเพิ่งได้ข้อมูลสดจาก RevenueCat ในรอบนี้ */
   fresh: boolean;
