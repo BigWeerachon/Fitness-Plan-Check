@@ -1,11 +1,9 @@
-import { MockAuthService } from './auth/mockAuth';
-import type { AuthService } from './auth/types';
 import { env, shouldUseMocks } from './config';
 import { MockPurchasesService, type MockScenario } from './purchases/mockPurchases';
 import type { PurchasesService } from './purchases/types';
 
+/** service ภายนอกเดียวของแอปคือการซื้อผ่านสโตร์ (ไม่มีล็อกอิน/คลาวด์ D81) */
 export interface Services {
-  auth: AuthService;
   purchases: PurchasesService;
   mode: 'mock' | 'live';
 }
@@ -20,18 +18,15 @@ export function getServices(): Services {
   if (services) return services;
   if (shouldUseMocks()) {
     services = {
-      auth: new MockAuthService(),
       purchases: new MockPurchasesService(env.mockScenario as MockScenario),
       mode: 'mock',
     };
   } else {
     /* eslint-disable @typescript-eslint/no-require-imports -- โหลด native adapter เฉพาะโหมด live */
-    const { SupabaseAuthService } = require('./auth/supabaseAuth') as typeof import('./auth/supabaseAuth');
     const { RevenueCatPurchasesService } =
       require('./purchases/revenueCat') as typeof import('./purchases/revenueCat');
     /* eslint-enable @typescript-eslint/no-require-imports */
     services = {
-      auth: new SupabaseAuthService(),
       purchases: new RevenueCatPurchasesService(),
       mode: 'live',
     };

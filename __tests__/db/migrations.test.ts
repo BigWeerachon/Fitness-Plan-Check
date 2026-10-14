@@ -2,7 +2,7 @@ import { describe, expect, it } from '@jest/globals';
 import { openDriver } from '@/db/driver';
 import { runMigrations } from '@/db/migrate';
 import { MIGRATIONS } from '@/db/migrations.generated';
-import { appSettings, program, workoutSession } from '@/db/schema';
+import { appSettings, entitlementCache, onboardingDraft, program, workoutSession } from '@/db/schema';
 
 describe('migration runner', () => {
   it('applies every migration once and records the version', () => {
@@ -66,5 +66,32 @@ describe('migration runner', () => {
     ).toEqual(['local']);
     expect(() => d.exec('SELECT * FROM sync_outbox')).toThrow(/no such table/);
     expect(() => d.exec('SELECT * FROM sync_state')).toThrow(/no such table/);
+  });
+
+  it('upgrades an account-era database: keeps the latest entitlement cache as the local one and drops sign-in leftovers (D81)', () => {
+    const d = openDriver('t5');
+    const accountEra = MIGRATIONS.findIndex((m) => m.tag === '0006_local_entitlement_cache');
+    expect(accountEra).toBeGreaterThan(0);
+    runMigrations(d, MIGRATIONS.slice(0, accountEra));
+    d.exec(
+      "INSERT INTO entitlement_cache (user_id, state, verified_at) VALUES ('old-user', 'EXPIRED', 10), ('last-user', 'LIFETIME', 20)",
+    );
+    d.exec(
+      `INSERT INTO app_settings (key, value) VALUES ('auth.lastUser', '{}'), ('mock.authUser', '{}'), ('language', '"th"')`,
+    );
+    d.exec(
+      "INSERT INTO onboarding_draft (id, data, updated_at, migrated_at, migrated_to) VALUES ('draft', '{}', 1, 2, 'last-user')",
+    );
+
+    expect(runMigrations(d)).toBe(MIGRATIONS.length - accountEra);
+    expect(
+      d.db
+        .select()
+        .from(entitlementCache)
+        .all()
+        .map((r) => [r.userId, r.state]),
+    ).toEqual([['local', 'LIFETIME']]);
+    expect(d.db.select().from(appSettings).all()).toEqual([{ key: 'language', value: '"th"' }]);
+    expect(d.db.select().from(onboardingDraft).all()[0].migratedTo).toBe('local');
   });
 });

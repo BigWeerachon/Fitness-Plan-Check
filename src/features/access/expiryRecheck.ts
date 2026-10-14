@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import { useNow } from '../../hooks/useNow';
-import { useAuth } from '../../stores/auth';
 import { useEntitlement } from '../../stores/entitlement';
 import { refreshEntitlement } from './accountFlow';
 
@@ -8,7 +7,6 @@ import { refreshEntitlement } from './accountFlow';
 const EXPIRY_RECHECK_INTERVAL_MS = 30_000;
 
 export interface RecheckInput {
-  hasUser: boolean;
   expirationDate: number | null;
   now: number;
   checking: boolean;
@@ -18,7 +16,6 @@ export interface RecheckInput {
 
 export function shouldRecheckExpiry(i: RecheckInput): boolean {
   return (
-    i.hasUser &&
     !i.checking &&
     i.expirationDate !== null &&
     i.now > i.expirationDate &&
@@ -31,7 +28,6 @@ export function shouldRecheckExpiry(i: RecheckInput): boolean {
  * ระหว่างตรวจ AccessGate แสดงสถานะรอ (B8, B9)
  */
 export function useEntitlementExpiryRecheck(): void {
-  const user = useAuth((s) => s.user);
   const expirationDate = useEntitlement((s) => s.cached?.expirationDate ?? null);
   const checking = useEntitlement((s) => s.checking);
   const lastCheckedFor = useRef<number | null>(null);
@@ -39,7 +35,6 @@ export function useEntitlementExpiryRecheck(): void {
 
   useEffect(() => {
     const input = {
-      hasUser: !!user,
       expirationDate,
       now: nowMs,
       checking,
@@ -48,5 +43,5 @@ export function useEntitlementExpiryRecheck(): void {
     if (!shouldRecheckExpiry(input)) return;
     lastCheckedFor.current = expirationDate;
     void refreshEntitlement();
-  }, [user, expirationDate, checking, nowMs]);
+  }, [expirationDate, checking, nowMs]);
 }

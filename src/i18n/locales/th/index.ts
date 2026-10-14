@@ -7,7 +7,6 @@ import a11y from './a11y';
 import errors from './errors';
 import onboarding from './onboarding';
 import paywall from './paywall';
-import auth from './auth';
 import account from './account';
 import today from './today';
 import week from './week';
@@ -29,7 +28,6 @@ const th: LocaleShape<typeof en> = {
   errors,
   onboarding,
   paywall,
-  auth,
   account,
   today,
   week,

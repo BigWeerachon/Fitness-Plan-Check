@@ -3,7 +3,6 @@ const expoPreset = require('jest-expo/jest-preset');
 // เพิ่มแพ็กเกจ ESM ที่ต้องแปลงด้วย babel ต่อจากรายการมาตรฐานของ jest-expo
 const EXTRA_ESM = [
   'react-native-.*',
-  '@react-native-google-signin',
   'react-native-gifted-charts',
   'gifted-charts-core',
   '@revenuecat',

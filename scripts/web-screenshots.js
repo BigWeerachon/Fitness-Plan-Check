@@ -58,16 +58,7 @@ const accent = process.argv[5] || 'pink';
   await step('paywall', async () => {
     await page.waitForTimeout(1000);
     await shot('04-paywall');
-    await tapByTestId('paywall-cta');
-  });
-  await step('login', async () => {
-    await page.waitForTimeout(800);
-    await shot('05-login');
-    await tapByTestId('signin-google');
-    await page.waitForTimeout(1500);
-  });
-  await step('paywall2', async () => {
-    await shot('06-paywall-after-login');
+    // ซื้อได้ทันทีโดยไม่ต้องล็อกอิน (D81)
     await tapByTestId('paywall-cta');
     await page.waitForTimeout(2500);
   });

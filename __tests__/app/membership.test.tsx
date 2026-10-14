@@ -2,9 +2,9 @@ import { afterEach, describe, expect, it, jest } from '@jest/globals';
 import { act, fireEvent, renderRouter, screen, within } from 'expo-router/testing-library';
 import { Linking } from 'react-native';
 import { entitlementRepo } from '@/db/repos/entitlementRepo';
-import { purchasePlan, refreshEntitlement, signIn } from '@/features/access/accountFlow';
+import { bootstrapEntitlement, purchasePlan, refreshEntitlement } from '@/features/access/accountFlow';
+import { getOwner } from '@/db/owner';
 import type { MockScenario } from '@/services/purchases/mockPurchases';
-import { useAuth } from '@/stores/auth';
 import { useEntitlement } from '@/stores/entitlement';
 import { useSettings } from '@/stores/settings';
 import { setClockForTests } from '@/utils/clock';
@@ -17,20 +17,20 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-/** ล็อกอินบัญชีที่สโตร์จำลองมีสถานะตาม scenario — วันนี้ = ศุกร์ 9 ต.ค. 2026 */
-async function signedIn(scenario: MockScenario): Promise<TestServices> {
+/** เครื่องที่บัญชีสโตร์จำลองมีสถานะตาม scenario (ตรวจกับสโตร์แล้ว) — วันนี้ = ศุกร์ 9 ต.ค. 2026 */
+async function withStore(scenario: MockScenario): Promise<TestServices> {
   const s = freshEnv(scenario);
   const t0 = new Date('2026-10-09T09:00:00').getTime();
   setClockForTests(() => t0);
   useSettings.getState().set('onboardingDone', true);
   useSettings.getState().set('language', 'en');
-  expect(await signIn('google')).toBe('success');
+  await bootstrapEntitlement();
   return s;
 }
 
 describe('membership dates and reminders (SPEC B7, J5)', () => {
   it('the "trialing" store scenario shows the trial end on Today and in Settings', async () => {
-    await signedIn('trialing');
+    await withStore('trialing');
     expect(useEntitlement.getState().cached).toMatchObject({ state: 'TRIALING', willRenew: true });
 
     const r = renderRouter('./src/app', { initialUrl: '/' });
@@ -48,17 +48,16 @@ describe('membership dates and reminders (SPEC B7, J5)', () => {
   });
 
   it('a renewing monthly subscriber sees a small renewal badge on Today', async () => {
-    await signedIn('monthly');
+    await withStore('monthly');
     renderRouter('./src/app', { initialUrl: '/' });
     expect(await screen.findByTestId('today')).toBeTruthy();
     expect(await screen.findByText('Renews Thu, Oct 29')).toBeTruthy();
   });
 
   it('after buying lifetime, Settings reminds the user to cancel the monthly that still renews', async () => {
-    const s = await signedIn('monthly');
-    const userId = useAuth.getState().user!.id;
+    const s = await withStore('monthly');
     expect((await purchasePlan(s.purchases.lifetimePlan)).status).toBe('success');
-    expect(entitlementRepo.get(userId)).toMatchObject({ state: 'LIFETIME', alsoRenewingMonthly: true });
+    expect(entitlementRepo.get(getOwner())).toMatchObject({ state: 'LIFETIME', alsoRenewingMonthly: true });
 
     // หน้าบัญชี (เข้าได้เสมอ) แสดงคำเตือนเดียวกัน
     const account = renderRouter('./src/app', { initialUrl: '/account' });
@@ -82,11 +81,11 @@ describe('membership dates and reminders (SPEC B7, J5)', () => {
 
     // ยกเลิกรายเดือนในสโตร์แล้ว → คำเตือนหายไป
     await act(async () => {
-      s.purchases.simulateCancel(userId);
+      s.purchases.simulateCancel();
       await refreshEntitlement();
     });
     await flush();
-    expect(entitlementRepo.get(userId)).toMatchObject({ state: 'LIFETIME', alsoRenewingMonthly: false });
+    expect(entitlementRepo.get(getOwner())).toMatchObject({ state: 'LIFETIME', alsoRenewingMonthly: false });
     expect(screen.queryByTestId('settings-monthly-notice')).toBeNull();
   });
 });

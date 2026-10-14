@@ -6,7 +6,7 @@ import Purchases, {
   type PurchasesPackage,
 } from 'react-native-purchases';
 import type { CustomerInfoLike } from '../../domain/entitlement/machine';
-import { assertCanPurchase, type StorePlan, type TrialEligibility } from '../../domain/entitlement/paywall';
+import type { StorePlan, TrialEligibility } from '../../domain/entitlement/paywall';
 import { env } from '../config';
 import { plansFromOffering, type OfferingLike } from './mapping';
 import {
@@ -18,12 +18,11 @@ import {
 
 /**
  * Adapter ของ RevenueCat จริง (ใช้เมื่อมีคีย์ใน .env)
- * - configure แบบนิรนามตอนเปิดแอปเพื่อโหลดราคา/ตรวจสิทธิ์ทดลอง (ไม่เริ่มซื้อ)
- * - logIn(userId) หลังล็อกอิน → สิทธิ์ผูกกับบัญชีและใช้ข้ามอุปกรณ์ (SPEC J3, B11)
+ * configure แบบนิรนาม (ไม่ส่ง appUserID) และไม่เรียก logIn/logOut เลย (D81)
+ * SDK จำ app user id ไว้ในเครื่องเอง — เครื่องเดิมที่เคยผูก id ไว้ก่อนอัปเดตยังใช้ id เดิมต่อ
  */
 export class RevenueCatPurchasesService implements PurchasesService {
   private configured = false;
-  private appUserId: string | null = null;
   private packages = new Map<string, PurchasesPackage>();
 
   async configure(): Promise<void> {
@@ -32,27 +31,6 @@ export class RevenueCatPurchasesService implements PurchasesService {
     if (!apiKey) throw new Error('RevenueCat API key missing');
     Purchases.configure({ apiKey });
     this.configured = true;
-  }
-
-  async logIn(userId: string): Promise<CustomerInfoLike> {
-    await this.configure();
-    const { customerInfo } = await Purchases.logIn(userId);
-    this.appUserId = userId;
-    return customerInfo;
-  }
-
-  async logOut(): Promise<void> {
-    if (!this.configured || !this.appUserId) return;
-    this.appUserId = null;
-    try {
-      await Purchases.logOut();
-    } catch {
-      // ผู้ใช้นิรนามอยู่แล้ว
-    }
-  }
-
-  currentAppUserId(): string | null {
-    return this.appUserId;
   }
 
   async getCustomerInfo(): Promise<CustomerInfoLike> {
@@ -84,8 +62,8 @@ export class RevenueCatPurchasesService implements PurchasesService {
     }
   }
 
-  async purchase(plan: StorePlan, authUserId: string | null): Promise<PurchaseResult> {
-    assertCanPurchase({ authUserId, purchasesUserId: this.appUserId });
+  async purchase(plan: StorePlan): Promise<PurchaseResult> {
+    await this.configure();
     const pkg = this.packages.get(plan.packageId);
     if (!pkg) return { status: 'error', code: 'store' };
     try {

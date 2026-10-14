@@ -9,7 +9,6 @@ const settings: LocaleShape<typeof en> = {
     profile: 'โปรไฟล์',
     membership: 'สมาชิก',
     data: 'ข้อมูลของคุณ',
-    account: 'บัญชี',
     about: 'เกี่ยวกับ',
   },
   weightUnit: 'หน่วยน้ำหนัก',

@@ -19,7 +19,6 @@ describe('app.config privacy manifest (SPEC N1, B13)', () => {
     const types = manifest.NSPrivacyCollectedDataTypes.map((d) => d.NSPrivacyCollectedDataType);
     expect(types).toEqual(
       expect.arrayContaining([
-        'NSPrivacyCollectedDataTypeEmailAddress',
         'NSPrivacyCollectedDataTypeUserID',
         'NSPrivacyCollectedDataTypeFitness',
         'NSPrivacyCollectedDataTypeHealth',
@@ -36,5 +35,20 @@ describe('app.config privacy manifest (SPEC N1, B13)', () => {
     }
     expect(manifest.NSPrivacyTracking).toBe(false);
     expect(manifest.NSPrivacyTrackingDomains).toEqual([]);
+  });
+
+  it('no sign-in (D81): no email collected, no Google/Apple sign-in plugins or entitlement', () => {
+    const types = manifest.NSPrivacyCollectedDataTypes.map((d) => d.NSPrivacyCollectedDataType);
+    expect(types).not.toContain('NSPrivacyCollectedDataTypeEmailAddress');
+    expect(config.ios?.usesAppleSignIn).toBeFalsy();
+    const pluginNames = (config.plugins ?? []).map((p) => (Array.isArray(p) ? p[0] : p));
+    expect(pluginNames).toEqual(expect.arrayContaining(['expo-router', 'expo-sqlite']));
+    for (const removed of [
+      'expo-apple-authentication',
+      '@react-native-google-signin/google-signin',
+      'expo-secure-store',
+    ]) {
+      expect(pluginNames).not.toContain(removed);
+    }
   });
 });

@@ -4,7 +4,7 @@ const onboarding = {
   step3Title: 'Quick start',
   stepOf: 'Step {{step}} of {{total}}',
   step1Sub: 'Pick your language, theme and accent color. You can change them anytime.',
-  haveAccount: 'I already have an account — sign in',
+  alreadyPurchased: 'Already purchased? Restore purchases',
   step2Sub: 'Used only to estimate calories and nutrition targets. You can skip this.',
   sex: 'Sex',
   sexes: { male: 'Male', female: 'Female' },

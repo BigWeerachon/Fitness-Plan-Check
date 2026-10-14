@@ -2,11 +2,12 @@ import { eq } from 'drizzle-orm';
 import { getDb } from '../../db/client';
 import { onboardingDraft } from '../../db/schema';
 import type { ActivityLevel, Goal, LengthUnit, Sex, WeightUnit } from '../../db/schema';
+import { getOwner } from '../../db/owner';
 import { now } from '../../utils/clock';
 
 /**
- * ข้อมูลขั้นตั้งค่าเริ่มต้น (SPEC C) เก็บในเครื่องชั่วคราวก่อนล็อกอิน (B3)
- * ย้ายเข้าบัญชีหลังได้สิทธิ์ (B4 ขั้นสุดท้าย) ด้วย migrateDraftToAccount
+ * ข้อมูลขั้นตั้งค่าเริ่มต้น (SPEC C) เก็บเป็นร่างชั่วคราวก่อนมีสิทธิ์ใช้งาน (B3)
+ * ย้ายเข้าข้อมูลหลักหลังได้สิทธิ์ (B4 ขั้นสุดท้าย) ด้วย applyOnboardingDraft
  */
 export type QuickStart = { kind: 'template'; key: string } | { kind: 'custom' } | { kind: 'skip' };
 
@@ -73,10 +74,11 @@ export const draftRepo = {
       .run();
     return data;
   },
-  markMigrated(userId: string): void {
+  /** ทำเครื่องหมายว่าย้ายร่างเข้าข้อมูลหลักแล้ว (migratedTo = เจ้าของข้อมูลในเครื่อง) */
+  markApplied(): void {
     getDb()
       .update(onboardingDraft)
-      .set({ migratedAt: now(), migratedTo: userId })
+      .set({ migratedAt: now(), migratedTo: getOwner() })
       .where(eq(onboardingDraft.id, ID))
       .run();
   },

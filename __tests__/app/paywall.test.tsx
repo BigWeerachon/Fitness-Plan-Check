@@ -2,9 +2,9 @@ import { afterEach, describe, expect, it, jest } from '@jest/globals';
 import { act, fireEvent, renderRouter, screen, within } from 'expo-router/testing-library';
 import { Alert, Linking, StyleSheet } from 'react-native';
 import { entitlementRepo } from '@/db/repos/entitlementRepo';
+import { getOwner } from '@/db/owner';
 import { deriveSnapshot } from '@/domain/entitlement/machine';
 import type { MockScenario } from '@/services/purchases/mockPurchases';
-import { useAuth } from '@/stores/auth';
 import { useEntitlement } from '@/stores/entitlement';
 import { useSettings } from '@/stores/settings';
 import { now } from '@/utils/clock';
@@ -33,17 +33,16 @@ function boot(scenario: Parameters<typeof freshEnv>[0] = 'new') {
   return s;
 }
 
-/** บัญชีที่ล็อกอินค้างไว้และ RevenueCat ผูกแล้ว ด้วยสถานะจากสโตร์จำลองตาม scenario */
-async function signedIn(scenario: MockScenario) {
+/** เครื่องที่มีแคชสิทธิ์จาก RevenueCat แล้ว ด้วยสถานะจากสโตร์จำลองตาม scenario */
+async function withStoreState(scenario: MockScenario) {
   const s = freshEnv(scenario);
   useSettings.getState().set('onboardingDone', true);
   useSettings.getState().set('language', 'en');
-  const user = await s.auth.signIn('google');
-  const info = await s.purchases.logIn(user.id);
-  entitlementRepo.save(user.id, deriveSnapshot(info, now()));
-  useAuth.setState({ user, status: 'signedIn' });
+  const info = await s.purchases.getCustomerInfo();
+  entitlementRepo.save(getOwner(), deriveSnapshot(info, now()));
   useEntitlement.setState({
-    cached: { ...entitlementRepo.get(user.id)! },
+    cached: { ...entitlementRepo.get(getOwner())! },
+    loaded: true,
     fresh: true,
     checking: false,
     online: true,
@@ -54,14 +53,14 @@ async function signedIn(scenario: MockScenario) {
 const fontSize = (el: { props: { style?: unknown } }) =>
   (StyleSheet.flatten(el.props.style as never) as { fontSize?: number }).fontSize ?? 0;
 
-describe('paywall → login → purchase (SPEC B4–B6, J2)', () => {
+describe('paywall → purchase (SPEC B4–B6, J2; no sign-in D81)', () => {
   it('shows the store price, trial offer and every required disclosure', async () => {
     boot('new');
     await flush();
     // หัวข้อเน้นฟีเจอร์ — คำว่า "ฟรี" ไม่เด่นกว่ายอดที่ถูกเรียกเก็บ (App Review 3.1.2)
     expect(await screen.findByText('Unlock your full training plan')).toBeTruthy();
     expect(screen.queryByText(/Try everything free/)).toBeNull();
-    expect(screen.getByText('All features, on all your devices.')).toBeTruthy();
+    expect(screen.getByText('Every feature, no account or sign-in needed.')).toBeTruthy();
     expect(screen.getByText('7-day free trial')).toBeTruthy();
     const billed = await screen.findByTestId('paywall-billed');
     expect(billed.props.children).toBe('7 days free, then ฿19.00/month');
@@ -93,37 +92,25 @@ describe('paywall → login → purchase (SPEC B4–B6, J2)', () => {
     expect(screen.getByText('Privacy Policy')).toBeTruthy();
   });
 
-  it('requires sign-in before the purchase, returns with the chosen plan, then unlocks the app', async () => {
+  it('buys the chosen plan straight from the paywall — no sign-in step (D81)', async () => {
     const s = boot('new');
     await flush();
+    expect(await screen.findByTestId('paywall-store-account')).toBeTruthy();
+    expect(screen.queryByText(/Sign in|Google|Apple ID/)).toBeNull();
     fireEvent.press(await screen.findByTestId('plan-lifetime'));
     expect(screen.getByTestId('paywall-billed').props.children).toBe('฿99.00 one-time payment');
-    fireEvent.press(screen.getByText('Buy lifetime for ฿99.00'));
-    await flush();
-    // ยังไม่ล็อกอิน → ไปหน้าล็อกอิน ไม่มีการเรียกซื้อ
-    expect(await screen.findByText('Continue with Google')).toBeTruthy();
-    expect(screen.getByLabelText('Sign in with Apple')).toBeTruthy();
-    expect(s.purchases.purchaseCalls).toHaveLength(0);
-    fireEvent.press(screen.getByTestId('signin-google'));
-    await flush(12);
-    // กลับ Paywall พร้อมแพ็กเกจที่เลือกไว้ (ซื้อขาด)
-    expect(await screen.findByText('Buy lifetime for ฿99.00')).toBeTruthy();
-    expect(s.purchases.purchaseCalls).toHaveLength(0);
     const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
-    fireEvent.press(screen.getByTestId('paywall-cta'));
+    fireEvent.press(screen.getByText('Buy lifetime for ฿99.00'));
     await flush(12);
-    expect(s.purchases.purchaseCalls).toEqual([{ plan: 'lifetime', appUserId: expect.any(String) }]);
+    expect(s.purchases.purchaseCalls).toEqual([{ plan: 'lifetime' }]);
     expect(alert).toHaveBeenCalledWith('You’re all set! Enjoy Fitnese Pro.');
-    alert.mockRestore();
+    expect(useEntitlement.getState().cached?.state).toBe('LIFETIME');
+    expect(await screen.findByTestId('today')).toBeTruthy();
   });
 
   it('never advertises the free trial to users who already used it (B6)', async () => {
     const s = boot('trial_used');
     await flush();
-    fireEvent.press(await screen.findByTestId('paywall-cta'));
-    await flush();
-    fireEvent.press(await screen.findByTestId('signin-apple'));
-    await flush(12);
     expect(await screen.findByText('Subscribe for ฿19.00 / month')).toBeTruthy();
     expect(
       screen.queryByText(/7-day free trial|Free for 7 days|days free|Start free trial|Start 7-day/i),
@@ -134,7 +121,7 @@ describe('paywall → login → purchase (SPEC B4–B6, J2)', () => {
   });
 
   it('says the user was not charged when a purchase fails offline (N8)', async () => {
-    const s = await signedIn('new');
+    const s = await withStoreState('new');
     renderRouter('./src/app', { initialUrl: '/' });
     await flush();
     expect(await screen.findByText('Start free trial, then ฿19.00/month')).toBeTruthy();
@@ -149,25 +136,26 @@ describe('paywall → login → purchase (SPEC B4–B6, J2)', () => {
     expect(alert).not.toHaveBeenCalledWith(expect.anything(), expect.stringMatching(/will sync later/));
   });
 
-  it('does not open a second purchase when linking the account restores access (J3)', async () => {
+  it('restores an existing purchase from the paywall without signing in, then enters the app (new phone)', async () => {
     const s = freshEnv('monthly');
     useSettings.getState().set('onboardingDone', true);
     useSettings.getState().set('language', 'en');
-    // ล็อกอินค้างไว้ แต่ตอนเปิดแอปผูก RevenueCat ไม่สำเร็จ → ยังไม่รู้ว่าบัญชีนี้สมัครรายเดือนไว้แล้ว
-    await s.auth.signIn('google');
-    jest.spyOn(s.purchases, 'logIn').mockRejectedValueOnce(new Error('network'));
+    s.purchases.simulateReinstall();
     renderRouter('./src/app', { initialUrl: '/' });
     await flush();
     expect(await screen.findByText('Subscribe for ฿19.00 / month')).toBeTruthy();
-    fireEvent.press(screen.getByTestId('paywall-cta'));
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+    fireEvent.press(screen.getByTestId('paywall-restore'));
     await flush(12);
+    expect(alert).toHaveBeenCalledWith('Your purchase was restored.');
+    expect(s.purchases.restoreCalls).toBe(1);
     expect(s.purchases.purchaseCalls).toHaveLength(0);
     expect(useEntitlement.getState().cached?.state).toBe('SUBSCRIBED_MONTHLY');
     expect(await screen.findByTestId('today')).toBeTruthy();
   });
 
   it('asks a user whose payment failed to fix it in the store instead of subscribing again (J5)', async () => {
-    const s = await signedIn('billing_retry');
+    const s = await withStoreState('billing_retry');
     expect(useEntitlement.getState().cached).toMatchObject({
       state: 'EXPIRED',
       billingIssueAt: expect.any(Number),
@@ -187,7 +175,7 @@ describe('paywall → login → purchase (SPEC B4–B6, J2)', () => {
   });
 
   it('welcomes back a user whose subscription simply ended', async () => {
-    await signedIn('expired');
+    await withStoreState('expired');
     renderRouter('./src/app', { initialUrl: '/' });
     await flush();
     expect(await screen.findByText('Welcome back — pick up where you left off')).toBeTruthy();
@@ -207,12 +195,13 @@ describe('paywall → login → purchase (SPEC B4–B6, J2)', () => {
     );
   });
 
-  it('keeps account, restore, legal and references reachable without a plan (B3)', async () => {
+  it('keeps settings, restore, delete-all-data, legal and references reachable without a plan (B3)', async () => {
     boot('new');
     await flush();
-    fireEvent.press(await screen.findByLabelText('Account & settings'));
+    fireEvent.press(await screen.findByLabelText('Settings'));
     expect(await screen.findByText('Restore purchases')).toBeTruthy();
-    expect(screen.getByText('Delete account and data')).toBeTruthy();
+    expect(screen.getByText('Delete all data on this device')).toBeTruthy();
+    expect(screen.queryByText(/Sign in|Sign out/)).toBeNull();
     const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
     fireEvent.press(screen.getByTestId('account-manage'));
     await flush();
@@ -226,7 +215,7 @@ describe('paywall → login → purchase (SPEC B4–B6, J2)', () => {
 
 describe('lifetime upgrade from settings (SPEC J5)', () => {
   it('lets a monthly subscriber buy lifetime, warning that the subscription is not cancelled', async () => {
-    const s = await signedIn('monthly');
+    const s = await withStoreState('monthly');
     renderRouter('./src/app', { initialUrl: '/settings' });
     fireEvent.press(await screen.findByTestId('settings-lifetime'));
     expect(await screen.findByText('Get Fitnese Pro with one payment')).toBeTruthy();
@@ -247,27 +236,27 @@ describe('lifetime upgrade from settings (SPEC J5)', () => {
     expect(screen.getByTestId('paywall-cta').props.accessibilityLabel).toBe('Buy lifetime for ฿99.00');
     fireEvent.press(screen.getByTestId('paywall-cta'));
     await flush(12);
-    expect(s.purchases.purchaseCalls).toEqual([{ plan: 'lifetime', appUserId: expect.any(String) }]);
+    expect(s.purchases.purchaseCalls).toEqual([{ plan: 'lifetime' }]);
     expect(alert).toHaveBeenCalledWith('You’re all set! Enjoy Fitnese Pro.');
     expect(useEntitlement.getState().cached?.state).toBe('LIFETIME');
     expect(await screen.findByTestId('today')).toBeTruthy();
   });
 
   it.each(['trialing', 'billing_grace'] as const)('offers the upgrade to %s users too', async (scenario) => {
-    await signedIn(scenario);
+    await withStoreState(scenario);
     renderRouter('./src/app', { initialUrl: '/settings' });
     expect(await screen.findByTestId('settings-lifetime')).toBeTruthy();
   });
 
   it('does not offer the upgrade to lifetime owners', async () => {
-    await signedIn('lifetime');
+    await withStoreState('lifetime');
     renderRouter('./src/app', { initialUrl: '/settings' });
     expect(await screen.findByTestId('settings')).toBeTruthy();
     expect(screen.queryByTestId('settings-lifetime')).toBeNull();
   });
 
   it('sends lifetime owners home even through a direct upgrade link', async () => {
-    const s = await signedIn('lifetime');
+    const s = await withStoreState('lifetime');
     renderRouter('./src/app', { initialUrl: '/paywall?upgrade=lifetime' });
     await flush();
     expect(await screen.findByTestId('today')).toBeTruthy();

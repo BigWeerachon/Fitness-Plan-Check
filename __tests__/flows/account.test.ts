@@ -1,83 +1,72 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { createRow, listRows } from '@/db/mutations';
 import {
-  bootstrapAccount,
+  bootstrapEntitlement,
   checkTrialEligibility,
-  deleteAccount,
-  onAccountDeleted,
   onEntitled,
   purchasePlan,
   restorePurchases,
-  signIn,
-  signOut,
 } from '@/features/access/accountFlow';
 import { getAccess } from '@/features/access/useAccess';
-import { PurchaseRequiresLoginError } from '@/domain/entitlement/paywall';
 import { entitlementRepo } from '@/db/repos/entitlementRepo';
+import { getOwner } from '@/db/owner';
 import { setClockForTests } from '@/utils/clock';
 import { freshEnv, simulateRestart, type TestServices } from '../helpers/env';
 
 const DAY = 86_400_000;
 
-describe('account + entitlement flow (SPEC B4, B9, B11, B12)', () => {
+describe('anonymous purchases + entitlement flow (SPEC B4, B9; no sign-in D81)', () => {
   let s: TestServices;
   beforeEach(() => {
     setClockForTests(null);
     s = freshEnv('new');
   });
 
-  it('never starts a purchase or trial before sign-in (B4)', async () => {
-    await bootstrapAccount();
-    await expect(purchasePlan(s.purchases.monthlyPlan)).rejects.toBeInstanceOf(PurchaseRequiresLoginError);
-    // แม้เรียก adapter ตรงๆ ก็ถูกกั้น
-    await expect(s.purchases.purchase(s.purchases.monthlyPlan, null)).rejects.toBeInstanceOf(
-      PurchaseRequiresLoginError,
-    );
-    expect(s.purchases.purchaseCalls).toHaveLength(0);
-    expect(getAccess().allowed).toBe(false);
-  });
-
-  it('sign-in → RevenueCat logIn(userId) → trial purchase → entitled → onEntitled hook', async () => {
-    const entitled = jest.fn<(userId: string) => void>();
+  it('buys directly without any sign-in: trial purchase → entitled → onEntitled hook', async () => {
+    const entitled = jest.fn<() => void>();
     const off = onEntitled(entitled);
-    await bootstrapAccount();
-    expect(await signIn('google')).toBe('success');
-    const userId = getAccess().userId!;
-    expect(s.purchases.currentAppUserId()).toBe(userId);
-    expect(getAccess()).toMatchObject({ allowed: false, state: 'NO_ENTITLEMENT' });
+    await bootstrapEntitlement();
+    expect(getAccess()).toMatchObject({ allowed: false, state: 'NO_ENTITLEMENT', pending: false });
 
     expect(await checkTrialEligibility(s.purchases.monthlyPlan)).toBe('eligible');
     const result = await purchasePlan(s.purchases.monthlyPlan);
     expect(result.status).toBe('success');
     expect(getAccess()).toMatchObject({ allowed: true, state: 'TRIALING' });
-    expect(s.purchases.purchaseCalls).toEqual([{ plan: 'monthly', appUserId: userId }]);
-    expect(entitled).toHaveBeenCalledWith(userId);
-    // แคชสถานะสิทธิ์ (B9) — ไม่ใช่ตัวนับเวลาทดลองของแอป: วันหมดอายุมาจากสโตร์
-    expect(entitlementRepo.get(userId)?.state).toBe('TRIALING');
+    expect(s.purchases.purchaseCalls).toEqual([{ plan: 'monthly' }]);
+    expect(entitled).toHaveBeenCalled();
+    // แคชสถานะสิทธิ์ของเครื่องนี้ (B9) — ไม่ใช่ตัวนับเวลาทดลองของแอป: วันหมดอายุมาจากสโตร์
+    expect(entitlementRepo.get(getOwner())?.state).toBe('TRIALING');
     off();
   });
 
-  it('uses the cached entitlement offline and locks again once the store says it expired', async () => {
-    await bootstrapAccount();
-    await signIn('google');
+  it('a cancelled or failed purchase changes nothing', async () => {
+    await bootstrapEntitlement();
+    s.purchases.failNextPurchase = { status: 'cancelled' };
+    expect((await purchasePlan(s.purchases.lifetimePlan)).status).toBe('cancelled');
+    s.purchases.failNextPurchase = { status: 'error', code: 'network' };
+    expect(await purchasePlan(s.purchases.lifetimePlan)).toEqual({ status: 'error', code: 'network' });
+    expect(getAccess().allowed).toBe(false);
+    expect(entitlementRepo.get(getOwner())?.state).toBe('NO_ENTITLEMENT');
+  });
+
+  it('uses the cached entitlement offline after a restart', async () => {
+    await bootstrapEntitlement();
     await purchasePlan(s.purchases.lifetimePlan);
     expect(getAccess().state).toBe('LIFETIME');
 
-    // ปิดแอปแล้วเปิดใหม่แบบออฟไลน์ → ยังใช้ได้จากแคช และไม่ต้องล็อกอินซ้ำ
+    // ปิดแอปแล้วเปิดใหม่แบบออฟไลน์ → ยังใช้ได้จากแคช
     s = simulateRestart(s);
     s.purchases.offline = true;
-    await bootstrapAccount();
+    await bootstrapEntitlement();
     expect(getAccess()).toMatchObject({ allowed: true, state: 'LIFETIME', source: 'cache' });
   });
 
   it('keeps user data when the subscription expires and restores access on resubscribe', async () => {
-    await bootstrapAccount();
-    await signIn('google');
-    const userId = getAccess().userId!;
+    await bootstrapEntitlement();
     await purchasePlan(s.purchases.monthlyPlan);
     createRow('program', { name: 'PPL' });
 
-    s.purchases.simulateExpire(userId);
+    s.purchases.simulateExpire();
     expect(getAccess()).toMatchObject({ allowed: false, state: 'EXPIRED' });
     expect(listRows('program').map((p) => p.name)).toEqual(['PPL']);
 
@@ -91,88 +80,65 @@ describe('account + entitlement flow (SPEC B4, B9, B11, B12)', () => {
   it('cached access ends at the store expiration date even without new events', async () => {
     const t0 = Date.parse('2026-10-09T00:00:00Z');
     setClockForTests(() => t0);
-    await bootstrapAccount();
-    await signIn('google');
+    await bootstrapEntitlement();
     await purchasePlan(s.purchases.monthlyPlan); // ทดลอง 7 วันจากสโตร์
-    s.purchases.offline = true;
     s = simulateRestart(s);
     s.purchases.offline = true;
     setClockForTests(() => t0 + 6 * DAY);
-    await bootstrapAccount();
+    await bootstrapEntitlement();
     expect(getAccess().allowed).toBe(true);
     setClockForTests(() => t0 + 10 * DAY); // เลยวันหมด + ช่วงผ่อนผัน 48 ชม.
     expect(getAccess().allowed).toBe(false);
   });
 
-  it('runs onEntitled when a restored session has a usable cache, but not once the cache is past expiry and grace', async () => {
+  it('runs onEntitled when the cache is usable at launch, but not once it is past expiry and grace', async () => {
     const t0 = Date.parse('2026-10-09T00:00:00Z');
     setClockForTests(() => t0);
-    await bootstrapAccount();
-    await signIn('google');
+    await bootstrapEntitlement();
     await purchasePlan(s.purchases.monthlyPlan);
 
     s = simulateRestart(s);
     s.purchases.offline = true;
     setClockForTests(() => t0 + 3 * DAY);
-    const usable = jest.fn<(userId: string) => void>();
+    const usable = jest.fn<() => void>();
     let off = onEntitled(usable);
-    await bootstrapAccount();
+    await bootstrapEntitlement();
     expect(usable).toHaveBeenCalled();
     off();
 
     s = simulateRestart(s);
     s.purchases.offline = true;
     setClockForTests(() => t0 + 30 * DAY);
-    const expired = jest.fn<(userId: string) => void>();
+    const expired = jest.fn<() => void>();
     off = onEntitled(expired);
-    await bootstrapAccount();
+    await bootstrapEntitlement();
     expect(getAccess().allowed).toBe(false);
     expect(expired).not.toHaveBeenCalled();
     off();
   });
 
-  it('restore requires sign-in, then restores the account entitlement', async () => {
-    await bootstrapAccount();
-    expect(await restorePurchases()).toBe('needLogin');
-    await signIn('apple');
-    expect(await restorePurchases()).toBe('none');
-    await purchasePlan(s.purchases.lifetimePlan);
+  it('restores purchases without sign-in on a new phone / reinstall', async () => {
+    s = freshEnv('lifetime');
+    // ติดตั้งใหม่: ผู้ใช้ RevenueCat นิรนามใหม่ยังไม่เห็นการซื้อในบัญชีสโตร์
+    s.purchases.simulateReinstall();
+    await bootstrapEntitlement();
+    expect(getAccess()).toMatchObject({ allowed: false, state: 'NO_ENTITLEMENT' });
+
     expect(await restorePurchases()).toBe('restored');
-  });
-
-  it('sign-out keeps local data; signing in again on a "new device" brings the entitlement back (B11)', async () => {
-    await bootstrapAccount();
-    await signIn('google');
-    await purchasePlan(s.purchases.lifetimePlan);
-    createRow('program', { name: 'Upper/Lower' });
-    await signOut();
-    expect(getAccess().allowed).toBe(false);
-    // ข้อมูลอยู่ในเครื่องเท่านั้นและไม่ผูกบัญชี (D81): ล็อกเอาต์แล้วข้อมูลยังอยู่ (แค่ถูกล็อกตามสิทธิ์)
-    expect(listRows('program').map((p) => p.name)).toEqual(['Upper/Lower']);
-    await signIn('google');
+    expect(s.purchases.restoreCalls).toBe(1);
     expect(getAccess()).toMatchObject({ allowed: true, state: 'LIFETIME' });
-    expect(listRows('program').map((p) => p.name)).toEqual(['Upper/Lower']);
+    expect(entitlementRepo.get(getOwner())?.state).toBe('LIFETIME');
   });
 
-  it('a cancelled sign-in is reported as cancelled, not an error', async () => {
-    await bootstrapAccount();
-    s.auth.nextSignInCancels = true;
-    expect(await signIn('apple')).toBe('cancelled');
-    expect(getAccess().userId).toBeNull();
+  it('restore reports nothing found or a store error without touching access', async () => {
+    await bootstrapEntitlement();
+    expect(await restorePurchases()).toBe('none');
+    s.purchases.offline = true;
+    expect(await restorePurchases()).toBe('error');
+    expect(getAccess().allowed).toBe(false);
   });
 
-  it('delete account runs server deletion and local cleanup hooks (B12)', async () => {
-    const cleanup = jest.fn<(userId: string) => void>();
-    const off = onAccountDeleted(cleanup);
-    await bootstrapAccount();
-    await signIn('apple');
-    const userId = getAccess().userId!;
-    await purchasePlan(s.purchases.monthlyPlan);
-    await deleteAccount();
-    expect(s.auth.deletedUsers).toEqual([userId]);
-    expect(cleanup).toHaveBeenCalledWith(userId);
-    expect(entitlementRepo.get(userId)).toBeNull();
-    expect(getAccess()).toMatchObject({ allowed: false, userId: null });
-    off();
+  it('access is pending until the on-device cache is loaded', () => {
+    expect(getAccess().pending).toBe(true);
   });
 });

@@ -5,7 +5,7 @@ import { entitlementCache } from '../schema';
 
 export type CachedEntitlement = EntitlementSnapshot & { userId: string };
 
-/** แคชสถานะสิทธิ์ต่อบัญชี (SPEC B9) — เขียนจากข้อมูล RevenueCat เท่านั้น */
+/** แคชสถานะสิทธิ์ (SPEC B9) ใต้เจ้าของในเครื่อง (getOwner) — เขียนจากข้อมูล RevenueCat เท่านั้น */
 export const entitlementRepo = {
   get(userId: string): CachedEntitlement | null {
     const row = getDb().select().from(entitlementCache).where(eq(entitlementCache.userId, userId)).get();
@@ -39,8 +39,5 @@ export const entitlementRepo = {
       .values(values)
       .onConflictDoUpdate({ target: entitlementCache.userId, set: values })
       .run();
-  },
-  remove(userId: string): void {
-    getDb().delete(entitlementCache).where(eq(entitlementCache.userId, userId)).run();
   },
 };

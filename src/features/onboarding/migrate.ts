@@ -8,8 +8,8 @@ import { draftRepo, type DraftData, type QuickStart } from './draft';
 type ProfilePatch = Parameters<typeof profileRepo.update>[0];
 
 /**
- * ช่องที่ต้องเขียนลงโปรไฟล์จากร่าง — ข้อมูลร่างกายเติมเฉพาะช่องที่บัญชียังว่าง (ไม่ทับของเดิม)
- * ส่วนหน่วยตั้งเฉพาะบัญชีที่ยังไม่มีโปรไฟล์เลย (บัญชีเดิมมีหน่วยของตัวเองอยู่แล้ว)
+ * ช่องที่ต้องเขียนลงโปรไฟล์จากร่าง — ข้อมูลร่างกายเติมเฉพาะช่องที่โปรไฟล์ยังว่าง (ไม่ทับของเดิม)
+ * ส่วนหน่วยตั้งเฉพาะเมื่อยังไม่มีโปรไฟล์เลย (โปรไฟล์เดิมมีหน่วยของตัวเองอยู่แล้ว)
  */
 export function buildProfilePatch(draftData: DraftData, existing: Profile | undefined): ProfilePatch {
   const patch: ProfilePatch = {};
@@ -34,7 +34,7 @@ export function buildProfilePatch(draftData: DraftData, existing: Profile | unde
   return patch;
 }
 
-/** สร้างโปรแกรมเริ่มต้นตามที่เลือกในร่าง เฉพาะเมื่อบัญชียังไม่มีโปรแกรมเลย */
+/** สร้างโปรแกรมเริ่มต้นตามที่เลือกในร่าง เฉพาะเมื่อยังไม่มีโปรแกรมเลย */
 function createStarterProgramIfNone(quickStart: QuickStart | undefined): void {
   if (programRepo.list().length > 0 || !quickStart) return;
   if (quickStart.kind === 'template') instantiateTemplate(quickStart.key, currentLanguage());
@@ -42,17 +42,16 @@ function createStarterProgramIfNone(quickStart: QuickStart | undefined): void {
 }
 
 /**
- * ย้ายข้อมูลขั้นตั้งค่าเริ่มต้น (ในเครื่อง) เข้าบัญชีหลังได้สิทธิ์ (SPEC B4 ขั้นสุดท้าย)
+ * ย้ายร่างตั้งค่าเริ่มต้นเข้าข้อมูลหลักในเครื่องหลังได้สิทธิ์ (SPEC B4 ขั้นสุดท้าย)
  * - ทำครั้งเดียวต่อร่าง (idempotent)
- * - ไม่ทับข้อมูลที่บัญชีมีอยู่แล้ว (เช่น ติดตั้งใหม่แล้วดึงข้อมูลจากคลาวด์มาแล้ว B11): เติมเฉพาะช่องที่ว่าง
- *   และสร้างโปรแกรมจากเทมเพลตเฉพาะเมื่อบัญชียังไม่มีโปรแกรมเลย
- * เรียกหลังพยายามดึงข้อมูลจากคลาวด์แล้ว (ดู registerAppHooks)
+ * - ไม่ทับข้อมูลที่มีอยู่แล้ว (เช่น กู้คืนจากไฟล์สำรองมาก่อน): เติมเฉพาะช่องที่ว่าง
+ *   และสร้างโปรแกรมจากเทมเพลตเฉพาะเมื่อยังไม่มีโปรแกรมเลย
  */
-export function migrateDraftToAccount(userId: string): 'migrated' | 'nothing' {
+export function applyOnboardingDraft(): 'migrated' | 'nothing' {
   const draft = draftRepo.get();
   if (!draft || draft.migratedAt) return 'nothing';
   profileRepo.update(buildProfilePatch(draft.data, profileRepo.get()));
   createStarterProgramIfNone(draft.data.quickStart);
-  draftRepo.markMigrated(userId);
+  draftRepo.markApplied();
   return 'migrated';
 }

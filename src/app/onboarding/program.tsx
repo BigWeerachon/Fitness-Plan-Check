@@ -6,7 +6,7 @@ import { PROGRAM_TEMPLATES, trainingDaysPerWeek } from '../../data/templates';
 import { currentLanguage } from '../../i18n';
 import { getAccess } from '../../features/access/useAccess';
 import { draftRepo, type QuickStart } from '../../features/onboarding/draft';
-import { migrateDraftToAccount } from '../../features/onboarding/migrate';
+import { applyOnboardingDraft } from '../../features/onboarding/migrate';
 import { OnboardingFrame } from '../../features/onboarding/OnboardingFrame';
 import { useSettings } from '../../stores/settings';
 
@@ -21,9 +21,8 @@ export default function OnboardingProgram() {
   const finish = (quickStart: QuickStart) => {
     draftRepo.save({ quickStart });
     useSettings.getState().set('onboardingDone', true);
-    // มีสิทธิ์อยู่แล้ว (ล็อกอินบัญชีที่สมัครไว้) → ย้ายข้อมูลเข้าบัญชีทันที
-    const access = getAccess();
-    if (access.allowed && access.userId) migrateDraftToAccount(access.userId);
+    // มีสิทธิ์อยู่แล้ว (เช่น กู้คืนการซื้อไว้ก่อน) → ย้ายร่างเข้าข้อมูลหลักทันที
+    if (getAccess().allowed) applyOnboardingDraft();
     router.replace('/');
   };
 

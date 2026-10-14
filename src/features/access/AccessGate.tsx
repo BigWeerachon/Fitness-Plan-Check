@@ -7,8 +7,8 @@ import { useEntitlement } from '../../stores/entitlement';
 import { useSettings } from '../../stores/settings';
 import { useAccess } from './useAccess';
 
-/** รอผลตรวจเซสชันตอนเปิดแอปได้นานสุดเท่านี้ก่อนยอมให้เริ่มตั้งค่าเริ่มต้นตามปกติ (กันค้างตอนเครือข่ายช้า) */
-const SESSION_WAIT_MS = 3_000;
+/** รอผลตรวจสิทธิ์กับสโตร์ตอนเปิดแอปได้นานสุดเท่านี้ก่อนยอมให้เริ่มตั้งค่าเริ่มต้นตามปกติ (กันค้างตอนเครือข่ายช้า) */
+const ENTITLEMENT_WAIT_MS = 3_000;
 
 const RESUME_HREF: Record<Exclude<EntitledResume, 'done'>, Href> = {
   profile: '/onboarding/profile',
@@ -29,25 +29,24 @@ function FullScreenLoading() {
  */
 function BeforeOnboarding() {
   const access = useAccess();
-  // ล็อกอินแล้วแต่ยังไม่มีแคชสิทธิ์ (ติดตั้งใหม่) → รอผลตรวจกับ RevenueCat ก่อน ไม่งั้นเด้งไปขั้น 1 ทั้งที่มีสิทธิ์อยู่
+  // ยังไม่มีแคชสิทธิ์ (เช่น ติดตั้งใหม่) → รอผลตรวจกับ RevenueCat ก่อน ไม่งั้นเด้งไปขั้น 1 ทั้งที่มีสิทธิ์อยู่
   const checking = useEntitlement((s) => s.checking);
   const [graceOver, setGraceOver] = useState(false);
-  const resumable = access.allowed && !!access.userId;
-  const userId = access.userId;
+  const resumable = access.allowed;
 
   useEffect(() => {
-    const id = setTimeout(() => setGraceOver(true), SESSION_WAIT_MS);
+    const id = setTimeout(() => setGraceOver(true), ENTITLEMENT_WAIT_MS);
     return () => clearTimeout(id);
   }, []);
 
-  const resume = useMemo(() => (resumable && userId ? entitledResumeStep() : null), [resumable, userId]);
+  const resume = useMemo(() => (resumable ? entitledResumeStep() : null), [resumable]);
   useEffect(() => {
-    if (resume === 'done' && userId) completeEntitledOnboarding(userId);
-  }, [resume, userId]);
+    if (resume === 'done') completeEntitledOnboarding();
+  }, [resume]);
 
   if (!resumable) {
-    const waitingForSession = access.pending || (!!userId && checking);
-    return waitingForSession && !graceOver ? <FullScreenLoading /> : <Redirect href="/onboarding" />;
+    const waitingForEntitlement = access.pending || checking;
+    return waitingForEntitlement && !graceOver ? <FullScreenLoading /> : <Redirect href="/onboarding" />;
   }
   // 'done' → completeEntitledOnboarding ตั้ง onboardingDone แล้ว AccessGate จะผ่านเอง
   if (resume === null || resume === 'done') return <FullScreenLoading />;
@@ -77,9 +76,8 @@ export const ALWAYS_ACCESSIBLE_ROUTES = [
   'onboarding/profile', // ขั้น 2: โปรไฟล์
   'onboarding/program', // ขั้น 3: เลือกโปรแกรมเริ่มต้น
   'paywall',
-  'login',
-  'account', // Restore Purchases, จัดการสมาชิก, ล็อกเอาต์, ภาษา/ธีม/สีหลัก
+  'account', // Restore Purchases, จัดการสมาชิก, ภาษา/ธีม/สีหลัก (และสำรอง/กู้คืนข้อมูลจากไฟล์)
   'legal/[doc]', // Privacy Policy, Terms
   'references', // แหล่งอ้างอิง
-  'delete-account', // ลบบัญชีและข้อมูล
+  'delete-data', // ลบข้อมูลทั้งหมดในเครื่องนี้
 ] as const;

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, jest } from '@jest/globals';
-import { fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
+import { act, fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
 import * as Sharing from 'expo-sharing';
 import { Alert, Linking } from 'react-native';
 import { dailyLogRepo } from '@/db/repos/dailyLogRepo';
@@ -12,7 +12,6 @@ import { lbToKg } from '@/domain/units';
 import { instantiateTemplate } from '@/features/programs/instantiate';
 import { finishSession } from '@/features/session/finish';
 import { startSession } from '@/features/session/sessionFlow';
-import { useAuth } from '@/stores/auth';
 import { useSettings } from '@/stores/settings';
 import { setClockForTests } from '@/utils/clock';
 import { entitledApp, flush } from '../helpers/app';
@@ -60,7 +59,7 @@ describe('settings tab (SPEC K)', () => {
     await flush();
     expect(profileRepo.get()?.weightStepKg).toBeCloseTo(lbToKg(2.5), 5);
     // ท่าที่สร้างจากเทมเพลตหลังจากนี้ใช้ก้าวที่ตั้งไว้
-    const program = instantiateTemplate('ppl3', 'en')!;
+    const program = await act(async () => instantiateTemplate('ppl3', 'en')!);
     const first = routineRepo.listByProgram(program.id)[0];
     expect(routineExerciseRepo.listByRoutine(first.id)[0].weightStepKg).toBeCloseTo(lbToKg(2.5), 5);
 
@@ -91,7 +90,7 @@ describe('settings tab (SPEC K)', () => {
   it('exports CSV through the share sheet', async () => {
     await entitledApp();
     profileRepo.update({ weightKg: 70 });
-    const program = instantiateTemplate('ppl3', 'en')!;
+    const program = await act(async () => instantiateTemplate('ppl3', 'en')!);
     const push = routineRepo.listByProgram(program.id).find((r) => r.type === 'push')!;
     const { session } = startSession({ routineId: push.id });
     const first = sessionRepo.setsInSession(session.id)[0];
@@ -138,25 +137,20 @@ describe('settings tab (SPEC K)', () => {
     );
   });
 
-  it('links to profile, references and delete account, and signs out after confirmation', async () => {
+  it('links to profile, references and delete-all-data, and has no sign-in or sign-out rows (D81)', async () => {
     await entitledApp();
     renderRouter('./src/app', { initialUrl: '/settings' });
+    expect(await screen.findByTestId('settings')).toBeTruthy();
+    expect(screen.queryByTestId('settings-signout')).toBeNull();
+    expect(screen.queryByText(/Sign in|Sign out|Signed in/)).toBeNull();
     fireEvent.press(await screen.findByTestId('settings-references'));
     expect(await screen.findByTestId('references')).toBeTruthy();
     fireEvent.press(screen.getByTestId('header-back'));
     fireEvent.press(await screen.findByTestId('settings-delete'));
-    expect(await screen.findByTestId('delete-account')).toBeTruthy();
+    expect(await screen.findByTestId('delete-data')).toBeTruthy();
     fireEvent.press(screen.getByTestId('header-back'));
     fireEvent.press(await screen.findByTestId('settings-profile'));
     expect(await screen.findByTestId('profile')).toBeTruthy();
-    fireEvent.press(screen.getByTestId('header-back'));
-
-    jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
-      buttons?.find((b) => b.style === 'destructive')?.onPress?.();
-    });
-    fireEvent.press(await screen.findByTestId('settings-signout'));
-    expect(await screen.findByTestId('paywall')).toBeTruthy();
-    expect(useAuth.getState().user).toBeNull();
     await flush();
   });
 });

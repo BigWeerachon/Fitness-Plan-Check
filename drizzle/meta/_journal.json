@@ -43,6 +43,13 @@
       "when": 1791988153440,
       "tag": "0005_reown_local_rows",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1791989120233,
+      "tag": "0006_local_entitlement_cache",
+      "breakpoints": true
     }
   ]
 }

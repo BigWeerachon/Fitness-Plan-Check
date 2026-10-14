@@ -1,4 +1,4 @@
-import { assertCanPurchase, type StorePlan, type TrialEligibility } from '../../domain/entitlement/paywall';
+import type { StorePlan, TrialEligibility } from '../../domain/entitlement/paywall';
 import {
   ENTITLEMENT_ID,
   type CustomerInfoLike,
@@ -65,22 +65,26 @@ function isUnexpired(entitlement: EntitlementInfoLike): boolean {
 /**
  * ร้านค้าจำลองสำหรับ dev/test — จำลองพฤติกรรมของสโตร์ (ไม่ใช่ตัวนับเวลาทดลองของแอป):
  * ราคาและข้อเสนอทดลองมาจาก "สโตร์จำลอง" นี้ผ่าน interface เดียวกับ RevenueCat
- * สิทธิ์ผูกกับ app user id เหมือนของจริง (ล็อกอินบัญชีเดิมบนเครื่องใหม่ = สิทธิ์กลับมา SPEC B11)
+ * ไม่มีล็อกอิน (D81): มีบัญชีสโตร์เดียว (Apple ID / Google) และผู้ใช้ RevenueCat นิรนามของเครื่องนี้
+ * ซื้อบนเครื่องนี้ = เห็นสิทธิ์ทันที; ติดตั้งใหม่/เครื่องใหม่ (simulateReinstall) ต้องกด Restore ก่อนจึงเห็นสิทธิ์
  */
 export class MockPurchasesService implements PurchasesService {
-  private appUserId: string | null = null;
-  private accounts = new Map<string, MockAccount>();
+  /** การซื้อในบัญชีสโตร์ (สร้างตอนใช้ครั้งแรกตามสถานการณ์ที่ตั้งไว้) */
+  private storeAccount: MockAccount | null = null;
+  /** ผู้ใช้ RevenueCat นิรนามของเครื่องนี้เห็นการซื้อในบัญชีสโตร์แล้วหรือยัง */
+  private linked = true;
   private listeners = new Set<(info: CustomerInfoLike) => void>();
   /** ตั้งค่าเพื่อจำลองข้อผิดพลาดในเทสต์ */
   failNextPurchase: PurchaseResult | null = null;
   offline = false;
   /**
    * พฤติกรรมตอนออฟไลน์: 'throw' = เรียกไม่ได้, 'cached' = คืนข้อมูลล่าสุดจากแคชของ SDK (requestDate เก่า)
-   * แบบหลังคือสิ่งที่ RevenueCat SDK ทำจริงเมื่อเคย logIn บนเครื่องนี้แล้ว
+   * แบบหลังคือสิ่งที่ RevenueCat SDK ทำจริงเมื่อเคยดึงข้อมูลบนเครื่องนี้แล้ว
    */
   offlineMode: 'throw' | 'cached' = 'throw';
   private lastInfo: CustomerInfoLike | null = null;
-  purchaseCalls: { plan: string; appUserId: string | null }[] = [];
+  purchaseCalls: { plan: string }[] = [];
+  restoreCalls = 0;
 
   constructor(private scenario: MockScenario = 'new') {}
 
@@ -101,13 +105,9 @@ export class MockPurchasesService implements PurchasesService {
 
   async configure(): Promise<void> {}
 
-  private account(id: string): MockAccount {
-    let acc = this.accounts.get(id);
-    if (!acc) {
-      acc = this.seed();
-      this.accounts.set(id, acc);
-    }
-    return acc;
+  private account(): MockAccount {
+    this.storeAccount ??= this.seed();
+    return this.storeAccount;
   }
 
   private seed(): MockAccount {
@@ -148,8 +148,16 @@ export class MockPurchasesService implements PurchasesService {
 
   /** สร้าง CustomerInfo จากบัญชีปัจจุบัน และเก็บเป็น lastInfo (แคชที่ offlineInfo คืนตอนออฟไลน์) */
   private snapshotCustomerInfo(): CustomerInfoLike {
-    if (!this.appUserId) return { entitlements: { active: {}, all: {} }, nonSubscriptionTransactions: [] };
-    const acc = this.account(this.appUserId);
+    if (!this.linked) {
+      const empty: CustomerInfoLike = {
+        entitlements: { active: {}, all: {} },
+        nonSubscriptionTransactions: [],
+        requestDate: new Date(now()).toISOString(),
+      };
+      this.lastInfo = empty;
+      return empty;
+    }
+    const acc = this.account();
     const active: Record<string, EntitlementInfoLike> = {};
     const all: Record<string, EntitlementInfoLike> = {};
     // รายเดือนที่ซื้อไว้ยังอยู่ในรอบแม้ซื้อขาดแล้ว (สโตร์ไม่ยกเลิกให้อัตโนมัติ SPEC J5)
@@ -190,33 +198,14 @@ export class MockPurchasesService implements PurchasesService {
   }
 
   /** ตอนออฟไลน์: โยน error หรือคืนแคชเก่า ตาม offlineMode */
-  private offlineInfo(userId?: string): CustomerInfoLike {
-    if (this.offlineMode === 'cached' && this.lastInfo && (!userId || userId === this.appUserId)) {
-      return this.lastInfo;
-    }
+  private offlineInfo(): CustomerInfoLike {
+    if (this.offlineMode === 'cached' && this.lastInfo) return this.lastInfo;
     throw new Error('network');
   }
 
   private emit() {
     const info = this.snapshotCustomerInfo();
     this.listeners.forEach((l) => l(info));
-  }
-
-  async logIn(userId: string): Promise<CustomerInfoLike> {
-    if (this.offline) return this.offlineInfo(userId);
-    this.appUserId = userId;
-    const info = this.snapshotCustomerInfo();
-    this.emit();
-    return info;
-  }
-
-  async logOut(): Promise<void> {
-    this.appUserId = null;
-    this.emit();
-  }
-
-  currentAppUserId(): string | null {
-    return this.appUserId;
   }
 
   async getCustomerInfo(): Promise<CustomerInfoLike> {
@@ -231,19 +220,19 @@ export class MockPurchasesService implements PurchasesService {
 
   async checkTrialEligibility(plan: StorePlan): Promise<TrialEligibility> {
     if (plan.kind !== 'monthly' || !plan.trialDays) return 'ineligible';
-    if (!this.appUserId) return this.scenario === 'new' ? 'eligible' : 'ineligible';
-    return this.account(this.appUserId).trialUsed ? 'ineligible' : 'eligible';
+    // สิทธิ์ทดลองผูกกับบัญชีสโตร์ ไม่ใช่ผู้ใช้ RevenueCat นิรนาม
+    return this.account().trialUsed ? 'ineligible' : 'eligible';
   }
 
-  async purchase(plan: StorePlan, authUserId: string | null): Promise<PurchaseResult> {
-    assertCanPurchase({ authUserId, purchasesUserId: this.appUserId });
-    this.purchaseCalls.push({ plan: plan.kind, appUserId: this.appUserId });
+  async purchase(plan: StorePlan): Promise<PurchaseResult> {
+    this.purchaseCalls.push({ plan: plan.kind });
     if (this.failNextPurchase) {
       const r = this.failNextPurchase;
       this.failNextPurchase = null;
       return r;
     }
-    const acc = this.account(this.appUserId!);
+    if (this.offline) return { status: 'error', code: 'network' };
+    const acc = this.account();
     if (plan.kind === 'lifetime') {
       acc.lifetime = true;
     } else {
@@ -255,12 +244,16 @@ export class MockPurchasesService implements PurchasesService {
         expiresAt: now() + (trial ? plan.trialDays! : MONTHLY_PERIOD_DAYS) * DAY,
       });
     }
+    // ซื้อผ่านบัญชีสโตร์บนเครื่องนี้ → ผู้ใช้นิรนามของเครื่องนี้เห็นการซื้อทั้งหมดในบัญชีด้วย
+    this.linked = true;
     this.emit();
     return { status: 'success', info: this.snapshotCustomerInfo() };
   }
 
   async restore(): Promise<CustomerInfoLike> {
+    this.restoreCalls += 1;
     if (this.offline) throw new Error('network');
+    this.linked = true;
     const info = this.snapshotCustomerInfo();
     this.emit();
     return info;
@@ -276,8 +269,14 @@ export class MockPurchasesService implements PurchasesService {
   }
 
   // ───── ตัวช่วยสำหรับเทสต์: จำลองเหตุการณ์จากสโตร์ ─────
-  simulateExpire(userId: string) {
-    const acc = this.account(userId);
+  /** ติดตั้งแอปใหม่/ย้ายเครื่อง: ผู้ใช้ RevenueCat นิรนามใหม่ ยังไม่เห็นการซื้อจนกว่าจะกด Restore */
+  simulateReinstall() {
+    this.linked = false;
+    this.lastInfo = null;
+  }
+
+  simulateExpire() {
+    const acc = this.account();
     if (acc.entitlement) {
       acc.everHad = { ...acc.entitlement, isActive: false };
       acc.entitlement = { ...acc.entitlement, expirationDate: new Date(now() - 1000).toISOString() };
@@ -286,8 +285,8 @@ export class MockPurchasesService implements PurchasesService {
   }
 
   /** สโตร์ต่ออายุรอบใหม่ (เช่น Google Play ต่ออายุตรงเวลาหมดอายุ) */
-  simulateRenew(userId: string, days = MONTHLY_PERIOD_DAYS) {
-    const acc = this.account(userId);
+  simulateRenew(days = MONTHLY_PERIOD_DAYS) {
+    const acc = this.account();
     if (acc.entitlement) {
       acc.entitlement = {
         ...acc.entitlement,
@@ -299,8 +298,8 @@ export class MockPurchasesService implements PurchasesService {
     this.emit();
   }
 
-  simulateCancel(userId: string) {
-    const acc = this.account(userId);
+  simulateCancel() {
+    const acc = this.account();
     if (acc.entitlement) acc.entitlement = { ...acc.entitlement, willRenew: false };
     this.emit();
   }

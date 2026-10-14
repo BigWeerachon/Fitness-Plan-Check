@@ -82,5 +82,14 @@ export const MIGRATIONS: EmbeddedMigration[] = [
       "UPDATE `session_set` SET `owner_id` = 'local' WHERE `owner_id` <> 'local';",
       "UPDATE `daily_log` SET `owner_id` = 'local' WHERE `owner_id` <> 'local';"
     ]
+  },
+  {
+    "tag": "0006_local_entitlement_cache",
+    "statements": [
+      "-- ไม่มีบัญชี/ล็อกอิน (D81): สิทธิ์เป็นของเครื่อง แคชใต้เจ้าของ 'local' — เก็บแถวที่ตรวจล่าสุด (บัญชีที่ใช้ล่าสุด) ไว้ใช้ตอนออฟไลน์\nDELETE FROM `entitlement_cache` WHERE `user_id` <> (SELECT `user_id` FROM `entitlement_cache` ORDER BY `verified_at` DESC LIMIT 1);",
+      "UPDATE `entitlement_cache` SET `user_id` = 'local';",
+      "-- ค่าเซสชันล็อกอินที่จำไว้ (ยุคมีบัญชี) ไม่ใช้แล้ว\nDELETE FROM `app_settings` WHERE `key` IN ('auth.lastUser', 'mock.authUser');",
+      "UPDATE `onboarding_draft` SET `migrated_to` = 'local' WHERE `migrated_to` IS NOT NULL;"
+    ]
   }
 ];

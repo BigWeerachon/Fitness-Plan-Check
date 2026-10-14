@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { StorePlans } from '../../services/purchases/types';
 import { getServices } from '../../services/registry';
-import { useAuth } from '../../stores/auth';
 import { useEntitlement } from '../../stores/entitlement';
 import { checkTrialEligibility } from './accountFlow';
 
@@ -20,17 +19,16 @@ interface Loaded {
 
 /**
  * โหลดแพ็กเกจและราคาจากสโตร์ แล้วตรวจสิทธิ์ทดลองฟรี "ก่อน" แสดง Paywall (SPEC B6, J2)
- * บัญชีเปลี่ยน (เช่น หลังล็อกอิน) → ผลเดิมใช้ไม่ได้ แสดงสถานะกำลังโหลดจนกว่าจะตรวจของบัญชีใหม่เสร็จ
+ * กดลองใหม่ → ผลเดิมใช้ไม่ได้ แสดงสถานะกำลังโหลดจนกว่าจะตรวจรอบใหม่เสร็จ
  */
 export function usePaywallData(): PaywallData {
-  const userId = useAuth((s) => s.user?.id ?? null);
   const [attempt, setAttempt] = useState(0);
-  const key = `${userId ?? 'anonymous'}|${attempt}`;
+  const key = String(attempt);
   const [loaded, setLoaded] = useState<Loaded | null>(null);
 
   useEffect(() => {
     let alive = true;
-    // สิทธิ์ทดลองของบัญชีก่อนหน้าใช้กับบัญชีนี้ไม่ได้ — ไม่โฆษณาทดลองจนกว่าจะรู้ผลจริง (B6)
+    // ไม่โฆษณาทดลองจนกว่าจะรู้ผลจริงของรอบนี้ (B6)
     useEntitlement.getState().set({ trialEligibility: 'unknown' });
     (async () => {
       try {

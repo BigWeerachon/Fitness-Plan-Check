@@ -14,7 +14,7 @@ import { AppState } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { getDb } from '../db/client';
 import { warmUpDatabase } from '../db/warmup';
-import { bootstrapAccount, refreshEntitlement } from '../features/access/accountFlow';
+import { bootstrapEntitlement, refreshEntitlement } from '../features/access/accountFlow';
 import { useEntitlementExpiryRecheck } from '../features/access/expiryRecheck';
 import { registerAppHooks } from '../features/bootstrap';
 import '../i18n';
@@ -29,7 +29,7 @@ function bootstrap(): boolean {
   getDb();
   useSettings.getState().load();
   registerAppHooks();
-  void bootstrapAccount();
+  void bootstrapEntitlement();
   return true;
 }
 
@@ -108,11 +108,10 @@ export default function RootLayout() {
           <Stack.Screen name="(app)" />
           <Stack.Screen name="onboarding" options={{ gestureEnabled: false, animation: 'fade' }} />
           <Stack.Screen name="paywall" options={{ gestureEnabled: false, animation: 'fade' }} />
-          <Stack.Screen name="login" options={{ presentation: 'modal' }} />
           <Stack.Screen name="account" />
           <Stack.Screen name="legal/[doc]" />
           <Stack.Screen name="references" />
-          <Stack.Screen name="delete-account" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="delete-data" options={{ presentation: 'modal' }} />
         </Stack>
       </ThemeProvider>
     </SafeAreaProvider>

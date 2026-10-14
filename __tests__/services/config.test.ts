@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { decideMocks } from '@/services/config';
+import { decideMocks, env, missingKeys } from '@/services/config';
 
 describe('mock adapters are never used in a release build (B2)', () => {
   it('release native build ignores the flag and missing keys', () => {
@@ -16,5 +16,14 @@ describe('mock adapters are never used in a release build (B2)', () => {
 
   it('the web preview may use mocks', () => {
     expect(decideMocks({ flag: true, dev: false, web: true, missing: 0 })).toBe(true);
+  });
+});
+
+describe('config keys (no backend or sign-in D81)', () => {
+  it('only RevenueCat keys are required — no Supabase or Google sign-in config', () => {
+    expect(Object.keys(env).sort()).toEqual(
+      ['mockScenario', 'privacyUrl', 'rcAndroidKey', 'rcIosKey', 'termsUrl', 'useMocksFlag'].sort(),
+    );
+    for (const key of missingKeys()) expect(key).toMatch(/^EXPO_PUBLIC_RC_/);
   });
 });

@@ -1,7 +1,8 @@
 import type { EntitlementState } from './machine';
 
 /**
- * ตรรกะของ Paywall และลำดับการซื้อ (SPEC B4–B6, J4) เป็นฟังก์ชันล้วน มี unit test ครบ
+ * ตรรกะของ Paywall (SPEC B4–B6, J4) เป็นฟังก์ชันล้วน มี unit test ครบ
+ * ซื้อได้ทันทีโดยไม่ต้องล็อกอิน (D81) จึงไม่มีขั้นตอนการซื้อให้ตัดสินในโดเมนอีก
  * หน้าจอ Paywall แค่ render ผลลัพธ์ของฟังก์ชันเหล่านี้
  */
 
@@ -128,59 +129,4 @@ export function billedTerms(model: PaywallModel, planKind: PlanKind | null): Bil
     return { key: 'paywall.billed.trial', count: model.trialDays, price: selected.priceString };
   }
   return { key: 'paywall.billed.monthly', price: selected.priceString };
-}
-
-// ───────────── ลำดับการซื้อ (SPEC B4) ─────────────
-
-export type PurchaseStep =
-  | { step: 'idle' }
-  | { step: 'needLogin'; plan: PlanKind }
-  | { step: 'linkingAccount'; plan: PlanKind }
-  | { step: 'ready'; plan: PlanKind }
-  | { step: 'purchasing'; plan: PlanKind }
-  | { step: 'done' }
-  | { step: 'cancelled'; plan: PlanKind }
-  | { step: 'error'; plan: PlanKind; message: string };
-
-export interface PurchaseContext {
-  /** id ผู้ใช้ที่ล็อกอิน (Supabase) */
-  authUserId: string | null;
-  /** app user id ที่ RevenueCat ใช้อยู่ — ต้องเท่ากับ authUserId ก่อนซื้อ */
-  purchasesUserId: string | null;
-}
-
-/** เงื่อนไขเดียวที่อนุญาตให้เรียกซื้อ/เริ่มทดลอง: ล็อกอินแล้ว และ RevenueCat logIn ด้วย id เดียวกันแล้ว */
-export function canStartPurchase(ctx: PurchaseContext): boolean {
-  return !!ctx.authUserId && ctx.purchasesUserId === ctx.authUserId;
-}
-
-/** ขั้นถัดไปเมื่อผู้ใช้แตะปุ่มซื้อบน Paywall */
-export function nextStepOnSelect(plan: PlanKind, ctx: PurchaseContext): PurchaseStep {
-  if (!ctx.authUserId) return { step: 'needLogin', plan };
-  if (ctx.purchasesUserId !== ctx.authUserId) return { step: 'linkingAccount', plan };
-  return { step: 'purchasing', plan };
-}
-
-/**
- * หลังผูกบัญชีกับ RevenueCat (ขั้น linkingAccount) สิทธิ์ของบัญชีอาจกลับมาแล้ว (เช่น เคยสมัครไว้บนเครื่องอื่น SPEC B11)
- * → ไม่ซื้อซ้ำ ยกเว้นตั้งใจอัปเกรดเป็นซื้อขาดจากหน้าอัปเกรดและยังไม่ได้ซื้อขาด
- */
-export function purchaseStillNeeded(
-  access: { allowed: boolean; state: EntitlementState },
-  plan: PlanKind,
-  upgrade: boolean,
-): boolean {
-  if (!access.allowed) return true;
-  return upgrade && plan === 'lifetime' && offersLifetimeUpgrade(access.state);
-}
-
-export class PurchaseRequiresLoginError extends Error {
-  constructor() {
-    super('Purchase or trial cannot start before sign-in (SPEC B4)');
-    this.name = 'PurchaseRequiresLoginError';
-  }
-}
-
-export function assertCanPurchase(ctx: PurchaseContext): void {
-  if (!canStartPurchase(ctx)) throw new PurchaseRequiresLoginError();
 }

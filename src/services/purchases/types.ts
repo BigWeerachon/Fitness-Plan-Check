@@ -13,18 +13,15 @@ export interface StorePlans {
 
 /**
  * ห่อ RevenueCat (react-native-purchases) — สถานะสิทธิ์มาจากที่นี่เท่านั้น (SPEC B2)
- * purchase() ต้องได้ authUserId ที่ตรงกับ app user id ที่ logIn แล้ว มิฉะนั้นโยน PurchaseRequiresLoginError (SPEC B4)
+ * ใช้ app user id นิรนามที่ RevenueCat สร้างเอง ไม่มีบัญชี/ล็อกอิน (D81): ซื้อได้ทันที
+ * และกู้คืนการซื้อผ่านบัญชีสโตร์ (Apple ID / Google) เมื่อเปลี่ยนเครื่องหรือติดตั้งใหม่
  */
 export interface PurchasesService {
   configure(): Promise<void>;
-  logIn(userId: string): Promise<CustomerInfoLike>;
-  logOut(): Promise<void>;
-  /** app user id ที่ logIn ไว้ (null = ผู้ใช้นิรนาม) */
-  currentAppUserId(): string | null;
   getCustomerInfo(): Promise<CustomerInfoLike>;
   getPlans(): Promise<StorePlans>;
   checkTrialEligibility(plan: StorePlan): Promise<TrialEligibility>;
-  purchase(plan: StorePlan, authUserId: string | null): Promise<PurchaseResult>;
+  purchase(plan: StorePlan): Promise<PurchaseResult>;
   restore(): Promise<CustomerInfoLike>;
   onCustomerInfo(listener: (info: CustomerInfoLike) => void): () => void;
   /** ลิงก์ตรงไปหน้าจัดการ/ยกเลิกสมาชิกของสโตร์ (SPEC B5, K) */

@@ -23,11 +23,8 @@
   "dependencies": {
     "@expo-google-fonts/ibm-plex-sans-thai": "^0.4.1",
     "@expo/vector-icons": "^15.0.2",
-    "@react-native-google-signin/google-signin": "^16.1.5",
-    "@supabase/supabase-js": "^2.117.3",
     "drizzle-orm": "^0.45.4",
     "expo": "~57.0.27",
-    "expo-apple-authentication": "~57.0.2",
     "expo-asset": "~57.0.19",
     "expo-constants": "~57.0.21",
     "expo-crypto": "~57.0.3",
@@ -40,7 +37,6 @@
     "expo-localization": "~57.0.2",
     "expo-network": "~57.0.2",
     "expo-router": "~57.0.25",
-    "expo-secure-store": "~57.0.4",
     "expo-sharing": "~57.0.22",
     "expo-splash-screen": "~57.0.9",
     "expo-sqlite": "~57.0.4",
@@ -58,7 +54,6 @@
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
     "react-native-svg": "15.15.4",
-    "react-native-url-polyfill": "^4.0.0",
     "react-native-worklets": "0.10.1",
     "zustand": "^5.0.15"
   },

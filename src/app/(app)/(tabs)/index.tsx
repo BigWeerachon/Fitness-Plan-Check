@@ -30,7 +30,6 @@ import { PastDaySheet } from '../../../features/today/PastDaySheet';
 import { TodayMenuSheet } from '../../../features/today/TodayMenuSheet';
 import { TodayPlanSection } from '../../../features/today/TodayPlanSection';
 import { formatTime } from '../../../i18n/format';
-import { useAuth } from '../../../stores/auth';
 import { useEntitlement } from '../../../stores/entitlement';
 import { spacing } from '../../../theme/tokens';
 
@@ -41,9 +40,8 @@ import { spacing } from '../../../theme/tokens';
 export default function TodayScreen() {
   const { t, i18n } = useTranslation();
   const model = useRepoQuery(() => loadToday(), i18n.language);
-  const user = useAuth((s) => s.user);
   const cached = useEntitlement((s) => s.cached);
-  const sub = describeSubscription(user ? cached : null, t);
+  const sub = describeSubscription(cached, t);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [pastDate, setPastDate] = useState<string | null>(null);
   const today = parseLocalDate(model.date);

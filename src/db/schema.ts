@@ -292,7 +292,7 @@ export const appSettings = sqliteTable('app_settings', {
   value: text('value').notNull(),
 });
 
-/** ข้อมูลตั้งค่าเริ่มต้นก่อนล็อกอิน (SPEC B3/C) ย้ายเข้าบัญชีหลังได้สิทธิ์ */
+/** ร่างข้อมูลตั้งค่าเริ่มต้นก่อนมีสิทธิ์ (SPEC B3/C) ย้ายเข้าข้อมูลหลักหลังได้สิทธิ์ (migratedTo = เจ้าของในเครื่อง) */
 export const onboardingDraft = sqliteTable('onboarding_draft', {
   id: text('id').primaryKey(),
   data: text('data', { mode: 'json' }).$type<Record<string, unknown>>().notNull(),
@@ -301,7 +301,7 @@ export const onboardingDraft = sqliteTable('onboarding_draft', {
   migratedTo: text('migrated_to'),
 });
 
-/** แคชสถานะสิทธิ์ต่อบัญชี (SPEC B9) — ไม่ใช่ตัวนับเวลาทดลอง มาจาก RevenueCat เท่านั้น */
+/** แคชสถานะสิทธิ์ของเครื่องนี้ (SPEC B9; user_id = เจ้าของในเครื่อง 'local' D81) — ไม่ใช่ตัวนับเวลาทดลอง มาจาก RevenueCat เท่านั้น */
 export const entitlementCache = sqliteTable('entitlement_cache', {
   userId: text('user_id').primaryKey(),
   state: text('state').notNull(),

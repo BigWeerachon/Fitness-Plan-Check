@@ -1,13 +1,28 @@
 import { router } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../components';
+import { useRestorePurchases } from '../../features/access/useRestorePurchases';
 import { AppearanceGroup, AppearancePreview } from '../../features/appearance/AppearancePickers';
 import { OnboardingFrame } from '../../features/onboarding/OnboardingFrame';
 
-/** ขั้น 1: ภาษา (ตามภาษาเครื่อง), ธีม, สีหลัก 8 สี + เลือกเอง พร้อม preview สด (SPEC C) */
+/**
+ * ขั้น 1: ภาษา (ตามภาษาเครื่อง), ธีม, สีหลัก 8 สี + เลือกเอง พร้อม preview สด (SPEC C)
+ * เคยซื้อแล้ว (เครื่องใหม่/ติดตั้งใหม่) → กู้คืนการซื้อจากบัญชีสโตร์ได้ทันที ไม่ต้องล็อกอิน (D81)
+ * กู้คืนสำเร็จ → AccessGate ข้ามขั้นที่มีข้อมูลในเครื่องแล้ว
+ */
 export default function OnboardingAppearance() {
   const { t } = useTranslation();
+  const restore = useRestorePurchases();
+  const [restoring, setRestoring] = useState(false);
+
+  const onRestore = async () => {
+    setRestoring(true);
+    const outcome = await restore();
+    setRestoring(false);
+    if (outcome === 'restored') router.replace('/');
+  };
+
   return (
     <OnboardingFrame
       step={1}
@@ -16,10 +31,11 @@ export default function OnboardingAppearance() {
       onNext={() => router.push('/onboarding/profile')}
       footer={
         <Button
-          title={t('onboarding.haveAccount')}
+          title={t('onboarding.alreadyPurchased')}
           kind="plain"
-          onPress={() => router.push({ pathname: '/login', params: { from: 'onboarding' } })}
-          testID="onboarding-have-account"
+          onPress={() => void onRestore()}
+          loading={restoring}
+          testID="onboarding-restore"
         />
       }
     >

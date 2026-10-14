@@ -3,30 +3,26 @@ import { router } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { CardGroup, HeroTitle, ListRow, Screen, SectionTitle, StackHeader } from '../components';
-import { SignedInAsRow } from '../features/access/SignedInAsRow';
 import { describeSubscription } from '../features/access/subscriptionInfo';
 import { useAccess } from '../features/access/useAccess';
-import { useConfirmSignOut } from '../features/access/useConfirmSignOut';
 import { useManageSubscriptions } from '../features/access/useManageSubscriptions';
 import { useRestorePurchases } from '../features/access/useRestorePurchases';
 import { AppearanceGroup } from '../features/appearance/AppearancePickers';
 import { openLegal } from '../features/legal/openLegal';
-import { useAuth } from '../stores/auth';
 import { useEntitlement } from '../stores/entitlement';
 
 /**
- * ศูนย์รวมสิ่งที่เข้าถึงได้เสมอแม้ไม่มีสิทธิ์ (SPEC B3): ภาษา/ธีม/สีหลัก, ล็อกอิน/ล็อกเอาต์,
- * Restore Purchases, จัดการ/ยกเลิกสมาชิก, Privacy, Terms, แหล่งอ้างอิง, ลบบัญชีและข้อมูล
+ * ศูนย์รวมสิ่งที่เข้าถึงได้เสมอแม้ไม่มีสิทธิ์ (SPEC B3): ภาษา/ธีม/สีหลัก, Restore Purchases,
+ * จัดการ/ยกเลิกสมาชิก, ข้อมูลของคุณ (ลบข้อมูลทั้งหมดในเครื่อง), Privacy, Terms, แหล่งอ้างอิง
+ * ไม่มีบัญชี/ล็อกอิน (D81)
  */
 export default function AccountScreen() {
   const { t } = useTranslation();
-  const user = useAuth((s) => s.user);
   const cached = useEntitlement((s) => s.cached);
   const access = useAccess();
   const openManage = useManageSubscriptions();
-  const sub = describeSubscription(user ? cached : null, t);
+  const sub = describeSubscription(cached, t);
   const onRestore = useRestorePurchases();
-  const onSignOut = useConfirmSignOut();
 
   return (
     <Screen header={<StackHeader />} testID="account">
@@ -34,21 +30,6 @@ export default function AccountScreen() {
 
       <SectionTitle>{t('account.sections.appearance')}</SectionTitle>
       <AppearanceGroup showLabels={false} />
-
-      <SectionTitle>{t('account.sections.account')}</SectionTitle>
-      <CardGroup>
-        {user ? (
-          <SignedInAsRow user={user} />
-        ) : (
-          <ListRow
-            title={t('account.signIn')}
-            value={t('account.notSignedIn')}
-            icon="person-circle-outline"
-            onPress={() => router.push('/login')}
-          />
-        )}
-        {user ? <ListRow title={t('account.signOut')} icon="log-out-outline" onPress={onSignOut} /> : null}
-      </CardGroup>
 
       <SectionTitle>{t('account.sections.membership')}</SectionTitle>
       <CardGroup>
@@ -92,6 +73,18 @@ export default function AccountScreen() {
         />
       </CardGroup>
 
+      {/* ข้อมูลอยู่ในเครื่องนี้เท่านั้น — เข้าถึงได้แม้ล็อก (เช่น เครื่องใหม่ก่อนกู้คืนการซื้อ) */}
+      <SectionTitle>{t('account.sections.data')}</SectionTitle>
+      <CardGroup>
+        <ListRow
+          title={t('account.deleteData')}
+          icon="trash-outline"
+          danger
+          onPress={() => router.push('/delete-data')}
+          testID="account-delete-data"
+        />
+      </CardGroup>
+
       <SectionTitle>{t('account.sections.info')}</SectionTitle>
       <CardGroup>
         <ListRow
@@ -104,12 +97,6 @@ export default function AccountScreen() {
           title={t('account.references')}
           icon="library-outline"
           onPress={() => router.push('/references')}
-        />
-        <ListRow
-          title={t('account.deleteAccount')}
-          icon="trash-outline"
-          danger
-          onPress={() => router.push('/delete-account')}
         />
         <ListRow
           title={t('account.version')}

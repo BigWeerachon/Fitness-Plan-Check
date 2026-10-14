@@ -7,7 +7,6 @@ import {
   AA_GRAPHIC,
   AA_TEXT,
   ACCENT_PRESETS,
-  BRAND,
   buildPalette,
   contrastReport,
   failingChecks,
@@ -45,16 +44,6 @@ for (const mode of MODES) {
       failed = true;
       console.log(`chart colors for ${a.id}/${mode} fail: ${f(worst)}`);
     }
-  }
-}
-
-// ปุ่มแบรนด์ล็อกอิน (ห้ามเปลี่ยนตามสีหลัก)
-for (const [name, b] of Object.entries(BRAND)) {
-  for (const mode of MODES) {
-    const scheme = b[mode];
-    const ratio = contrastRatio(scheme.text, scheme.background);
-    failed ||= ratio < AA_TEXT;
-    console.log(`\n${name} button (${mode}): text ${f(ratio)}:1`);
   }
 }
 

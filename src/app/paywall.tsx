@@ -17,24 +17,15 @@ import {
   Screen,
   StackHeader,
 } from '../components';
-import { purchasePlan, refreshEntitlement } from '../features/access/accountFlow';
+import { purchasePlan } from '../features/access/accountFlow';
 import { usePaywallData } from '../features/access/usePaywallData';
-import { getAccess, useAccess } from '../features/access/useAccess';
+import { useAccess } from '../features/access/useAccess';
 import { useManageSubscriptions } from '../features/access/useManageSubscriptions';
 import { useRestorePurchases } from '../features/access/useRestorePurchases';
 import { openLegal } from '../features/legal/openLegal';
 import { PlanOption } from '../features/access/PlanOption';
-import {
-  billedTerms,
-  buildPaywallModel,
-  nextStepOnSelect,
-  purchaseStillNeeded,
-  type PlanKind,
-  type StorePlan,
-} from '../domain/entitlement/paywall';
+import { billedTerms, buildPaywallModel, type PlanKind, type StorePlan } from '../domain/entitlement/paywall';
 import type { PurchaseResult } from '../services/purchases/types';
-import { getServices } from '../services/registry';
-import { useAuth } from '../stores/auth';
 import { useEntitlement } from '../stores/entitlement';
 import { spacing } from '../theme/tokens';
 import { usePalette } from '../theme/useTheme';
@@ -56,6 +47,7 @@ const PURCHASE_ERROR_KEY: Partial<
  * Paywall (SPEC B4–B6, J2, J4, J5) — ไม่มี dark pattern: ราคาจากสโตร์, เงื่อนไขต่ออายุ/ยกเลิกครบ,
  * ปุ่มกู้คืนการซื้อ, ลิงก์ Terms/Privacy และไม่โฆษณาทดลองฟรีกับผู้ที่ไม่มีสิทธิ์
  * ผู้ใช้ที่ไม่มีสิทธิ์ถูกพามาที่นี่จาก AccessGate จึงไม่มีปุ่ม "ข้าม" เข้าแอป (ล็อกทุกฟีเจอร์ B3)
+ * ไม่มีล็อกอิน (D81): เลือกแพ็กเกจ → ซื้อผ่านสโตร์ได้ทันที
  * ?upgrade=lifetime (จากการตั้งค่า) → ผู้ที่มีรายเดือน/ทดลองอยู่ซื้อขาดได้ พร้อมแจ้งว่ารายเดือนไม่ถูกยกเลิกให้
  */
 export default function PaywallScreen() {
@@ -63,7 +55,6 @@ export default function PaywallScreen() {
   const p = usePalette();
   const params = useLocalSearchParams<{ plan?: PlanKind; upgrade?: string }>();
   const access = useAccess();
-  const user = useAuth((s) => s.user);
   const eligibility = useEntitlement((s) => s.trialEligibility);
   const billingIssue = useEntitlement((s) => s.cached?.billingIssueAt != null);
   const { plans, loading, error, reload } = usePaywallData();
@@ -106,26 +97,8 @@ export default function PaywallScreen() {
 
   const onBuy = async () => {
     if (!selectedPlan) return;
-    const upgrade = model.upgrade;
-    const step = nextStepOnSelect(selectedPlan.kind, {
-      authUserId: user?.id ?? null,
-      purchasesUserId: getServices().purchases.currentAppUserId(),
-    });
-    // ยังไม่ล็อกอิน → ไปล็อกอินก่อน แล้วกลับมาที่นี่พร้อมแพ็กเกจที่เลือก (SPEC B4)
-    if (step.step === 'needLogin') {
-      router.push({ pathname: '/login', params: { plan: selectedPlan.kind } });
-      return;
-    }
     setBusy(true);
     try {
-      if (step.step === 'linkingAccount') {
-        await refreshEntitlement();
-        // ผูกบัญชีแล้วพบว่ามีสิทธิ์อยู่แล้ว → ไม่เปิดหน้าซื้อซ้ำ (SPEC B11, J3)
-        if (!purchaseStillNeeded(getAccess(), selectedPlan.kind, upgrade)) {
-          router.replace('/');
-          return;
-        }
-      }
       const result = await purchasePlan(selectedPlan);
       if (result.status === 'success') {
         Alert.alert(t('paywall.success'));
@@ -151,7 +124,7 @@ export default function PaywallScreen() {
     { icon: 'calendar-outline', text: t('paywall.features.programs') },
     { icon: 'trending-up-outline', text: t('paywall.features.overload') },
     { icon: 'pie-chart-outline', text: t('paywall.features.stats') },
-    { icon: 'cloud-done-outline', text: t('paywall.features.sync') },
+    { icon: 'phone-portrait-outline', text: t('paywall.features.offline') },
   ];
 
   const fixPayment = model.primaryAction === 'fixPayment';
@@ -260,8 +233,8 @@ export default function PaywallScreen() {
           loading={busy}
           testID="paywall-cta"
         />
-        <AppText variant="caption" secondary align="center">
-          {user ? t('paywall.cta.signedInAs', { email: user.email ?? '' }) : t('paywall.cta.signInFirst')}
+        <AppText variant="caption" secondary align="center" testID="paywall-store-account">
+          {t('paywall.cta.storeAccount', { store })}
         </AppText>
 
         {/* ข้อความเปิดเผยข้อมูลที่สโตร์กำหนด (SPEC B5) */}

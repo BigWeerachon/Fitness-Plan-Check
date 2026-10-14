@@ -1,14 +1,9 @@
 import { describe, expect, it } from '@jest/globals';
 import { ENTITLEMENT_STATES } from '@/domain/entitlement/machine';
 import {
-  assertCanPurchase,
   billedTerms,
   buildPaywallModel,
-  canStartPurchase,
-  nextStepOnSelect,
   offersLifetimeUpgrade,
-  purchaseStillNeeded,
-  PurchaseRequiresLoginError,
   type StorePlan,
 } from '@/domain/entitlement/paywall';
 import { plansFromOffering, trialDaysOf, type PackageLike } from '@/services/purchases/mapping';
@@ -201,43 +196,6 @@ describe('lifetime upgrade (SPEC J5)', () => {
       upgrade: true,
     });
     expect(m).toMatchObject({ unavailable: true, defaultPlan: null });
-  });
-});
-
-describe('purchase order (SPEC B4)', () => {
-  it('requires sign-in before any purchase or trial', () => {
-    expect(canStartPurchase({ authUserId: null, purchasesUserId: null })).toBe(false);
-    expect(() => assertCanPurchase({ authUserId: null, purchasesUserId: null })).toThrow(
-      PurchaseRequiresLoginError,
-    );
-    expect(nextStepOnSelect('monthly', { authUserId: null, purchasesUserId: null })).toEqual({
-      step: 'needLogin',
-      plan: 'monthly',
-    });
-  });
-
-  it('requires RevenueCat to be logged in as the same account', () => {
-    expect(canStartPurchase({ authUserId: 'u1', purchasesUserId: null })).toBe(false);
-    expect(canStartPurchase({ authUserId: 'u1', purchasesUserId: 'u2' })).toBe(false);
-    expect(nextStepOnSelect('lifetime', { authUserId: 'u1', purchasesUserId: null }).step).toBe(
-      'linkingAccount',
-    );
-    expect(canStartPurchase({ authUserId: 'u1', purchasesUserId: 'u1' })).toBe(true);
-    expect(nextStepOnSelect('lifetime', { authUserId: 'u1', purchasesUserId: 'u1' }).step).toBe('purchasing');
-  });
-
-  it('does not buy again when linking the account restored access (J3)', () => {
-    const none = { allowed: false, state: 'NO_ENTITLEMENT' } as const;
-    const monthlyAccess = { allowed: true, state: 'SUBSCRIBED_MONTHLY' } as const;
-    const lifetimeAccess = { allowed: true, state: 'LIFETIME' } as const;
-    expect(purchaseStillNeeded(none, 'monthly', false)).toBe(true);
-    expect(purchaseStillNeeded(none, 'lifetime', false)).toBe(true);
-    expect(purchaseStillNeeded(monthlyAccess, 'monthly', false)).toBe(false);
-    expect(purchaseStillNeeded(monthlyAccess, 'lifetime', false)).toBe(false);
-    // อัปเกรดเป็นซื้อขาดโดยตั้งใจจากหน้าอัปเกรด → ซื้อต่อได้ แต่ถ้ามีซื้อขาดแล้วไม่ซื้อซ้ำ
-    expect(purchaseStillNeeded(monthlyAccess, 'lifetime', true)).toBe(true);
-    expect(purchaseStillNeeded(lifetimeAccess, 'lifetime', true)).toBe(false);
-    expect(purchaseStillNeeded({ allowed: true, state: 'TRIALING' }, 'monthly', true)).toBe(false);
   });
 });
 

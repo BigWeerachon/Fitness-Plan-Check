@@ -19,6 +19,7 @@
 | T06 Repository | ✅ | `e26f21c` — `__tests__/db/repos.test.ts`, `migrations.test.ts` |
 | T07 Sync engine | ✅ | `149417f` — `__tests__/sync/engine.test.ts`, `cursor.test.ts` (ต่อมาเสริมใน `06a677e` — `engineRobustness.test.ts`) |
 | D81 ออฟไลน์ล้วน — เฟส 1/5 ชั้นข้อมูล | ✅ | ตัด sync engine/คิว/เคอร์เซอร์/สถานะซิงก์ + migration `0004`/`0005` — `__tests__/db/migrations.test.ts` (อัปเกรดฐานข้อมูลยุคซิงก์), `repos.test.ts` (ไม่มีคิวซิงก์); T07 ถูกแทนที่ |
+| D81 ออฟไลน์ล้วน — เฟส 2/5 ไม่มีล็อกอิน | ✅ | ตัด Supabase Auth/Google/Apple/หน้าล็อกอิน/ล็อกเอาต์; RevenueCat นิรนาม ซื้อ/กู้คืนโดยไม่ล็อกอิน; `/delete-data` ลบข้อมูลทั้งหมดในเครื่อง + migration `0006` (D81.2) — `__tests__/flows/account.test.ts`, `offline-access.test.ts`, `app/paywall.test.tsx`, `app/delete-data.test.tsx`, `features/deleteAllData.test.ts`, `features/useRestorePurchases.test.tsx`, `app/onboarding-entitled.test.tsx`, `db/migrations.test.ts`; ยังเหลือ: โฟลเดอร์ `supabase/` + เทสต์ `__tests__/supabase/*`, ข้อความนโยบายความเป็นส่วนตัว/ข้อกำหนด และเอกสาร ARCHITECTURE/HUMAN_TASKS/FINAL_CHECK ที่ยังพูดถึงล็อกอิน (เฟสถัดไปของ D81) |
 | T08 Supabase backend | ✅ | `8d2ae66` — `__tests__/supabase/*`, `npm run supabase:verify` (Postgres 16 จริง), `deno check` |
 | T09 ตั้งค่าเริ่มต้น | ✅ | `631ffaa`, `fb8c8f7` — `__tests__/app/onboarding.test.tsx` (+ `onboarding-entitled.test.tsx` จาก `96d13a9`) |
 | T10 Paywall/ล็อกอิน/บัญชี/กฎหมาย | ✅ | `3565f00` — `__tests__/app/paywall.test.tsx`, `gate.test.tsx`, `__tests__/flows/account.test.ts` |

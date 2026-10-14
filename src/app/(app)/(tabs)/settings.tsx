@@ -22,10 +22,8 @@ import { profileRepo } from '../../../db/repos/profileRepo';
 import type { LengthUnit, WeightUnit } from '../../../db/schema';
 import { isSameWeightStep, preferredWeightStepKg, weightStepChoices } from '../../../domain/progression';
 import { offersLifetimeUpgrade } from '../../../domain/entitlement/paywall';
-import { SignedInAsRow } from '../../../features/access/SignedInAsRow';
 import { describeSubscription } from '../../../features/access/subscriptionInfo';
 import { useAccess } from '../../../features/access/useAccess';
-import { useConfirmSignOut } from '../../../features/access/useConfirmSignOut';
 import { useManageSubscriptions } from '../../../features/access/useManageSubscriptions';
 import { useRestorePurchases } from '../../../features/access/useRestorePurchases';
 import { AppearanceGroup } from '../../../features/appearance/AppearancePickers';
@@ -33,7 +31,6 @@ import { useRepoQuery } from '../../../features/data/useRepoQuery';
 import { openLegal } from '../../../features/legal/openLegal';
 import { shareExport, type ExportKind } from '../../../features/settings/exportCsv';
 import { formatDuration } from '../../../i18n/format';
-import { useAuth } from '../../../stores/auth';
 import { useEntitlement } from '../../../stores/entitlement';
 import { spacing } from '../../../theme/tokens';
 
@@ -50,19 +47,18 @@ const EXPORTS: { kind: ExportKind; key: 'settings.exportWorkouts' | 'settings.ex
 
 /**
  * ตั้งค่า (SPEC K): ภาษา ธีม สีหลัก หน่วย ตัวจับเวลาพัก วันเริ่มต้นสัปดาห์ โปรไฟล์ สถานะสมาชิก/วันสิ้นสุดทดลอง/วันต่ออายุ
- * จัดการสมาชิก Restore ส่งออก CSV ล็อกเอาต์ ลบบัญชี Privacy Terms แหล่งอ้างอิง เวอร์ชัน + คำเตือน H5
+ * จัดการสมาชิก Restore ส่งออก CSV ลบข้อมูลทั้งหมดในเครื่อง Privacy Terms แหล่งอ้างอิง เวอร์ชัน + คำเตือน H5
+ * ไม่มีบัญชี/ล็อกอิน (D81)
  */
 export default function SettingsScreen() {
   const { t } = useTranslation();
   const profile = useRepoQuery(() => profileRepo.ensure());
-  const user = useAuth((s) => s.user);
   const cached = useEntitlement((s) => s.cached);
   const access = useAccess();
   const openManage = useManageSubscriptions();
   const onRestore = useRestorePurchases();
-  const onSignOut = useConfirmSignOut();
   const [exporting, setExporting] = useState(false);
-  const sub = describeSubscription(user ? cached : null, t);
+  const sub = describeSubscription(cached, t);
   const unit = profile.weightUnit;
   const stepKg = preferredWeightStepKg(unit, profile.weightStepKg);
 
@@ -220,22 +216,11 @@ export default function SettingsScreen() {
           onPress={() => setExporting(true)}
           testID="settings-export"
         />
-      </CardGroup>
-
-      <SectionTitle>{t('settings.sections.account')}</SectionTitle>
-      <CardGroup>
-        {user ? <SignedInAsRow user={user} /> : null}
         <ListRow
-          title={t('account.signOut')}
-          icon="log-out-outline"
-          onPress={onSignOut}
-          testID="settings-signout"
-        />
-        <ListRow
-          title={t('account.deleteAccount')}
+          title={t('account.deleteData')}
           icon="trash-outline"
           danger
-          onPress={() => router.push('/delete-account')}
+          onPress={() => router.push('/delete-data')}
           testID="settings-delete"
         />
       </CardGroup>

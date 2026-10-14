@@ -7,11 +7,11 @@ const paywall = {
     upgrade: 'Get Fitnese Pro with one payment',
   },
   sub: {
-    subscribe: 'All features, on all your devices.',
+    subscribe: 'Every feature, no account or sign-in needed.',
     winback: 'Your programs and history are safe and waiting for you.',
     billing:
       'Your last payment didn’t go through, so access is paused. Update your payment method in your {{store}} account to get it back.',
-    upgrade: 'Pay once and keep every feature on all your devices.',
+    upgrade: 'Pay once and keep every feature.',
   },
   billed: {
     trial: '{{count}} days free, then {{price}}/month',
@@ -23,7 +23,7 @@ const paywall = {
     programs: 'Your own weekly plan, programs and templates',
     overload: 'Progressive overload you can adjust mid-workout',
     stats: 'Stats by program, routine type and muscle',
-    sync: 'Synced across your devices',
+    offline: 'Works offline — your data stays on your device',
   },
   plans: {
     monthly: 'Monthly',
@@ -41,8 +41,7 @@ const paywall = {
     monthly: 'Subscribe for {{price}} / month',
     lifetime: 'Buy lifetime for {{price}}',
     fixPayment: 'Fix payment',
-    signInFirst: 'You’ll sign in with Google or Apple first, so your purchase stays with your account.',
-    signedInAs: 'Signed in as {{email}}',
+    storeAccount: 'Your purchase is linked to your {{store}} account. On a new phone, tap Restore purchases.',
   },
   disclosure: {
     trialThenPrice: 'Free for {{count}} days, then {{price}} per month.',
@@ -62,14 +61,14 @@ const paywall = {
   manageSubscription: 'Manage or cancel subscription',
   restore: 'Restore purchases',
   restored: 'Your purchase was restored.',
-  nothingToRestore: 'No previous purchase was found for this account.',
+  nothingToRestore: 'No previous purchase was found for your store account.',
   success: 'You’re all set! Enjoy Fitnese Pro.',
   unavailable: 'Plans can’t be loaded from the store right now.',
   loadingPlans: 'Loading plans from the store…',
   terms: 'Terms of Use',
   privacy: 'Privacy Policy',
   references: 'References',
-  account: 'Account & settings',
+  account: 'Settings',
   store: { ios: 'App Store', android: 'Google Play' },
 } as const;
 

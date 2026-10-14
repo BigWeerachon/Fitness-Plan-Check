@@ -6,7 +6,6 @@ const settings = {
     profile: 'Profile',
     membership: 'Membership',
     data: 'Your data',
-    account: 'Account',
     about: 'About',
   },
   weightUnit: 'Weight unit',

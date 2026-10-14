@@ -1,15 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
 import {
   LIVE_INFO_MAX_AGE_MS,
-  bootstrapAccount,
+  bootstrapEntitlement,
   isLiveInfo,
   refreshEntitlement,
-  signIn,
 } from '@/features/access/accountFlow';
 import { shouldRecheckExpiry } from '@/features/access/expiryRecheck';
 import { getAccess } from '@/features/access/useAccess';
 import { OFFLINE_GRACE_MS } from '@/domain/entitlement/machine';
-import { useAuth } from '@/stores/auth';
 import { useEntitlement } from '@/stores/entitlement';
 import { setClockForTests } from '@/utils/clock';
 import { freshEnv, type TestServices } from '../helpers/env';
@@ -18,10 +16,9 @@ const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
 let t = Date.parse('2026-10-09T09:00:00Z');
 
-async function signedInSubscriber(scenario: 'monthly' | 'trialing' = 'monthly'): Promise<TestServices> {
+async function subscriber(scenario: 'monthly' | 'trialing' = 'monthly'): Promise<TestServices> {
   const s = freshEnv(scenario);
-  await bootstrapAccount();
-  expect(await signIn('google')).toBe('success');
+  await bootstrapEntitlement();
   expect(getAccess().allowed).toBe(true);
   return s;
 }
@@ -43,7 +40,7 @@ describe('offline access and expiry re-check (SPEC B8, B9)', () => {
   });
 
   it('keeps the 48h offline grace even when the store SDK serves its cached CustomerInfo', async () => {
-    const s = await signedInSubscriber();
+    const s = await subscriber();
     const exp = useEntitlement.getState().cached!.expirationDate!;
     s.purchases.offline = true;
     s.purchases.offlineMode = 'cached';
@@ -58,15 +55,14 @@ describe('offline access and expiry re-check (SPEC B8, B9)', () => {
   });
 
   it('asks the store again when the cached expiry passes while the app stays open', async () => {
-    const s = await signedInSubscriber();
-    const userId = useAuth.getState().user!.id;
+    const s = await subscriber();
     const exp = useEntitlement.getState().cached!.expirationDate!;
     t = exp + 60_000;
-    s.purchases.simulateRenew(userId);
+    s.purchases.simulateRenew();
     // แคชเดิมหมดอายุแล้ว (ยังไม่ได้ตรวจใหม่)
     useEntitlement.getState().set({ cached: { ...useEntitlement.getState().cached!, expirationDate: exp } });
     expect(getAccess().allowed).toBe(false);
-    const input = { hasUser: true, expirationDate: exp, now: t, checking: false, lastCheckedFor: null };
+    const input = { expirationDate: exp, now: t, checking: false, lastCheckedFor: null };
     expect(shouldRecheckExpiry(input)).toBe(true);
     await refreshEntitlement();
     expect(getAccess()).toMatchObject({ allowed: true, state: 'SUBSCRIBED_MONTHLY' });
@@ -74,28 +70,29 @@ describe('offline access and expiry re-check (SPEC B8, B9)', () => {
     expect(shouldRecheckExpiry({ ...input, lastCheckedFor: exp })).toBe(false);
     expect(shouldRecheckExpiry({ ...input, checking: true })).toBe(false);
     expect(shouldRecheckExpiry({ ...input, now: exp - 1 })).toBe(false);
-    expect(shouldRecheckExpiry({ ...input, hasUser: false })).toBe(false);
+    expect(shouldRecheckExpiry({ ...input, expirationDate: null })).toBe(false);
   });
 
-  it('adopts session changes from the server: refresh after reconnect and server-side sign-out', async () => {
-    const s = await signedInSubscriber('trialing');
+  it('re-checks after reconnecting: offline → online again refreshes from the store', async () => {
+    const s = await subscriber('trialing');
     s.purchases.offline = true;
     await refreshEntitlement();
     expect(useEntitlement.getState().online).toBe(false);
-    // กลับมาออนไลน์ แล้ว auth ต่ออายุโทเค็นสำเร็จ → ตรวจสิทธิ์ใหม่อัตโนมัติ
+    expect(getAccess().allowed).toBe(true);
     s.purchases.offline = false;
-    s.auth.simulateTokenRefreshed();
-    await Promise.resolve();
-    await Promise.resolve();
+    await refreshEntitlement();
     expect(useEntitlement.getState()).toMatchObject({ online: true, fresh: true });
-    // เซิร์ฟเวอร์เพิกถอนเซสชัน → ล็อกเอาต์ในแอป (ข้อมูลในเครื่องยังอยู่ตาม owner)
-    s.auth.simulateServerSignOut();
-    expect(useAuth.getState().user).toBeNull();
-    expect(getAccess().allowed).toBe(false);
+    expect(getAccess()).toMatchObject({ allowed: true, state: 'TRIALING', source: 'live' });
+  });
+
+  it('store events (e.g. cancellation) reach the cache through the CustomerInfo listener', async () => {
+    const s = await subscriber('monthly');
+    s.purchases.simulateCancel();
+    expect(useEntitlement.getState().cached).toMatchObject({ state: 'SUBSCRIBED_MONTHLY', willRenew: false });
   });
 
   it('a stale RevenueCat cache never overwrites a newer local cache', async () => {
-    const s = await signedInSubscriber();
+    const s = await subscriber();
     const before = useEntitlement.getState().cached!;
     s.purchases.offline = true;
     s.purchases.offlineMode = 'cached';

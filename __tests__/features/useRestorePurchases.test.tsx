@@ -1,8 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import { renderHook } from '@testing-library/react-native';
-import { router } from 'expo-router';
 import { Alert } from 'react-native';
-import { signIn } from '@/features/access/accountFlow';
 import { alertRestoreOutcome, useRestorePurchases } from '@/features/access/useRestorePurchases';
 import { setLanguage, t } from '@/i18n';
 import { freshEnv } from '../helpers/env';
@@ -27,24 +25,21 @@ describe('alertRestoreOutcome', () => {
 });
 
 describe('useRestorePurchases', () => {
-  it('sends a signed-out user to login and restores right after (?then=restore)', async () => {
-    freshEnv('lifetime');
-    const push = jest.spyOn(router, 'push').mockImplementation(() => undefined);
+  it('restores straight from the store account without any sign-in and alerts the outcome', async () => {
+    const s = freshEnv('lifetime');
+    s.purchases.simulateReinstall();
     const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
     const { result } = renderHook(() => useRestorePurchases());
-    await result.current();
-    expect(push).toHaveBeenCalledWith({ pathname: '/login', params: { then: 'restore' } });
-    expect(alert).not.toHaveBeenCalled();
+    expect(await result.current()).toBe('restored');
+    expect(s.purchases.restoreCalls).toBe(1);
+    expect(alert).toHaveBeenCalledWith(t('paywall.restored'));
   });
 
-  it('alerts the outcome for a signed-in user without navigating', async () => {
-    freshEnv('lifetime');
-    await signIn('google');
-    const push = jest.spyOn(router, 'push').mockImplementation(() => undefined);
+  it('tells the user when the store account has nothing to restore', async () => {
+    freshEnv('new');
     const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
     const { result } = renderHook(() => useRestorePurchases());
-    await result.current();
-    expect(push).not.toHaveBeenCalled();
-    expect(alert).toHaveBeenCalledWith(t('paywall.restored'));
+    expect(await result.current()).toBe('none');
+    expect(alert).toHaveBeenCalledWith(t('paywall.nothingToRestore'));
   });
 });

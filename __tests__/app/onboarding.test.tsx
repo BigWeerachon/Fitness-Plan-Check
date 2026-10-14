@@ -1,7 +1,7 @@
 import { describe, expect, it, jest } from '@jest/globals';
 import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import { draftRepo } from '@/features/onboarding/draft';
-import { migrateDraftToAccount } from '@/features/onboarding/migrate';
+import { applyOnboardingDraft } from '@/features/onboarding/migrate';
 import { profileRepo } from '@/db/repos/profileRepo';
 import { programRepo, routineRepo } from '@/db/repos/programRepo';
 import { weekPlanRepo } from '@/db/repos/weekPlanRepo';
@@ -90,7 +90,7 @@ describe('onboarding (SPEC C) → paywall (B4)', () => {
       goal: null,
     });
     // ย้ายเข้าบัญชีแล้วไม่มีข้อมูลร่างกายหลุดเข้าไป
-    migrateDraftToAccount('u1');
+    applyOnboardingDraft();
     expect(profileRepo.get()).toMatchObject({ sex: null, age: null, weightKg: null, goal: null });
   });
 });
@@ -137,21 +137,21 @@ describe('draft migration into the account (B4 last step)', () => {
       goal: 'gain',
       quickStart: { kind: 'template', key: 'ppl3' },
     });
-    expect(migrateDraftToAccount('u1')).toBe('migrated');
+    expect(applyOnboardingDraft()).toBe('migrated');
     expect(profileRepo.get()).toMatchObject({ sex: 'male', age: 35, weightKg: 80, goal: 'gain' });
     const [p] = programRepo.list();
     expect(p.templateKey).toBe('ppl3');
     expect(routineRepo.listByProgram(p.id).map((r) => r.type)).toEqual(['push', 'pull', 'legs']);
     expect(weekPlanRepo.activeProgramId()).toBe(p.id);
     expect(weekPlanRepo.listByProgram(p.id).map((e) => e.days)).toEqual([[1], [3], [5]]);
-    expect(migrateDraftToAccount('u1')).toBe('nothing');
+    expect(applyOnboardingDraft()).toBe('nothing');
     expect(programRepo.list()).toHaveLength(1);
   });
 
   it('ignores body fields when the profile step was skipped (C-2)', () => {
     freshEnv();
     draftRepo.save({ age: 35, weightKg: 80, goal: 'gain', weightUnit: 'lb', profileSkipped: true });
-    migrateDraftToAccount('u1');
+    applyOnboardingDraft();
     expect(profileRepo.get()).toMatchObject({ age: null, weightKg: null, goal: null, weightUnit: 'lb' });
   });
 
@@ -160,7 +160,7 @@ describe('draft migration into the account (B4 last step)', () => {
     profileRepo.update({ weightKg: 90, age: 40 });
     programRepo.create('Existing');
     draftRepo.save({ weightKg: 70, sex: 'male', quickStart: { kind: 'template', key: 'ppl6' } });
-    migrateDraftToAccount('u1');
+    applyOnboardingDraft();
     expect(profileRepo.get()).toMatchObject({ weightKg: 90, age: 40, sex: 'male' });
     expect(programRepo.list().map((p) => p.name)).toEqual(['Existing']);
   });
