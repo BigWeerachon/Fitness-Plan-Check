@@ -1,0 +1,31 @@
+const appearance = {
+  language: 'Language',
+  theme: 'Theme',
+  accent: 'Accent color',
+  themes: { dark: 'Dark', light: 'Light', system: 'System' },
+  languages: { th: 'ไทย', en: 'English' },
+  accents: {
+    pink: 'Pink',
+    lavender: 'Lavender',
+    sky: 'Sky',
+    mint: 'Mint',
+    lime: 'Lime',
+    gold: 'Gold',
+    peach: 'Peach',
+    coral: 'Coral',
+    custom: 'Custom color',
+  },
+  customTitle: 'Pick your color',
+  customHex: 'Hex code',
+  customHexPlaceholder: '#E5A9DC',
+  customInvalid: 'Enter a color like #E5A9DC',
+  customAdjusted: 'Adjusted slightly so text stays easy to read.',
+  apply: 'Use this color',
+  preview: 'Preview',
+  previewTitle: 'Today: Push Day',
+  previewSub: 'Thu 9 Oct · 6 exercises · ~55 min',
+  previewRow: 'Push A',
+  hue: 'Color {{index}}',
+} as const;
+
+export default appearance;

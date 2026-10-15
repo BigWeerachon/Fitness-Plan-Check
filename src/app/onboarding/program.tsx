@@ -1,0 +1,66 @@
+import { router } from 'expo-router';
+import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { CardGroup, ListRow, RadioIndicator } from '../../components';
+import { PROGRAM_TEMPLATES, trainingDaysPerWeek } from '../../data/templates';
+import { currentLanguage } from '../../i18n';
+import { getAccess } from '../../features/access/useAccess';
+import { draftRepo, type QuickStart } from '../../features/onboarding/draft';
+import { applyOnboardingDraft } from '../../features/onboarding/migrate';
+import { OnboardingFrame } from '../../features/onboarding/OnboardingFrame';
+import { useSettings } from '../../stores/settings';
+
+/**
+ * ขั้น 3: เริ่มโปรแกรมอย่างเร็ว — (ก) เทมเพลต (จัดวันให้อัตโนมัติ) (ข) สร้างเอง (ค) ข้าม แล้วไป Paywall (SPEC C, B4)
+ */
+export default function OnboardingProgram() {
+  const { t } = useTranslation();
+  const lang = currentLanguage();
+  const [choice, setChoice] = useState<QuickStart | null>(() => draftRepo.get()?.data.quickStart ?? null);
+
+  const finish = (quickStart: QuickStart) => {
+    draftRepo.save({ quickStart });
+    useSettings.getState().set('onboardingDone', true);
+    // มีสิทธิ์อยู่แล้ว (เช่น กู้คืนการซื้อไว้ก่อน) → ย้ายร่างเข้าข้อมูลหลักทันที
+    if (getAccess().allowed) applyOnboardingDraft();
+    router.replace('/');
+  };
+
+  const isTemplateSelected = (key: string) => choice?.kind === 'template' && choice.key === key;
+
+  return (
+    <OnboardingFrame
+      step={3}
+      title={t('onboarding.step3Title')}
+      subtitle={t('onboarding.step3Sub')}
+      onNext={choice ? () => finish(choice) : undefined}
+      nextLabel={t('onboarding.finish')}
+      onSkip={() => finish({ kind: 'skip' })}
+      skipLabel={t('onboarding.skipProgram')}
+      showBack
+    >
+      <CardGroup>
+        {PROGRAM_TEMPLATES.map((tpl) => (
+          <ListRow
+            key={tpl.key}
+            title={tpl.name[lang]}
+            value={`${t('onboarding.daysPerWeek', { count: trainingDaysPerWeek(tpl) })} · ${tpl.description[lang]}`}
+            onPress={() => setChoice({ kind: 'template', key: tpl.key })}
+            right={<RadioIndicator selected={isTemplateSelected(tpl.key)} />}
+            testID={`template-${tpl.key}`}
+          />
+        ))}
+      </CardGroup>
+      <CardGroup>
+        <ListRow
+          title={t('onboarding.custom')}
+          value={t('onboarding.customSub')}
+          icon="create-outline"
+          onPress={() => setChoice({ kind: 'custom' })}
+          right={<RadioIndicator selected={choice?.kind === 'custom'} />}
+          testID="template-custom"
+        />
+      </CardGroup>
+    </OnboardingFrame>
+  );
+}
