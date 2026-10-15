@@ -220,7 +220,7 @@
 | Jest + RNTL + expo-router/testing-library | เทสต์ฟังก์ชันล้วนและเรนเดอร์ทั้งแอปผ่าน router กับ SQLite จริง |
 | ESLint (+ i18next/no-literal-string) + Prettier | บังคับห้ามข้อความฮาร์ดโค้ดใน JSX |
 
-ตัดออกใน D81: Supabase (Auth/Postgres/RLS/Edge Functions), `@react-native-google-signin/google-signin`, `expo-apple-authentication`, `expo-secure-store`, `react-native-url-polyfill`
+ตัดออกใน D81: Supabase (Auth/Postgres/RLS/Edge Functions), `@react-native-google-signin/google-signin`, `expo-apple-authentication`, `expo-secure-store`, `react-native-url-polyfill`, `expo-web-browser` (ใช้กับ OAuth ของ Supabase เท่านั้น)
 
 ## 8. การทดสอบ
 

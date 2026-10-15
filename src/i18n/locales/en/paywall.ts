@@ -61,6 +61,8 @@ const paywall = {
   manageSubscription: 'Manage or cancel subscription',
   restore: 'Restore purchases',
   restored: 'Your purchase was restored.',
+  restoreEnded:
+    'We found your membership in your store account, but it has ended. Subscribe again, or update your payment method in the store to continue.',
   nothingToRestore: 'No previous purchase was found for your store account.',
   success: 'You’re all set! Enjoy Fitnese Pro.',
   unavailable: 'Plans can’t be loaded from the store right now.',

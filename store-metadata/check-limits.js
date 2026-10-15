@@ -70,10 +70,7 @@ for (const file of files) {
     const cp = Array.from(body).length;
     const bytes = Buffer.byteLength(body, 'utf8');
     // จำลอง URL จริงแทน placeholder ประเภท URL
-    const withUrls = body.replace(
-      /<(TERMS|PRIVACY|SUPPORT|MARKETING|DELETE_ACCOUNT)_URL>/g,
-      'x'.repeat(urlLen),
-    );
+    const withUrls = body.replace(/<(TERMS|PRIVACY|SUPPORT|MARKETING)_URL>/g, 'x'.repeat(urlLen));
     const cpUrl = Array.from(withUrls).length;
     const bytesUrl = Buffer.byteLength(withUrls, 'utf8');
 

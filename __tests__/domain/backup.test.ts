@@ -27,7 +27,8 @@ const SPEC: BackupSpec = {
       columns: {
         id: { kind: 'text', nullable: false },
         deletedAt: { kind: 'number', nullable: true },
-        days: { kind: 'json', nullable: false, default: [] },
+        days: { kind: 'array', items: 'number', nullable: false, default: [] },
+        weeks: { kind: 'array', items: 'object', nullable: true },
         enabled: { kind: 'boolean', nullable: false, default: true },
         note: { kind: 'text', nullable: true },
       },
@@ -48,7 +49,16 @@ function validFile(overrides: Record<string, unknown> = {}) {
     ...buildBackup(
       {
         program: [{ id: 'p1', createdAt: 1, deletedAt: null, name: 'PPL', sortOrder: 0 }],
-        week_plan: [{ id: 'w1', deletedAt: null, days: [1, 3], enabled: false, note: null }],
+        week_plan: [
+          {
+            id: 'w1',
+            deletedAt: null,
+            days: [1, 3],
+            enabled: false,
+            note: null,
+            weeks: [{ reps: 8, percent: 100 }],
+          },
+        ],
         daily_log: [{ id: 'd1', deletedAt: null }],
       },
       { ...META, settings: { onboardingDone: true } },
@@ -119,6 +129,9 @@ describe('parseBackup rejects files it cannot restore', () => {
     ['row not an object', { week_plan: ['w1'] }, 'week_plan[0].(row)'],
     ['wrong type', { week_plan: [{ id: 'w1', days: [1], enabled: 'yes' }] }, 'week_plan[0].enabled'],
     ['json column holds a string', { week_plan: [{ id: 'w1', days: '1,3' }] }, 'week_plan[0].days'],
+    ['array column holds an object', { week_plan: [{ id: 'w1', days: { a: 1 } }] }, 'week_plan[0].days'],
+    ['array items of the wrong type', { week_plan: [{ id: 'w1', days: [1, '3'] }] }, 'week_plan[0].days'],
+    ['object items that are arrays', { week_plan: [{ id: 'w1', weeks: [[8, 100]] }] }, 'week_plan[0].weeks'],
     ['null in required column', { week_plan: [{ id: 'w1', days: null }] }, 'week_plan[0].days'],
     ['unknown column', { week_plan: [{ id: 'w1', colour: 'red' }] }, 'week_plan[0].colour'],
     ['missing required column', { program: [{ id: 'p1', createdAt: 1 }] }, 'program[0].name'],
@@ -144,7 +157,7 @@ describe('parseBackup accepts older or equal schema versions', () => {
     if (!r.ok) return;
     expect(r.backup.tables).toEqual({
       program: [{ id: 'p1', createdAt: 5, deletedAt: null, name: 'Old', sortOrder: 0 }],
-      week_plan: [{ id: 'w1', deletedAt: null, days: [], enabled: true, note: null }],
+      week_plan: [{ id: 'w1', deletedAt: null, days: [], enabled: true, note: null, weeks: null }],
       // daily_log มาใน schema 3 → ไฟล์ schema 2 ไม่มีได้ ถือว่าว่าง
       daily_log: [],
     });

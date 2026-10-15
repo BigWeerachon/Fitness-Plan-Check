@@ -54,7 +54,7 @@ Values calculated by the app are estimates and general guidance, not medical adv
 ## Retention and deletion
 
 • Data on your device stays until you delete it. It is not deleted when your access ends.  
-• Delete everything: Settings → Your data → Delete all data on this device (always available, even without access, through the “Settings” button on the membership screen). This erases your workouts, profile, daily log, setup answers, cached subscription status and last-backup date. Device preferences such as language, theme and accent color are kept. Uninstalling the app also removes all of its data.  
+• Delete everything: Settings → Your data → Delete all data on this device (always available, even without access, through the “Settings” button on the membership screen). This erases your workouts, profile, daily log, setup answers, cached subscription status, last-backup date, and the temporary copies of backup, CSV and picked restore files the app keeps in its cache. Device preferences such as language, theme and accent color are kept. Uninstalling the app also removes all of its data.  
 • Items you delete one by one (for example a session or program) are hidden immediately and may remain in the app’s database on your device until you delete all data, restore from a file or uninstall. They are never included in backup files.  
 • Backup or export files you saved elsewhere are not deleted by the app; delete them yourself wherever you keep them.  
 • Deleting your data does not cancel a store subscription; cancel it in your store account settings.  

@@ -35,7 +35,7 @@ describe('backup file rows (D82)', () => {
     share.mockClear();
     fireEvent.press(screen.getByTestId('settings-backup'));
     await waitFor(() => expect(share).toHaveBeenCalledTimes(1));
-    expect(share.mock.calls[0][0]).toBe('file:///cache/fitnese-backup-2026-10-09.json');
+    expect(share.mock.calls[0][0]).toBe('file:///cache/exports/fitnese-backup-2026-10-09.json');
     await waitFor(() =>
       expect(
         within(screen.getByTestId('settings-backup')).getByText(

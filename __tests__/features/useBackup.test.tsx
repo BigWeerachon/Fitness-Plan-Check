@@ -22,8 +22,8 @@ const pick = DocumentPicker.getDocumentAsync as jest.MockedFunction<typeof Docum
 const NOW = new Date('2026-10-09T09:00:00').getTime();
 
 /** ผู้ใช้เลือกไฟล์ที่มีเนื้อหานี้ (ถ้า content = null → ไฟล์เปิดไม่ได้) */
-function pickFile(content: string | null, opts: { size?: number } = {}) {
-  const uri = 'file:///picked/fitnese-backup-2026-10-01.json';
+function pickFile(content: string | null, opts: { size?: number; uri?: string } = {}) {
+  const uri = opts.uri ?? 'file:///picked/fitnese-backup-2026-10-01.json';
   if (content === null) files.delete(uri);
   else files.set(uri, content);
   pick.mockResolvedValueOnce({
@@ -71,13 +71,27 @@ describe('useBackup — back up', () => {
       outcome = await result.current.backUp();
     });
     expect(outcome).toBe('shared');
-    const uri = 'file:///cache/fitnese-backup-2026-10-09.json';
+    const uri = 'file:///cache/exports/fitnese-backup-2026-10-09.json';
     expect(share).toHaveBeenCalledWith(uri, expect.objectContaining({ mimeType: 'application/json' }));
     const parsed = parseBackup(files.get(uri)!, backupSpec());
     expect(parsed.ok && parsed.summary.counts.workout_session).toBe(2);
     expect(useSettings.getState().lastBackupAt).toBe(NOW);
     expect(result.current.lastBackupLabel).toBe(t('backup.lastBackup', { date: 'Oct 9, 2026' }));
     expect(alert).not.toHaveBeenCalled();
+  });
+
+  it('keeps only the latest export in the cache (older backup copies are removed)', async () => {
+    const { result } = renderHook(() => useBackup());
+    await act(async () => {
+      await result.current.backUp();
+    });
+    expect(files.has('file:///cache/exports/fitnese-backup-2026-10-09.json')).toBe(true);
+    setClockForTests(() => NOW + 86_400_000);
+    await act(async () => {
+      await result.current.backUp();
+    });
+    expect(files.has('file:///cache/exports/fitnese-backup-2026-10-09.json')).toBe(false);
+    expect(files.has('file:///cache/exports/fitnese-backup-2026-10-10.json')).toBe(true);
   });
 
   it('says so when sharing is unavailable and does not record a backup', async () => {
@@ -177,8 +191,26 @@ describe('useBackup — restore from file', () => {
     expect(dumpUserTables()).toEqual(expected);
     expect(sessionRepo.listCompleted()).toHaveLength(2);
     expect(useSettings.getState().onboardingDone).toBe(true);
+    // วันที่สำรองล่าสุด = วันที่ของไฟล์ที่กู้คืน
+    expect(result.current.lastBackupLabel).toBe(t('backup.lastBackup', { date: 'Oct 9, 2026' }));
     expect(alert).toHaveBeenLastCalledWith(t('backup.restored'));
     expect(onRestored).toHaveBeenCalledTimes(1);
+  });
+
+  it('deletes the picker’s cached copy once read, but never a file outside the app cache', async () => {
+    const cached = 'file:///cache/DocumentPicker/1234/fitnese-backup-2026-10-01.json';
+    pickFile(backupText(), { uri: cached });
+    const { result } = renderHook(() => useBackup());
+    await act(async () => {
+      expect(await result.current.restore()).toBe('confirming');
+    });
+    expect(files.has(cached)).toBe(false);
+
+    pickFile(backupText());
+    await act(async () => {
+      expect(await result.current.restore()).toBe('confirming');
+    });
+    expect(files.has('file:///picked/fitnese-backup-2026-10-01.json')).toBe(true);
   });
 
   it('keeps the current data when the user cancels the confirmation', async () => {

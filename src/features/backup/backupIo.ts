@@ -1,10 +1,11 @@
 import * as DocumentPicker from 'expo-document-picker';
-import { File, Paths } from 'expo-file-system';
+import { File } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import { removeCachedCopy, writeExportFile } from '../data/localFiles';
 
 /**
  * อ่าน/เขียนไฟล์สำรองบนเครื่อง (iOS/Android) — บนเว็บใช้ backupIo.web.ts
- * ไฟล์ส่งออกอยู่ในโฟลเดอร์แคชของแอปแล้วเปิดหน้าแชร์ของระบบ ให้ผู้ใช้เลือกที่เก็บเอง (Drive/LINE/Files/อีเมล)
+ * ไฟล์ส่งออกอยู่ในโฟลเดอร์แคชของแอป (data/localFiles) แล้วเปิดหน้าแชร์ของระบบ ให้ผู้ใช้เลือกที่เก็บเอง (Drive/LINE/Files/อีเมล)
  */
 
 export type ShareResult = 'shared' | 'unavailable';
@@ -15,10 +16,7 @@ export async function saveBackupFile(
   dialogTitle: string,
 ): Promise<ShareResult> {
   if (!(await Sharing.isAvailableAsync())) return 'unavailable';
-  const file = new File(Paths.cache, filename);
-  if (file.exists) file.delete();
-  file.create();
-  file.write(content);
+  const file = writeExportFile(filename, content);
   await Sharing.shareAsync(file.uri, { mimeType: 'application/json', UTI: 'public.json', dialogTitle });
   return 'shared';
 }
@@ -39,6 +37,13 @@ export async function pickBackupFile(): Promise<PickedFile> {
     canceled: false,
     name: asset.name,
     size: asset.size ?? null,
-    read: () => new File(asset.uri).text(),
+    read: async () => {
+      try {
+        return await new File(asset.uri).text();
+      } finally {
+        // สำเนาในแคชมีข้อมูลทั้งหมด — อ่านแล้วไม่ต้องเก็บ
+        removeCachedCopy(asset.uri);
+      }
+    },
   };
 }

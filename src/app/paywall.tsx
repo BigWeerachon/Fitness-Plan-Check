@@ -178,7 +178,7 @@ export default function PaywallScreen() {
           <LoadingState label={t('paywall.loadingPlans')} />
         </View>
       ) : error || model.unavailable ? (
-        <ErrorState message={t('paywall.unavailable')} onRetry={reload} />
+        <ErrorState message={t('paywall.unavailable')} onRetry={reload} icon="cloud-offline-outline" />
       ) : (
         <View style={styles.plans} accessibilityRole="radiogroup">
           {PLAN_KINDS.map((kind) => {

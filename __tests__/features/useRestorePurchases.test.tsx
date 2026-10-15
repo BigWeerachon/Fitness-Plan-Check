@@ -14,10 +14,12 @@ describe('alertRestoreOutcome', () => {
   it('shows a message per outcome', () => {
     const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
     alertRestoreOutcome('restored', t);
+    alertRestoreOutcome('ended', t);
     alertRestoreOutcome('none', t);
     alertRestoreOutcome('error', t);
     expect(alert.mock.calls).toEqual([
       [t('paywall.restored')],
+      [t('paywall.restoreEnded')],
       [t('paywall.nothingToRestore')],
       [t('common.errorTitle'), t('errors.restoreFailed')],
     ]);
@@ -41,5 +43,14 @@ describe('useRestorePurchases', () => {
     const { result } = renderHook(() => useRestorePurchases());
     expect(await result.current()).toBe('none');
     expect(alert).toHaveBeenCalledWith(t('paywall.nothingToRestore'));
+  });
+
+  it('says the membership was found but has ended (not "nothing found") for an expired store purchase', async () => {
+    const s = freshEnv('expired');
+    s.purchases.simulateReinstall();
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+    const { result } = renderHook(() => useRestorePurchases());
+    expect(await result.current()).toBe('ended');
+    expect(alert).toHaveBeenCalledWith(t('paywall.restoreEnded'));
   });
 });

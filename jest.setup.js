@@ -52,16 +52,28 @@ jest.mock('expo-network', () => ({
 }));
 
 jest.mock('expo-file-system', () => {
-  // ระบบไฟล์จำลองในหน่วยความจำ (ใช้กับการส่งออก CSV)
+  // ระบบไฟล์จำลองในหน่วยความจำ (ใช้กับการส่งออก CSV / ไฟล์สำรอง)
   const files = new Map();
+  const dirs = new Set();
+  const join = (parts) => parts.map((p) => (typeof p === 'string' ? p : p.uri)).join('/');
   class Directory {
-    constructor(uri) {
-      this.uri = uri;
+    constructor(...parts) {
+      this.uri = join(parts);
+    }
+    get exists() {
+      return dirs.has(this.uri) || [...files.keys()].some((k) => k.startsWith(`${this.uri}/`));
+    }
+    create() {
+      dirs.add(this.uri);
+    }
+    delete() {
+      for (const k of [...files.keys()]) if (k.startsWith(`${this.uri}/`)) files.delete(k);
+      for (const d of [...dirs]) if (d === this.uri || d.startsWith(`${this.uri}/`)) dirs.delete(d);
     }
   }
   class File {
     constructor(...parts) {
-      this.uri = parts.map((p) => (typeof p === 'string' ? p : p.uri)).join('/');
+      this.uri = join(parts);
     }
     get exists() {
       return files.has(this.uri);

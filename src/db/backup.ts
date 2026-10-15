@@ -1,6 +1,7 @@
-import { and, asc, eq, getTableColumns, isNull } from 'drizzle-orm';
+import { and, asc, eq, getTableColumns, is, isNull, SQL } from 'drizzle-orm';
 import {
   buildBackup,
+  type ArrayItemKind,
   type BackupFile,
   type BackupRow,
   type BackupSpec,
@@ -27,6 +28,24 @@ import { onboardingDraft, USER_TABLE_NAMES, USER_TABLES, type UserTableName } fr
  */
 export const BACKUP_SETTINGS = { onboardingDone: 'boolean' } as const satisfies Record<string, SettingKind>;
 
+/**
+ * schemaVersion แรกที่แอปส่งออกไฟล์สำรองได้ — ทุกไฟล์มี schemaVersion ≥ ค่านี้
+ * ตารางผู้ใช้ที่เพิ่มทีหลังต้องประกาศใน TABLE_INTRODUCED_IN และคอลัมน์ NOT NULL ที่เพิ่มทีหลังต้องมีค่าเริ่มต้นแบบค่าคงที่
+ * (ไม่ใช่ $defaultFn หรือ sql``) ไม่เช่นนั้นไฟล์เก่าจะกู้คืนไม่ได้ — เทสต์ __tests__/db/backup.test.ts บังคับทั้งสองข้อ
+ */
+export const FIRST_BACKUP_SCHEMA_VERSION = 7;
+
+/** schemaVersion (จำนวน migration) แรกที่มีตารางผู้ใช้นั้น สำหรับตารางที่เพิ่มหลัง FIRST_BACKUP_SCHEMA_VERSION */
+export const TABLE_INTRODUCED_IN: Partial<Record<UserTableName, number>> = {};
+
+/** รูปร่างของคอลัมน์ json ในตารางผู้ใช้ (ทุกคอลัมน์ตอนนี้เป็นอาร์เรย์: ชนิดสมาชิก) — คอลัมน์ json ใหม่ต้องประกาศที่นี่ */
+export const JSON_ARRAY_COLUMNS: Partial<Record<UserTableName, Record<string, ArrayItemKind>>> = {
+  custom_exercise: { secondaryMuscles: 'text' },
+  routine_exercise: { customWeeks: 'object' },
+  week_plan: { days: 'number' },
+  workout_session: { progression: 'object' },
+};
+
 /** คอลัมน์ที่ไม่ใส่ในไฟล์ (เติมใหม่ตอนกู้คืน) */
 const OMITTED_COLUMNS = new Set(['ownerId']);
 
@@ -46,14 +65,25 @@ function columnKind(dataType: string): ColumnKind {
   return 'json';
 }
 
+/** ค่าเริ่มต้นที่เป็นค่าคงที่ (ใช้เติมแถวจากไฟล์เก่าได้) — $defaultFn ให้ undefined และ sql`` ให้ออบเจกต์ SQL */
+export function isLiteralDefault(value: unknown): boolean {
+  return value !== undefined && !is(value, SQL);
+}
+
 function tableSpec(name: UserTableName): TableSpec {
   const columns: Record<string, ColumnSpec> = {};
   for (const [key, col] of Object.entries(getTableColumns(USER_TABLES[name]))) {
-    const spec: ColumnSpec = { kind: columnKind(col.dataType), nullable: !col.notNull };
-    if (col.hasDefault && col.default !== undefined) spec.default = col.default;
+    const kind = columnKind(col.dataType);
+    const items = kind === 'json' ? JSON_ARRAY_COLUMNS[name]?.[key] : undefined;
+    const spec: ColumnSpec =
+      items === undefined
+        ? { kind, nullable: !col.notNull }
+        : { kind: 'array', items, nullable: !col.notNull };
+    if (col.hasDefault && isLiteralDefault(col.default)) spec.default = col.default;
     columns[key] = spec;
   }
-  return { columns };
+  const introducedIn = TABLE_INTRODUCED_IN[name];
+  return introducedIn === undefined ? { columns } : { columns, introducedIn };
 }
 
 /** รูปแบบข้อมูลของแอปเวอร์ชันนี้ ใช้ตรวจไฟล์สำรอง (schemaVersion = จำนวน migration) */
@@ -108,6 +138,7 @@ function insertRows(name: UserTableName, rows: BackupRow[]): void {
  * แทนที่ข้อมูลผู้ใช้ทั้งหมดด้วยไฟล์สำรอง (ต้องผ่าน parseBackup มาแล้ว) ในทรานแซกชันเดียว:
  * ลบทุกแถวของตารางผู้ใช้ (รวมแถวที่ soft delete) + ร่างตั้งค่าเริ่มต้น แล้วใส่แถวจากไฟล์โดยเป็นของเจ้าของในเครื่อง
  * ค่า onboardingDone ตั้งเป็น true ได้แต่ไม่ย้อนเครื่องที่ตั้งค่าเสร็จแล้วกลับไปขั้นแรก
+ * วันที่สำรองล่าสุด = วันที่ของไฟล์นี้ (ข้อมูลในเครื่องตรงกับไฟล์นั้นแล้ว วันที่เดิมเป็นของข้อมูลชุดที่ถูกแทนที่)
  * แคชสิทธิ์ไม่ถูกแตะ (สิทธิ์มาจากบัญชีสโตร์ ไม่ใช่จากไฟล์)
  */
 export function restoreAllUserData(backup: BackupFile): void {
@@ -116,5 +147,6 @@ export function restoreAllUserData(backup: BackupFile): void {
     getDb().delete(onboardingDraft).run();
     for (const name of USER_TABLE_NAMES) insertRows(name, backup.tables[name] ?? []);
     if (backup.settings.onboardingDone === true) settingsRepo.set('onboardingDone', true);
+    settingsRepo.set('lastBackupAt', backup.exportedAt);
   });
 }

@@ -131,14 +131,17 @@ export async function purchasePlan(plan: StorePlan): Promise<PurchaseResult> {
   return result;
 }
 
-export type RestoreOutcome = 'restored' | 'none' | 'error';
+/** restored = ได้สิทธิ์, ended = พบสมาชิกในบัญชีสโตร์แต่หมดอายุ/ชำระเงินไม่ผ่าน, none = ไม่พบการซื้อเลย */
+export type RestoreOutcome = 'restored' | 'ended' | 'none' | 'error';
 
 /** กู้คืนการซื้อจากบัญชีสโตร์ของเครื่องนี้ (เครื่องใหม่/ติดตั้งใหม่) — ไม่ต้องล็อกอิน */
 export async function restorePurchases(): Promise<RestoreOutcome> {
   try {
     const info = await getServices().purchases.restore();
     applyCustomerInfo(info);
-    return hasAccess(deriveSnapshot(info, now()).state) ? 'restored' : 'none';
+    const { state } = deriveSnapshot(info, now());
+    if (hasAccess(state)) return 'restored';
+    return state === 'EXPIRED' ? 'ended' : 'none';
   } catch {
     return 'error';
   }

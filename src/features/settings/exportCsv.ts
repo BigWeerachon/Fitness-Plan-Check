@@ -1,10 +1,10 @@
-import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { dailyLogRepo } from '../../db/repos/dailyLogRepo';
 import { sessionRepo } from '../../db/repos/sessionRepo';
 import { dailyLogCsv, workoutCsv } from '../../domain/csv';
 import { toLocalDate } from '../../domain/dates';
 import { now } from '../../utils/clock';
+import { writeExportFile } from '../data/localFiles';
 import { exerciseDisplayName } from '../exercises/resolve';
 import { loadStats } from '../stats/loadStats';
 
@@ -34,15 +34,12 @@ export function buildExport(kind: ExportKind): { filename: string; content: stri
 
 /**
  * ส่งออก CSV แล้วเปิดหน้าแชร์ของระบบ (บันทึกลงไฟล์/ส่งอีเมล ฯลฯ)
- * ไฟล์อยู่ในโฟลเดอร์แคชของแอปเท่านั้น ระบบลบได้เองเมื่อพื้นที่เหลือน้อย
+ * ไฟล์อยู่ในโฟลเดอร์แคชของแอปเท่านั้น (ลบเมื่อส่งออกครั้งถัดไป หรือเมื่อลบข้อมูลทั้งหมด — data/localFiles)
  */
 export async function shareExport(kind: ExportKind, dialogTitle: string): Promise<'shared' | 'unavailable'> {
   if (!(await Sharing.isAvailableAsync())) return 'unavailable';
   const { filename, content } = buildExport(kind);
-  const file = new File(Paths.cache, filename);
-  if (file.exists) file.delete();
-  file.create();
-  file.write(content);
+  const file = writeExportFile(filename, content);
   await Sharing.shareAsync(file.uri, {
     mimeType: 'text/csv',
     UTI: 'public.comma-separated-values-text',

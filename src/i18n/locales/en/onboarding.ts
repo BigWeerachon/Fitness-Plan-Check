@@ -5,6 +5,7 @@ const onboarding = {
   stepOf: 'Step {{step}} of {{total}}',
   step1Sub: 'Pick your language, theme and accent color. You can change them anytime.',
   alreadyPurchased: 'Already purchased? Restore purchases',
+  restoreFromFile: 'Have a backup file? Restore your data',
   step2Sub: 'Used only to estimate calories and nutrition targets. You can skip this.',
   sex: 'Sex',
   sexes: { male: 'Male', female: 'Female' },

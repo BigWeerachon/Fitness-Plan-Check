@@ -56,12 +56,21 @@ export function EmptyState({
   );
 }
 
-export function ErrorState({ message, onRetry }: { message?: string; onRetry?: () => void }) {
+/** ไอคอนค่าเริ่มต้นเป็นกลาง (ข้อมูลอยู่ในเครื่อง D81) — ใช้ไอคอนออฟไลน์เฉพาะข้อผิดพลาดที่มาจากการเชื่อมต่อจริง เช่น สโตร์ */
+export function ErrorState({
+  message,
+  onRetry,
+  icon = 'alert-circle-outline',
+}: {
+  message?: string;
+  onRetry?: () => void;
+  icon?: IconName;
+}) {
   const p = usePalette();
   const { t } = useTranslation();
   return (
     <View style={styles.wrap} accessibilityRole="alert">
-      <Icon name="cloud-offline-outline" size={36} color={p.danger} />
+      <Icon name={icon} size={36} color={p.danger} />
       <AppText variant="headline" align="center" style={styles.title}>
         {t('common.errorTitle')}
       </AppText>

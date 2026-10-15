@@ -104,7 +104,7 @@ describe('settings tab (SPEC K)', () => {
     fireEvent.press(await screen.findByTestId('export-workouts'));
     await waitFor(() => expect(Sharing.shareAsync).toHaveBeenCalled());
     const [uri, options] = jest.mocked(Sharing.shareAsync).mock.calls.at(-1)!;
-    expect(uri).toBe('file:///cache/fitnese-workouts-2026-10-09.csv');
+    expect(uri).toBe('file:///cache/exports/fitnese-workouts-2026-10-09.csv');
     expect(options).toMatchObject({ mimeType: 'text/csv' });
     const csv = files.get(uri)!;
     expect(csv).toContain(WORKOUT_CSV_HEADER.join(','));
@@ -114,7 +114,9 @@ describe('settings tab (SPEC K)', () => {
     fireEvent.press(screen.getByTestId('settings-export'));
     fireEvent.press(await screen.findByTestId('export-daily'));
     await waitFor(() =>
-      expect(files.get('file:///cache/fitnese-daily-2026-10-09.csv')).toContain('2026-10-09,70,2200,'),
+      expect(files.get('file:///cache/exports/fitnese-daily-2026-10-09.csv')).toContain(
+        '2026-10-09,70,2200,',
+      ),
     );
   });
 

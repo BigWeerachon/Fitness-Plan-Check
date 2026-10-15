@@ -490,7 +490,7 @@
 |---|---|---|---|---|
 | `LoadingState` | `label?` | ตัวหมุนใหญ่สี `accent` กลางจอ | role `progressbar` label ค่าเริ่มต้น `common.loading` | `paywall` (โหลดแผน), `AccessGate` |
 | `EmptyState` | `title?`, `body?`, `icon?` (ค่าเริ่มต้น `leaf-outline`), `actionLabel?`, `onAction?` | ไอคอน 36 สีหลัก + headline + ข้อความเทา + ปุ่ม primary (ถ้ามี) | — | วันนี้, โปรแกรม, ตารางสัปดาห์, สถิติ, เซสชัน, routine, program, history, exercises, stats/exercise |
-| `ErrorState` | `message?`, `onRetry?` | ไอคอน `cloud-offline-outline` สี `danger` + `common.errorTitle` + ข้อความ (ค่าเริ่มต้นยืนยันว่าข้อมูลในเครื่องปลอดภัย) + ปุ่ม secondary "ลองใหม่" | role `alert` | paywall, เซสชัน, session summary, routine, program, history/[id], exercises/[id] |
+| `ErrorState` | `message?`, `onRetry?`, `icon?` | ไอคอน `alert-circle-outline` สี `danger` (paywall ส่ง `cloud-offline-outline` เพราะเป็นปัญหาการเชื่อมต่อสโตร์จริง ข้อผิดพลาดอื่นเป็นของในเครื่อง D81) + `common.errorTitle` + ข้อความ (ค่าเริ่มต้นยืนยันว่าข้อมูลในเครื่องปลอดภัย) + ปุ่ม secondary "ลองใหม่" | role `alert` | paywall, เซสชัน, session summary, routine, program, history/[id], exercises/[id] |
 | `LockedState` | `onUnlock` | ไอคอนกุญแจ + `common.lockedTitle/Body/Cta` | label `a11y.locked` | ยังไม่มีหน้าที่ใช้ — การล็อกจริงทำโดย `AccessGate` ที่พาไป `/paywall` |
 
 ### 3.11 `PillTabBar` — แถบเมนูล่าง

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
+import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { count } from 'drizzle-orm';
 import { getDb, getDriver } from '@/db/client';
 import { customExerciseRepo } from '@/db/repos/customExerciseRepo';
@@ -14,7 +14,9 @@ import { USER_TABLE_NAMES, USER_TABLES } from '@/db/schema';
 import { bootstrapEntitlement } from '@/features/access/accountFlow';
 import { getAccess } from '@/features/access/useAccess';
 import { deleteAllLocalData, USER_SETTING_KEYS } from '@/features/data/deleteAllData';
+import { createBackup } from '@/features/backup/backupFlow';
 import { draftRepo } from '@/features/onboarding/draft';
+import { shareExport } from '@/features/settings/exportCsv';
 import { instantiateTemplate } from '@/features/programs/instantiate';
 import { finishSession } from '@/features/session/finish';
 import { startSession } from '@/features/session/sessionFlow';
@@ -76,6 +78,25 @@ describe('deleteAllLocalData (D81 "delete all data on this device")', () => {
     // ค่าของเครื่อง (ภาษา/สีหลัก) ไม่ใช่ข้อมูลส่วนตัว — เก็บไว้
     expect(useSettings.getState()).toMatchObject({ language: 'th', accent: 'mint' });
     expect(settingsRepo.get('language')).toBe('th');
+  });
+
+  it('also deletes backup/CSV exports and picked-file copies left in the app cache (not files elsewhere)', async () => {
+    const files = (jest.requireMock('expo-file-system') as { __files: Map<string, string> }).__files;
+    populateEverything();
+    await createBackup('Back up');
+    await shareExport('daily', 'Export');
+    const exported = [...files.keys()].filter((k) => k.startsWith('file:///cache/exports/'));
+    expect(exported).toEqual(['file:///cache/exports/fitnese-daily-2026-10-09.csv']);
+    const picked = 'file:///cache/DocumentPicker/abc/fitnese-backup-2026-10-01.json';
+    const elsewhere = 'file:///downloads/fitnese-backup-2026-10-01.json';
+    files.set(picked, '{}');
+    files.set(elsewhere, '{}');
+
+    await deleteAllLocalData();
+
+    expect([...files.keys()].filter((k) => k.startsWith('file:///cache/'))).toEqual([]);
+    expect(files.has(elsewhere)).toBe(true);
+    files.delete(elsewhere);
   });
 
   it('does not cancel the store subscription: access comes back from the store right away', async () => {

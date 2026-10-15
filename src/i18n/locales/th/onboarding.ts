@@ -8,6 +8,7 @@ const onboarding: LocaleShape<typeof en> = {
   stepOf: 'ขั้นที่ {{step}} จาก {{total}}',
   step1Sub: 'เลือกภาษา ธีม และสีหลัก เปลี่ยนได้ตลอดเวลา',
   alreadyPurchased: 'เคยซื้อแล้ว? กู้คืนการซื้อ',
+  restoreFromFile: 'มีไฟล์สำรองข้อมูล? กู้คืนข้อมูลจากไฟล์',
   step2Sub: 'ใช้เพื่อประมาณแคลอรี่และเป้าหมายสารอาหารเท่านั้น ข้ามไปก่อนได้',
   sex: 'เพศ',
   sexes: { male: 'ชาย', female: 'หญิง' },

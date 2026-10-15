@@ -2,6 +2,8 @@
 
 > วิธีใช้: คัดลอกข้อความในกล่องด้านล่างทั้งหมด ไปวางในเครื่องมือ AI ที่เปิด repo นี้อยู่
 > สเปคเต็มอยู่ที่ `docs/SPEC.md` และภาพธีมอยู่ที่ `docs/reference/theme-reference.jpg` แล้ว ไม่ต้องแปะซ้ำ
+>
+> **ประวัติ (2026-10-14):** Prompt นี้เขียนก่อนแอปเปลี่ยนเป็นออฟไลน์ล้วน (D81/D82) — [docs/SPEC_CHANGES.md](../docs/SPEC_CHANGES.md) มีผลเหนือข้อความด้านล่าง: ไม่มี Supabase (SQL/RLS/Edge Functions), ไม่มีซิงก์ และไม่มีขั้นล็อกอินก่อนซื้อแล้ว เฟส 1 ทำเสร็จแล้ว ใช้เป็นประวัติเท่านั้น
 
 ```
 คุณคือ Senior Mobile Architect + Developer + UX/UI Designer

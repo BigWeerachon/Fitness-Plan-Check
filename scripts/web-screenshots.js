@@ -105,6 +105,7 @@ const accent = process.argv[5] || 'pink';
   await step('settings', async () => {
     await tapByTestId('tab-settings');
     await shot('14-settings');
+    await shot('14-settings-full', { fullPage: true });
   });
   await step('settings-profile', async () => {
     await tapByTestId('settings-profile');

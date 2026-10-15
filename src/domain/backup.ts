@@ -8,7 +8,8 @@
  *   คอลัมน์ที่ขาดเติมค่าเริ่มต้นของคอลัมน์ (หรือ null ถ้าคอลัมน์ว่างได้) — ขาดคอลัมน์ที่บังคับและไม่มีค่าเริ่มต้น = ไฟล์เสีย
  *   คอลัมน์ที่ไม่รู้จัก = ไฟล์เสีย (schema ไม่ตรงกับที่ประกาศ)
  * - ต้องมีครบทุกตารางที่ schemaVersion ของไฟล์ควรมี (ตารางที่เพิ่มทีหลังประกาศ introducedIn) ตารางที่แอปไม่รู้จักถูกข้าม
- * - ชนิดค่าตรวจระดับคอลัมน์ (text/number/boolean/json) ไม่ตรวจค่า enum หรือความสัมพันธ์ข้ามตาราง
+ * - ชนิดค่าตรวจระดับคอลัมน์ (text/number/boolean/json/array) ไม่ตรวจค่า enum หรือความสัมพันธ์ข้ามตาราง
+ *   คอลัมน์ json ที่เก็บอาร์เรย์ต้องเป็นอาร์เรย์ และสมาชิกต้องเป็นชนิดที่ประกาศ (items) — กันไฟล์เสียที่ทำให้หน้าจอพังหลังกู้คืน
  *   ตัวเลขไม่บังคับจำนวนเต็ม เพราะ SQLite เก็บได้ทั้งสองแบบ และไม่อยากปฏิเสธไฟล์ที่แอปเองส่งออก
  * - แถวที่ถูกลบแล้ว (deletedAt ไม่ว่าง) ไม่ถูกส่งออก และถ้ามีในไฟล์ก็ถูกข้าม — การกู้คืนแทนที่ทั้งหมด ไม่ต้องใช้ tombstone
  */
@@ -22,11 +23,16 @@ export const BACKUP_FORMAT_VERSION = 1;
  */
 export const MAX_BACKUP_BYTES = 50 * 1024 * 1024;
 
-export type ColumnKind = 'text' | 'number' | 'boolean' | 'json';
+export type ColumnKind = 'text' | 'number' | 'boolean' | 'json' | 'array';
+
+/** ชนิดสมาชิกของคอลัมน์ 'array' (object = ออบเจกต์ธรรมดา ไม่ใช่อาร์เรย์ซ้อน) */
+export type ArrayItemKind = 'text' | 'number' | 'object';
 
 export interface ColumnSpec {
   kind: ColumnKind;
   nullable: boolean;
+  /** เฉพาะ kind 'array': ชนิดของสมาชิกทุกตัว */
+  items?: ArrayItemKind;
   /** มี key นี้ = คอลัมน์มีค่าเริ่มต้น */
   default?: unknown;
 }
@@ -125,16 +131,28 @@ function isPositiveInt(v: unknown): v is number {
   return typeof v === 'number' && Number.isInteger(v) && v >= 1;
 }
 
-function matchesKind(value: unknown, kind: ColumnKind): boolean {
-  switch (kind) {
+function isFiniteNumber(v: unknown): v is number {
+  return typeof v === 'number' && Number.isFinite(v);
+}
+
+function matchesItem(value: unknown, kind: ArrayItemKind): boolean {
+  if (kind === 'text') return typeof value === 'string';
+  if (kind === 'number') return isFiniteNumber(value);
+  return isPlainObject(value);
+}
+
+function matchesColumn(value: unknown, c: ColumnSpec): boolean {
+  switch (c.kind) {
     case 'text':
       return typeof value === 'string';
     case 'number':
-      return typeof value === 'number' && Number.isFinite(value);
+      return isFiniteNumber(value);
     case 'boolean':
       return typeof value === 'boolean';
     case 'json':
       return typeof value === 'object' && value !== null;
+    case 'array':
+      return Array.isArray(value) && (c.items === undefined || value.every((v) => matchesItem(v, c.items!)));
   }
 }
 
@@ -150,7 +168,7 @@ function normalizeRow(raw: unknown, spec: TableSpec): { row: BackupRow } | { bad
     const value = present ? raw[col] : 'default' in c ? c.default : null;
     if (value === null) {
       if (!c.nullable) return { bad: col };
-    } else if (!matchesKind(value, c.kind)) {
+    } else if (!matchesColumn(value, c)) {
       return { bad: col };
     }
     row[col] = value;
