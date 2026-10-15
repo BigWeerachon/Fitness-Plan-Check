@@ -6,15 +6,13 @@ const BUNDLE_ID = process.env.APP_BUNDLE_ID || 'com.example.fitnese';
 const EAS_PROJECT_ID = process.env.EAS_PROJECT_ID || '';
 
 /**
- * ประเภทข้อมูลที่แอปเก็บ (ตรงกับตาราง App Privacy ใน docs/HUMAN_TASKS.md ส่วน R และนโยบายความเป็นส่วนตัว)
- * ทุกประเภท: เชื่อมกับตัวตนผู้ใช้ ไม่ใช้ติดตาม ใช้เพื่อการทำงานของแอปเท่านั้น
+ * ประเภทข้อมูลที่ "ออกจากเครื่อง" (D81, D83) — ข้อมูลการฝึก/โปรไฟล์/สุขภาพอยู่ใน SQLite บนเครื่องเท่านั้น จึงไม่ประกาศ
+ * เหลือเฉพาะสิ่งที่ RevenueCat ได้รับ (ตรงกับ store-metadata/privacy-labels.md และนโยบายความเป็นส่วนตัว)
+ * Linked: true แบบระมัดระวัง (รหัสนิรนามคงที่ผูกกับประวัติการซื้อ) — ความไม่แน่ใจบันทึกใน OPEN_QUESTIONS Q21
  */
 const COLLECTED_DATA_TYPES = [
-  'NSPrivacyCollectedDataTypeUserID', // app user id นิรนามของ RevenueCat (ไม่มีบัญชี/ล็อกอิน D81)
-  'NSPrivacyCollectedDataTypeHealth', // ส่วนสูง น้ำหนักตัว แคลอรี่ที่กิน
-  'NSPrivacyCollectedDataTypeFitness', // โปรแกรมและบันทึกการฝึก
-  'NSPrivacyCollectedDataTypePurchaseHistory', // สถานะสมาชิกผ่าน RevenueCat
-  'NSPrivacyCollectedDataTypeOtherDataTypes', // เพศ อายุ (ไม่บังคับ)
+  'NSPrivacyCollectedDataTypeUserID', // app user id นิรนามที่ SDK ของ RevenueCat สร้าง (ไม่มีบัญชี/ล็อกอิน)
+  'NSPrivacyCollectedDataTypePurchaseHistory', // ประวัติการซื้อ/สถานะสมาชิกผ่าน RevenueCat
 ].map((type) => ({
   NSPrivacyCollectedDataType: type,
   NSPrivacyCollectedDataTypeLinked: true,

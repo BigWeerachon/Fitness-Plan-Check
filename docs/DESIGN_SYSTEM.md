@@ -153,9 +153,9 @@
 | `separator` | `rgba(255,255,255,0.10)` | `rgba(0,0,0,0.10)` | เส้นคั่นแถว, เส้นขอบ hairline, ขอบ chip ไม่เลือก, ที่จับ Sheet, เส้นกริดกราฟ |
 | `text` | `#FFFFFF` | `#000000` | ข้อความหลัก, ข้อความใหญ่ในแถว |
 | `textSecondary` | `#98989F` | `#636366` | บรรทัดย่อย, คำอธิบาย, ไอคอนแท็บไม่เลือก, ป้ายแกนกราฟ (D44) |
-| `danger` | `#FF7A7A` | `#B71C1C` | `Button kind="danger"`, `ListRow danger`, ขอบ+ข้อความ error ของ `TextField`, ไอคอน `ErrorState`, ช่องยืนยันใน `delete-account` (D44) |
+| `danger` | `#FF7A7A` | `#B71C1C` | `Button kind="danger"`, `ListRow danger`, ขอบ+ข้อความ error ของ `TextField`, ไอคอน `ErrorState`, ช่องยืนยันและปุ่มลบใน `delete-data` (D44) |
 | `success` | `#7EE2A8` | `#176B3B` | ประกาศไว้สำหรับสถานะสำเร็จ (D44) — ยังไม่มีหน้าที่ใช้ |
-| `warning` | `#F5C46B` | `#8A5A00` | `Badge tone="warning"` (ปัญหาการชำระเงิน BILLING_GRACE บนหน้าแรก), ไอคอนเตือนใน `delete-account` และการ์ดแจ้งก่อนซื้อ Lifetime ของ Paywall, คำเตือนในฟอร์มโปรไฟล์ |
+| `warning` | `#F5C46B` | `#8A5A00` | `Badge tone="warning"` (ปัญหาการชำระเงิน BILLING_GRACE บนหน้าแรก), ไอคอนเตือนใน `delete-data` และการ์ดแจ้งก่อนซื้อ Lifetime ของ Paywall, คำเตือนในฟอร์มโปรไฟล์ |
 | `tabBar` | `rgba(36,36,38,0.88)` | `rgba(255,255,255,0.92)` | พื้นแคปซูลแถบเมนู |
 | `switchOff` | `#39393D` | `#D1D1D6` | รางสวิตช์ตอนปิด, ราง `ProgressBar`, รางแท่งในกราฟ % |
 | `overlay` | `rgba(0,0,0,0.6)` | `rgba(0,0,0,0.35)` | ฉากหลังมืดลงเมื่อเปิด Sheet |
@@ -284,7 +284,7 @@
 | `card` | 28 | `CardGroup`, `Card`, การ์ดแคลอรี่หน้าแรก, แถบตัวจับเวลาพัก (แผนราคาใน Paywall ใช้ `card - 8` = 20) |
 | `row` | 20 | ประกาศไว้ ยังไม่มีคอมโพเนนต์ใช้ |
 | `button` | 16 | ปุ่มแป้นตัวเลข, ปุ่ม Stepper, กรอบ Disclaimer, กล่องพรีวิวสีเอง |
-| `pill` | 999 | `Button`, `Chip`, `SegmentedControl`, `Badge`, แถบเมนู, ปุ่มล็อกอิน |
+| `pill` | 999 | `Button`, `Chip`, `SegmentedControl`, `Badge`, แถบเมนู |
 | `sheet` | 28 | มุมบนของ `Sheet` |
 | `input` | 14 | `TextField`, ช่องน้ำหนัก/ครั้งในเซสชัน |
 
@@ -295,17 +295,9 @@
 - `MIN_TOUCH` = **48** ทั้ง iOS/Android (SPEC A2, D07) — ใช้เป็นขนาดขั้นต่ำของทุกสิ่งที่แตะได้
 - `motion` = `{ fast: 150, normal: 250, slow: 400 }` ms — ประกาศไว้เป็นกรอบเวลา ปัจจุบันไม่มีโค้ดอ้าง `motion.*` คอมโพเนนต์ใส่ค่าตรง (ดูข้อ 6.6)
 
-### 2.6 สีแบรนด์ของปุ่มล็อกอิน (`BRAND`)
+### 2.6 สีแบรนด์ของปุ่มล็อกอิน (ตัดออกแล้ว)
 
-ห้ามเปลี่ยนตามสีหลัก (SPEC B10 "ใช้ปุ่มตามแนวทางแบรนด์", D32) ใช้ใน `src/features/auth/SignInButtons.tsx` ปุ่ม Google ใช้ **ชุดสีตรงข้ามกับโหมดแอป** เพื่อให้เด่นเท่าปุ่ม Apple (D51, Guideline 4.8): พื้นมืดใช้ปุ่ม Google แบบสว่าง พื้นสว่างใช้แบบมืด (ทั้งสองเป็นสไตล์ทางการของ Google)
-
-| ปุ่ม | โหมดมืดของแอป | โหมดสว่างของแอป |
-|---|---|---|
-| Continue with Google (`BRAND.google`) | ใช้ชุด `light`: พื้น `#FFFFFF` ขอบ `#747775` ตัวอักษร `#1F1F1F` | ใช้ชุด `dark`: พื้น `#131314` ขอบ `#8E918F` ตัวอักษร `#E3E3E3` |
-| โลโก้ G | น้ำเงิน `#4285F4` เขียว `#34A853` เหลือง `#FBBC05` แดง `#EA4335` | เหมือนกัน |
-| Sign in with Apple (`BRAND.apple`) | พื้น `#FFFFFF` ตัวอักษร `#000000` | พื้น `#000000` ตัวอักษร `#FFFFFF` |
-
-ทั้งสองปุ่มสูง 52 (`HEIGHT`) มุม `pill` กว้างเต็มแถว วางซ้อนแนวตั้ง Google ก่อน Apple (D32) บน iOS ปุ่ม Apple เป็น `AppleAuthenticationButton` ชนิด `SIGN_IN` ของระบบ (สไตล์ WHITE บนพื้นมืด / BLACK บนพื้นสว่าง, `cornerRadius` = `radius.pill`) ส่วน Android (และตอนกำลังโหลด) วาดเองตามสีในตาราง สคริปต์ `npm run contrast` ตรวจทั้งสองชุดของ Google และสองชุดของ Apple ผ่าน ≥ 4.5 (Google ชุดมืด 14.47, ชุดสว่าง 16.48; Apple 21.00 ทั้งสองชุด)
+แอปไม่มีล็อกอินแล้ว (D81, [SPEC_CHANGES](SPEC_CHANGES.md) B10) — token `BRAND` ปุ่ม Google/Apple และ `src/features/auth/SignInButtons.tsx` ถูกลบ ไม่มีสีนอกระบบ token เหลือในแอป
 
 ### 2.7 ฟอนต์และขนาดตัวอักษร (`src/theme/typography.ts`)
 
@@ -334,7 +326,7 @@
 | `caption` | Regular | 13 / 19 | 1.46 | ค่าใต้ `ListRow`, `SectionTitle`, ข้อความเปิดเผยข้อมูล, คำเตือน |
 | `dayLetter` | Regular | 13 / 18 | 1.38 | วันที่ปิดใน `WeekdayDots` |
 | `dayLetterOn` | SemiBold | 13 / 18 | 1.38 | วันที่เปิดใน `WeekdayDots` |
-| `button` | Medium | 16 / 22 | 1.38 | ข้อความบนปุ่ม (รวมปุ่มล็อกอิน) |
+| `button` | Medium | 16 / 22 | 1.38 | ข้อความบนปุ่ม |
 | `tabular` | Regular + `tabular-nums` | 17 / 24 | 1.41 | ค่าใน Stepper, เลขเซ็ต/ช่องน้ำหนัก/ครั้งในเซสชัน |
 
 **กฎการขยายฟอนต์ (Dynamic Type / Font size ของ Android, SPEC N5)** — ห้ามปิดการขยายฟอนต์ (`allowFontScaling={false}`) ให้จำกัดเพดานผ่าน `maxFontSizeMultiplier` แทน
@@ -380,14 +372,14 @@
 - **หน้าที่:** หัวของหน้าที่ซ้อนเข้ามา: ปุ่มย้อนกลับ + ชื่อหน้าสีหลักตรงกลาง + ช่องขวา
 - **props:** `title?`, `right?` (เช่น `IconButton` ⋮), `onBack?` (ค่าเริ่มต้น `router.back()` หรือกลับ `/` ถ้าย้อนไม่ได้), `backIcon` = `chevron-back` | `close`
 - **a11y:** ปุ่มย้อนมี label `a11y.back` / `a11y.close`; ชื่อหน้า `accessibilityRole="header"`, ตัดบรรทัดเดียว; สูง ≥ 52; ช่องขวากว้าง ≥ 48
-- **ใช้ที่:** ทุกหน้าที่ซ้อนเข้ามา (`week`, `session/[id]`, `session/summary/[id]`, `routine/[id]`, `program/[id]`, `program/templates`, `history/*`, `exercises/*`, `stats/exercise/[id]`, `profile`, `account`, `legal/[doc]`, `references`, `delete-account`, onboarding ขั้น 2–3 ผ่าน `showBack` ของ `OnboardingFrame`); หน้า `login` ใช้ `backIcon="close"` และ `paywall` ใช้ `backIcon="close"` เฉพาะตอนเข้ามาเพื่ออัปเกรดเป็น Lifetime (`model.upgrade`, เช่นจากปุ่ม "Get lifetime" ในตั้งค่า) — หน้าแท็บ 4 หน้า, onboarding ขั้น 1 และ Paywall ปกติไม่มีปุ่มย้อน (Paywall ปกติใช้ `ActionBar` ไอคอนตั้งค่าแทน)
+- **ใช้ที่:** ทุกหน้าที่ซ้อนเข้ามา (`week`, `session/[id]`, `session/summary/[id]`, `routine/[id]`, `program/[id]`, `program/templates`, `history/*`, `exercises/*`, `stats/exercise/[id]`, `profile`, `account`, `legal/[doc]`, `references`, `delete-data`, onboarding ขั้น 2–3 ผ่าน `showBack` ของ `OnboardingFrame`); หน้า `delete-data` ใช้ `backIcon="close"` และ `paywall` ใช้ `backIcon="close"` เฉพาะตอนเข้ามาเพื่ออัปเกรดเป็น Lifetime (`model.upgrade`, เช่นจากปุ่ม "Get lifetime" ในตั้งค่า) — หน้าแท็บ 4 หน้า, onboarding ขั้น 1 และ Paywall ปกติไม่มีปุ่มย้อน (Paywall ปกติใช้ `ActionBar` ไอคอนตั้งค่าแทน)
 
 ### 3.4 `HeroTitle` — หัวข้อใหญ่
 
 - **หน้าที่:** หัวข้อสีหลักกลางจอ + บรรทัดย่อยสีเทา (ข้อ 1.3)
 - **props:** `title`, `subtitle?`, `children?` (วางใต้บรรทัดย่อย เช่น `Badge` วันสิ้นสุดทดลอง), `compact?`
 - **a11y:** หัวข้อเป็น `header`, เพดานฟอนต์ 1.4
-- **ใช้ที่:** แบบเต็มในหน้าแท็บ 4 หน้า (`(app)/(tabs)/index`, `programs`, `stats`, `settings`); แบบ `compact` ในหน้าอื่นทั้งหมด รวม `paywall`, `login`, `OnboardingFrame`
+- **ใช้ที่:** แบบเต็มในหน้าแท็บ 4 หน้า (`(app)/(tabs)/index`, `programs`, `stats`, `settings`); แบบ `compact` ในหน้าอื่นทั้งหมด รวม `paywall`, `account`, `delete-data`, `OnboardingFrame`
 
 ### 3.5 `CardGroup`, `Card`, `ListRow`, `BigRow`, `SectionTitle` — การ์ดและแถว
 
@@ -402,7 +394,7 @@
 `Card`
 
 - **หน้าที่:** การ์ดเดี่ยว padding 20 สำหรับเนื้อหาที่ไม่ใช่รายการ (กราฟ ตารางเซ็ต สรุป)
-- **ใช้ที่:** `(tabs)/index` (กล้ามเนื้อวันนี้), `(tabs)/stats`, `session/[id]` (การ์ดต่อท่า), `session/summary/[id]`, `stats/exercise/[id]`, `history/[id]`, `profile`, `legal/[doc]`, `references`, `delete-account`, `program/templates`, `exercises/[id]`
+- **ใช้ที่:** `(tabs)/index` (กล้ามเนื้อวันนี้), `(tabs)/stats`, `session/[id]` (การ์ดต่อท่า), `session/summary/[id]`, `stats/exercise/[id]`, `history/[id]`, `profile`, `legal/[doc]`, `references`, `delete-data`, `program/templates`, `exercises/[id]`
 
 `ListRow`
 
@@ -571,7 +563,6 @@
 | `src/features/session/SetTick.tsx` | `SetTick` | วงกลม 48 ขอบ 2: ยังไม่เสร็จ = ขอบ `textSecondary`; เสร็จ = พื้น+ขอบ `accentFill` และ ✓ สี `onAccent`; role `checkbox`; haptic success (ติ๊ก) / selection (ยกเลิก); เด้ง 1 → 1.25 (120 ms) → 1 (160 ms) **เฉพาะตอนติ๊ก** (ตอนยกเลิกไม่เด้ง) และข้ามเมื่อผู้ใช้เปิดลดการเคลื่อนไหว; `hitSlop` 4 |
 | `src/features/session/RestTimerBar.tsx` | `RestTimerBar` | แถบลอยล่าง พื้น `elevated` มุม 28 ขอบ hairline: "พัก m:ss" headline สีหลัก + `ProgressBar` + ปุ่ม plain "+15 วิ" + ปุ่ม secondary "ข้าม/ตกลง"; live region `polite`; haptic warning เมื่อครบ |
 | `src/features/appearance/AppearancePickers.tsx` | `LanguagePicker`, `ThemePicker`, `AccentPicker`, `AppearanceGroup` (ภาษา/ธีม/สีหลักในการ์ดเดียว `showLabels` — ใช้ที่ `settings`, `account`, `onboarding/index`), `AppearancePreview` | Chip / SegmentedControl / วงสี 36 ในพื้นที่แตะ 48 (เลือก = วงแหวนสี `text`) / พรีวิวหัวข้อ + `BigRow` + `WeekdayDots` + `Toggle` |
-| `src/features/auth/SignInButtons.tsx` | `GoogleButton`, `AppleButton` | สี `BRAND` (ข้อ 2.6) |
 | `src/features/stats/charts.tsx` | `DonutChart`, `ShareBars`, `TrendChart`, `KcalBars` | กราฟบน `Card`; สีจาก `p.chart` / `accentFill`; วงในโดนัทสี `card`; สรุปเป็นข้อความสำหรับโปรแกรมอ่านหน้าจอ (ข้อ 6.4) |
 | `src/features/onboarding/OnboardingFrame.tsx` | `OnboardingFrame` | `Screen` + `ProgressBar` ขั้นที่ x/3 + `HeroTitle compact` + ปุ่ม primary "ถัดไป" |
 
@@ -600,9 +591,8 @@
 | **ตารางประจำสัปดาห์** `src/app/(app)/week.tsx` | แถว routine พร้อมแถวจุดวัน + สวิตช์เปิด/ปิด | `StackHeader` + `HeroTitle compact` → `Chip` เลือกโปรแกรมทั้งสัปดาห์ → `SegmentedControl` วันเริ่มสัปดาห์ → `CardGroup` ของ `BigRow` ต่อ routine: `WeekdayDots` แตะเปิด/ปิดวันได้ (วางใน `footer` เต็มความกว้างการ์ด ช่องละ 1/7 สูง 48) + `Toggle` ชิดขวา; routine ที่ปิด → `dimmed` ทั้งชื่อและจุดวัน | [en มืด](screenshots/en-dark-09-week.jpg) |
 | **เซสชัน** `src/app/(app)/session/[id].tsx` | พื้นดำ ติ๊กเซ็ตสีหลัก | `Screen glow={false}` (ดำล้วน ไม่มีแสง) + `StackHeader` ชื่อ routine + ⋮ → เวลาที่ผ่านไป + "เสร็จ x จาก y เซ็ต" (headline สีหลัก) + `ProgressBar` → `Card` ต่อท่า: ตาราง เซ็ต / ครั้งก่อน / เป้าหมาย (สีหลัก แตะแก้) / ช่องน้ำหนัก×ครั้ง (`inputBg` มุม 14 แตะเปิด `NumberPad`) / `SetTick` → `RestTimerBar` ลอยล่าง | [th มืด](screenshots/th-dark-10-session.jpg) · [en มืด หลังติ๊ก](screenshots/en-dark-11-session-ticked.jpg) |
 | **สถิติ** `src/app/(app)/(tabs)/stats.tsx` | กราฟสีหลักบนการ์ดเทาเข้ม | `HeroTitle` (บรรทัดย่อย = กรุ๊ปที่กรอง) → `SegmentedControl` วัน/สัปดาห์/เดือน/ปี + `IconButton` ย้อน/ถัดไป → `Chip` กรองกรุ๊ป (เลื่อนแนวนอน) → `Card` สรุป → `SegmentedControl` มุมมอง + ตัวชี้วัด → `Card` โดนัท (`p.chart`) + แท่ง % → `CardGroup` ประวัติ/ความแข็งแรง/พลังงาน → `Card` กราฟแท่งแคลอรี่/เส้นน้ำหนักตัว (`accentFill`) → `Disclaimer` | [en มืด](screenshots/en-dark-13-stats.jpg) · [en สว่าง](screenshots/en-light-13-stats.jpg) |
-| **ตั้งค่า** `src/app/(app)/(tabs)/settings.tsx` | ภาษาภาพทั่วไปของ DS | `HeroTitle` แบบเต็ม → `SectionTitle` + `CardGroup` เรียงเป็นหมวด: รูปลักษณ์ (ภาษา `Chip`, ธีม `SegmentedControl`, สีหลัก `AccentPicker`) → การฝึก (`SegmentedControl`, `Toggle`, `Stepper`, `Chip`) → โปรไฟล์ → สมาชิกภาพ → ข้อมูล → บัญชี → เกี่ยวกับ (`ListRow`) → `Disclaimer` | [en มืด](screenshots/en-dark-14-settings.jpg) |
-| **Paywall** `src/app/paywall.tsx` | พื้นดำ + แสงเรืองด้านบน | `Screen` มีแสง + header: ปกติ `ActionBar` (ไอคอน `settings-outline` → `/account`), โหมดอัปเกรดเป็น Lifetime (`model.upgrade`) ใช้ `StackHeader backIcon="close"` → `HeroTitle compact` (headline นำด้วยประโยชน์ เช่น "Unlock your full training plan" ตาม eligibility B6: `subscribe` / `winback` / `billing` / `upgrade`) → (กรณีตัดเงินไม่ผ่าน) ปุ่ม primary "Fix payment" → `CardGroup` รายการฟีเจอร์ 5 ข้อ (`ListRow` ไอคอนสีหลัก ข้อความเน้นผลลัพธ์) → แผนราคา 2 ใบ (radio; เลือก = พื้น `accentSoft` ขอบ `accent`; มุม 20; ราคาเต็มจากสโตร์เป็นบรรทัด `title` แยกกับรอบการชำระ; `Badge` ทดลองฟรี; หมายเหตุ caption D45) → (โหมดอัปเกรด) `Card` เตือนว่าซื้อ Lifetime ไม่ยกเลิกรายเดือน/ทดลองอัตโนมัติ + ปุ่ม plain เปิดการจัดการสมาชิก (ไอคอนเตือนสี `warning`) → บรรทัด headline ยอดที่จะถูกเรียกเก็บ ("{{count}} days free, then {{price}}/month" / "{{price}}/month, renews automatically" / "{{price}} one-time payment") → ปุ่ม primary CTA ("Start free trial, then {{price}}/month" / "Subscribe for …" / "Buy lifetime for …") → caption ลงชื่อเข้าใช้ → ข้อความเปิดเผยข้อมูล B5 (caption) → Restore (secondary) → จัดการสมาชิก (plain, ไม่แสดงในโหมดอัปเกรด) → Terms/Privacy/แหล่งอ้างอิง (plain) | [en มืด](screenshots/en-dark-04-paywall.jpg) · [th มืด](screenshots/th-dark-04-paywall.jpg) (ภาพถ่ายก่อนปรับข้อความ — ถ่ายใหม่ก่อนส่งสโตร์) |
-| **ล็อกอิน** `src/app/login.tsx` | พื้นดำ + แสงเรืองด้านบน | `Screen` มีแสง + `StackHeader backIcon="close"` → `HeroTitle compact` + คำอธิบาย → `GoogleButton` + `AppleButton` (สีแบรนด์ ขนาดเท่ากัน ซ้อนแนวตั้ง D32) → caption ข้อตกลง + ปุ่ม plain Terms/Privacy | [en มืด](screenshots/en-dark-05-login.jpg) |
+| **ตั้งค่า** `src/app/(app)/(tabs)/settings.tsx` | ภาษาภาพทั่วไปของ DS | `HeroTitle` แบบเต็ม → `SectionTitle` + `CardGroup` เรียงเป็นหมวด: รูปลักษณ์ (ภาษา `Chip`, ธีม `SegmentedControl`, สีหลัก `AccentPicker`) → การฝึก (`SegmentedControl`, `Toggle`, `Stepper`, `Chip`) → โปรไฟล์ → สมาชิกภาพ → ข้อมูลของคุณ (สำรองข้อมูล + วันที่สำรองล่าสุด, กู้คืนจากไฟล์, ส่งออก CSV, ลบข้อมูลทั้งหมดในเครื่องนี้ `danger` + caption เตือนว่าข้อมูลอยู่ในเครื่องนี้เท่านั้น) → เกี่ยวกับ (`ListRow`) → `Disclaimer` | [en มืด](screenshots/en-dark-14-settings.jpg) |
+| **Paywall** `src/app/paywall.tsx` | พื้นดำ + แสงเรืองด้านบน | `Screen` มีแสง + header: ปกติ `ActionBar` (ไอคอน `settings-outline` "การตั้งค่า" → `/account`), โหมดอัปเกรดเป็น Lifetime (`model.upgrade`) ใช้ `StackHeader backIcon="close"` → `HeroTitle compact` (headline นำด้วยประโยชน์ เช่น "Unlock your full training plan" ตาม eligibility B6: `subscribe` / `winback` / `billing` / `upgrade`) → (กรณีตัดเงินไม่ผ่าน) ปุ่ม primary "Fix payment" → `CardGroup` รายการฟีเจอร์ 5 ข้อ (`ListRow` ไอคอนสีหลัก ข้อความเน้นผลลัพธ์) → แผนราคา 2 ใบ (radio; เลือก = พื้น `accentSoft` ขอบ `accent`; มุม 20; ราคาเต็มจากสโตร์เป็นบรรทัด `title` แยกกับรอบการชำระ; `Badge` ทดลองฟรี; หมายเหตุ caption D45) → (โหมดอัปเกรด) `Card` เตือนว่าซื้อ Lifetime ไม่ยกเลิกรายเดือน/ทดลองอัตโนมัติ + ปุ่ม plain เปิดการจัดการสมาชิก (ไอคอนเตือนสี `warning`) → บรรทัด headline ยอดที่จะถูกเรียกเก็บ ("{{count}} days free, then {{price}}/month" / "{{price}}/month, renews automatically" / "{{price}} one-time payment") → ปุ่ม primary CTA ("Start free trial, then {{price}}/month" / "Subscribe for …" / "Buy lifetime for …") → caption "การซื้อผูกกับบัญชีสโตร์ เครื่องใหม่แตะกู้คืนการซื้อ" → ข้อความเปิดเผยข้อมูล B5 (caption) → Restore (secondary) → จัดการสมาชิก (plain, ไม่แสดงในโหมดอัปเกรด) → Terms/Privacy/แหล่งอ้างอิง (plain) | [en มืด](screenshots/en-dark-04-paywall.jpg) · [th มืด](screenshots/th-dark-04-paywall.jpg) (ภาพถ่ายก่อนปรับข้อความ — ถ่ายใหม่ก่อนส่งสโตร์) |
 | **ตั้งค่าเริ่มต้นขั้น 1** `src/app/onboarding/index.tsx` | C ขั้น 1 + พรีวิวสดของ DS | `OnboardingFrame` (`ProgressBar` 1/3 + `HeroTitle compact`) → `CardGroup` ภาษา/ธีม/สีหลัก → `AppearancePreview` (หัวข้อสีหลัก + `BigRow` + `WeekdayDots` + `Toggle`) → ปุ่ม primary "ถัดไป" | [en มืด](screenshots/en-dark-01-onboarding-1.jpg) |
 
 ### 4.3 สิ่งที่ภาพหน้าจอยืนยัน
@@ -625,7 +615,7 @@ node scripts/web-screenshots.js <โฟลเดอร์ภาพ> th dark pink
 node scripts/web-screenshots.js <โฟลเดอร์ภาพ> en light mint
 ```
 
-สคริปต์เดินผ่าน onboarding → Paywall → ล็อกอิน (mock) → ทุกแท็บ แล้วบันทึกไฟล์ชื่อ `<ภาษา>-<ธีม>-<ลำดับ>-<หน้า>.png` ขนาด 780 × 1688 (viewport 390 × 844 ที่ scale 2) — ไฟล์ใน `docs/screenshots/` เป็น .jpg ที่ย่อเหลือ 390 × 844
+สคริปต์เดินผ่าน onboarding → Paywall → ซื้อจำลอง (mock) → ทุกแท็บ แล้วบันทึกไฟล์ชื่อ `<ภาษา>-<ธีม>-<ลำดับ>-<หน้า>.png` ขนาด 780 × 1688 (viewport 390 × 844 ที่ scale 2) — ไฟล์ใน `docs/screenshots/` เป็น .jpg ที่ย่อเหลือ 390 × 844
 
 ---
 
@@ -665,19 +655,11 @@ node scripts/web-screenshots.js <โฟลเดอร์ภาพ> en light min
 | coral `#F5A3A8` | light | `#C11520` / ปุ่ม `#C11520` | 5.54 | 6.18 | 4.65 / 4.50 | 6.18 | 6.18 | 5.99 / 5.37 | 4.55 | ผ่าน |
 
 ```text
-google button (dark): text 14.47:1
-
-google button (light): text 16.48:1
-
-apple button (dark): text 21.00:1
-
-apple button (light): text 21.00:1
-
 เกณฑ์: ข้อความ ≥ 4.5:1, องค์ประกอบกราฟิก ≥ 3:1
 ALL CONTRAST CHECKS PASSED
 ```
 
-**อ่านตาราง:** คอลัมน์ตรงกับฟิลด์ของ `contrastReport()` — บนพื้น = `accentOnBackground`, บนการ์ด = `accentOnCard`, หัวข้อ/ข้อความรองบนแสงเรือง = `heroOnGlow` / `secondaryOnGlow` (ค่าแรก = สีหลัก ค่าหลัง = สีเทาของบรรทัดย่อย), ข้อความบนปุ่ม = `onAccentOnFill`, ปุ่ม/กราฟบนการ์ด = `fillOnCard` (เกณฑ์ 3), ข้อความรองบนการ์ด/sheet = `secondaryOnCard` / `secondaryOnElevated`, สีหลักบน chip/แท็บที่เลือก = `accentOnSoft` (ค่าต่ำสุดของทุกพื้น) นอกจากนี้สคริปต์ตรวจสีกราฟทุกสี ≥ 3:1 บนการ์ด (พิมพ์เฉพาะเมื่อไม่ผ่าน) และปุ่มแบรนด์ล็อกอิน
+**อ่านตาราง:** คอลัมน์ตรงกับฟิลด์ของ `contrastReport()` — บนพื้น = `accentOnBackground`, บนการ์ด = `accentOnCard`, หัวข้อ/ข้อความรองบนแสงเรือง = `heroOnGlow` / `secondaryOnGlow` (ค่าแรก = สีหลัก ค่าหลัง = สีเทาของบรรทัดย่อย), ข้อความบนปุ่ม = `onAccentOnFill`, ปุ่ม/กราฟบนการ์ด = `fillOnCard` (เกณฑ์ 3), ข้อความรองบนการ์ด/sheet = `secondaryOnCard` / `secondaryOnElevated`, สีหลักบน chip/แท็บที่เลือก = `accentOnSoft` (ค่าต่ำสุดของทุกพื้น) นอกจากนี้สคริปต์ตรวจสีกราฟทุกสี ≥ 3:1 บนการ์ด (พิมพ์เฉพาะเมื่อไม่ผ่าน) 
 
 **ข้อสังเกตจากตาราง:** โหมดมืดไม่มีสีไหนต้องปรับสีหลัก (สีพาสเทลบนดำผ่านสบาย) ส่วนโหมดสว่างทุกสีถูกทำให้เข้มลง ค่าที่ "ตึง" ที่สุดคือหัวข้อบนแสงเรือง (4.54–4.74) และสีหลักบน chip ที่เลือก (4.50–4.88) เพราะทั้งสองพื้นเป็นสีโทนเดียวกับสีหลัก และข้อความรองบนแสงเรือง (4.50–5.51) ซึ่งหลายสีวิ่งอยู่ที่ขอบ 4.50 พอดีเพราะ `glowOpacity` ถูกลดลงจนเพิ่งผ่าน (ดูข้อ 2.3)
 
@@ -727,7 +709,6 @@ D44 ([DECISIONS.md](DECISIONS.md)) ปรับสีกลางและสี
 | `ListRow` / `BigRow` | สูง ≥ 56 / ≥ 104 เต็มความกว้าง |
 | แท็บใน `PillTabBar` | 72 × 56 |
 | วงสีใน `AccentPicker` / ตารางสีเอง | 48 × 48 (วงสี 36 อยู่ข้างใน สำหรับ `AccentPicker`) |
-| ปุ่มล็อกอิน | สูง 52 เต็มความกว้าง |
 
 ข้อยกเว้นที่เหลือในโค้ดตอนนี้ (ดูข้อ 8.2): `Toggle` ใช้ขนาดของ `Switch` ระบบ (ราว 51 × 31 บน iOS) — ส่วนที่เคยต่ำกว่า 48 ถูกแก้แล้ว: `Chip` และตัวเลือกใน `SegmentedControl` สูง ≥ 48, ช่องวันใน `WeekdayDots` แบบแตะได้กว้าง 1/7 ของแถว (ราว 43 dp บนจอ 360 dp, ≥ 44 บนจอ ≥ 390 — D57) สูง ≥ 48, ตารางสีตัวอย่างในแผ่นเลือกสีเอง 48 × 48
 
@@ -781,7 +762,7 @@ SPEC: "Animation เรียบ: ติ๊กเซ็ต (haptic), สลั�
 | สลับแท็บ | `animation: 'shift'` ของ `Tabs` (`src/app/(app)/(tabs)/_layout.tsx`) | `selectionAsync` | ใช้พฤติกรรมของ navigator |
 | เปลี่ยนสีหลัก/โหมด | แสงเรือง crossfade 350 ms (`Animated.timing`, native driver; `GlowBackground`) ส่วนอื่นเปลี่ยนทันที | — | เป็นการเปลี่ยนความทึบ ไม่ใช่การเคลื่อนที่ |
 | Sheet / NumberPad | `Modal animationType="slide"` ของระบบ | ปุ่มแป้นตัวเลข = `selectionAsync` | ใช้พฤติกรรมของระบบ |
-| เข้า onboarding / Paywall | `animation: 'fade'` (`src/app/_layout.tsx`); login/delete-account เปิดแบบ `modal` | — | ใช้พฤติกรรมของ navigator |
+| เข้า onboarding / Paywall | `animation: 'fade'` (`src/app/_layout.tsx`); delete-data เปิดแบบ `modal` | — | ใช้พฤติกรรมของ navigator |
 | ตัวจับเวลาพักครบ | — | `notificationAsync(Warning)` ครั้งเดียว | — |
 
 กฎ animation:
@@ -811,7 +792,7 @@ SPEC: "Animation เรียบ: ติ๊กเซ็ต (haptic), สลั�
 
 **Don't**
 
-- ❌ ห้ามเขียนสี hex/rgba ตรงในหน้าจอหรือ `src/features` (ยกเว้นสีแบรนด์ที่มาจาก `BRAND`) — ถ้าต้องการสีใหม่ให้เพิ่มเป็น token ใน `NEUTRALS` ทั้งสองโหมด แล้วเพิ่มในการตรวจ contrast
+- ❌ ห้ามเขียนสี hex/rgba ตรงในหน้าจอหรือ `src/features` — ถ้าต้องการสีใหม่ให้เพิ่มเป็น token ใน `NEUTRALS` ทั้งสองโหมด แล้วเพิ่มในการตรวจ contrast
 - ❌ ห้ามใช้ `Text`/`Switch`/`TextInput`/`Modal` ของ React Native ตรงๆ ในหน้าจอ ใช้ `AppText`/`Toggle`/`TextField`/`Sheet`
 - ❌ ห้ามใส่ข้อความ literal ใน JSX หรือ prop `accessibilityLabel`/`placeholder`/`title`/`label` (lint จะไม่ผ่าน)
 - ❌ ห้ามวาง `GlowBackground` เอง (ใช้ `Screen`) และห้ามปิดแสงนอกจากหน้าเซสชัน
@@ -820,7 +801,6 @@ SPEC: "Animation เรียบ: ติ๊กเซ็ต (haptic), สลั�
 - ❌ ห้ามปิดการขยายฟอนต์ หรือตั้ง `lineHeight` ของข้อความไทยต่ำกว่า ~1.35 เท่า (สระจะถูกตัด)
 - ❌ ห้ามใช้สีเป็นสัญญาณเดียวของสถานะ
 - ❌ ห้ามเพิ่มสีหลักเกิน 8 สี (SPEC กำหนด 8 + เลือกเอง; เทสต์ตรวจจำนวน) หรือข้ามการคำนวณ `deriveAccent()` ด้วยการใช้ base ตรงๆ
-- ❌ ห้ามเปลี่ยนสีปุ่มล็อกอินตามสีหลัก หรือทำให้ปุ่ม Google/Apple ขนาดไม่เท่ากัน
 - ❌ ห้ามฮาร์ดโค้ดราคาใน UI (ใช้ `priceString` จาก service, D20) และห้ามตัดราคา (D45)
 - ❌ ห้ามสร้าง animation ที่เคลื่อนที่โดยไม่เช็ก `useReduceMotion()`
 

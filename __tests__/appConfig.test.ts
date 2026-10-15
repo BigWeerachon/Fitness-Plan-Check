@@ -15,16 +15,20 @@ describe('app.config privacy manifest (SPEC N1, B13)', () => {
     }[];
   };
 
-  it('declares the collected data types, linked to the user, never for tracking', () => {
+  it('declares only what leaves the device (D81, D83): RevenueCat anonymous ID + purchase history', () => {
     const types = manifest.NSPrivacyCollectedDataTypes.map((d) => d.NSPrivacyCollectedDataType);
-    expect(types).toEqual(
-      expect.arrayContaining([
-        'NSPrivacyCollectedDataTypeUserID',
-        'NSPrivacyCollectedDataTypeFitness',
-        'NSPrivacyCollectedDataTypeHealth',
-        'NSPrivacyCollectedDataTypePurchaseHistory',
-      ]),
-    );
+    expect([...types].sort()).toEqual([
+      'NSPrivacyCollectedDataTypePurchaseHistory',
+      'NSPrivacyCollectedDataTypeUserID',
+    ]);
+    // ข้อมูลการฝึก/สุขภาพ/โปรไฟล์อยู่ในเครื่องเท่านั้น จึงต้องไม่ถูกประกาศว่าเก็บ
+    for (const local of [
+      'NSPrivacyCollectedDataTypeHealth',
+      'NSPrivacyCollectedDataTypeFitness',
+      'NSPrivacyCollectedDataTypeOtherDataTypes',
+    ]) {
+      expect(types).not.toContain(local);
+    }
     expect(new Set(types).size).toBe(types.length);
     for (const d of manifest.NSPrivacyCollectedDataTypes) {
       expect(d.NSPrivacyCollectedDataTypeLinked).toBe(true);

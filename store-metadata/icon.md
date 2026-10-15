@@ -53,5 +53,5 @@ python3 -c "from PIL import Image; Image.open('assets/icon.png').resize((512, 51
 
 - [ ] เจ้าของดู `assets/icon.png` และไฟล์ Android แล้วยืนยันว่าพอใจ (HUMAN_TASKS ข้อ 3)
 - [ ] ถ้าเปลี่ยนชื่อแอป ([app-names.md](app-names.md)) ไอคอนยังเข้ากับชื่อใหม่ (เช่น ชื่อ "SetCheck" ไปกับเครื่องหมายถูกได้ดี)
-- [ ] ทำไอคอน Play 512 × 512 และ feature graphic 1024 × 500 แล้วอัปโหลด (HUMAN_TASKS ข้อ 78)
+- [ ] ทำไอคอน Play 512 × 512 และ feature graphic 1024 × 500 แล้วอัปโหลด (HUMAN_TASKS ข้อ 55)
 - [ ] ตรวจไอคอนบนเครื่องจริงหลัง build (iOS หน้าโฮม + Settings, Android หลายรูปทรงหน้ากาก + themed icon)

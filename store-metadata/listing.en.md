@@ -5,7 +5,7 @@
 >
 > **How counts were made:** `node store-metadata/check-limits.js` counts the exact text of every block below (Unicode code points, including spaces, punctuation and line breaks) and fails if a limit is exceeded or a printed number is stale. Run it again after every edit and update the numbers in this file. Store consoles show their own counter; if it disagrees, the console wins. The URL placeholders (`<TERMS_URL>`, `<PRIVACY_URL>`) are counted at their placeholder length; the script also checks the descriptions with 80-character URLs.
 >
-> **Honesty rules used:** no prices in the text (prices come from the store through RevenueCat and differ by country), the free trial is described as "for eligible users", sign-in before the trial is stated, and the "not a medical device" disclaimer is included (SPEC N1, N2). The App Store text does not mention Android or Google Play (App Review Guideline 2.3.10); the Play text does not mention the App Store.
+> **Honesty rules used:** no prices in the text (prices come from the store through RevenueCat and differ by country), the free trial is described as "for eligible users", the app is described as having no account, with data only on the device and the user keeping backups, and the "not a medical device" disclaimer is included (SPEC N1, N2). The App Store text does not mention Android or Google Play (App Review Guideline 2.3.10); the Play text does not mention the App Store.
 
 ## Summary of limits
 
@@ -15,12 +15,12 @@
 | App name with descriptor (optional) | App Store / Play | 30 / 30 | 24 |
 | Subtitle | App Store | 30 | 29 |
 | Promotional text | App Store | 170 | 147 |
-| Description | App Store | 4000 | 3854 |
+| Description | App Store | 4000 | 3816 |
 | Keywords | App Store | 100 | 98 characters / 98 bytes |
-| What's New (1.0) | App Store | 4000 | 315 |
+| What's New (1.0) | App Store | 4000 | 333 |
 | Short description | Google Play | 80 | 65 |
-| Full description | Google Play | 4000 | 3752 |
-| Release notes (1.0) | Google Play | 500 | 315 (same text as What's New) |
+| Full description | Google Play | 4000 | 3715 |
+| Release notes (1.0) | Google Play | 500 | 333 (same text as What's New) |
 
 ---
 
@@ -58,7 +58,7 @@ Comma-separated, no spaces after commas. Words already in the name or subtitle (
 strength,lifting,weightlifting,progressive,overload,ppl,split,routine,tracker,1rm,fitness,exercise
 ```
 
-### Description — limit 4000 · count 3854
+### Description — limit 4000 · count 3816
 <!-- id:as_desc -->
 ```text
 Fitnese is a strength-training planner and workout log: open the app, see today's workout, and start in a few taps.
@@ -98,9 +98,9 @@ TARGETS (OPTIONAL)
 • No weight-loss targets for users under 18
 
 YOUR DATA
-• Offline-first: saved on your device, then synced to your account on all your devices
-• CSV export; delete your account and data in the app anytime
-• Sign in with Apple or Google. No ads, no tracking.
+• Works offline, no account or sign-in: your data stays on your device
+• Back up to a file you keep (Files, Drive, email) and restore it on a new phone; CSV export; delete all data anytime
+• No ads, no tracking.
 • Dark theme with a soft glow, light mode, 8 accent colors or your own; English and Thai
 
 MEMBERSHIP: FITNESE PRO
@@ -108,8 +108,8 @@ Fitnese Pro unlocks every feature. There is no permanently free version.
 • Monthly: auto-renewing. Eligible new subscribers get a 7-day free trial, then pay the monthly price shown in the app.
 • Lifetime: a one-time purchase. No free trial.
 • Prices are shown in the app and come from the App Store, in your local currency.
-• You sign in with Apple or Google before starting a trial or buying, so your membership belongs to your account and works on all your devices.
-• Payment is charged to your Apple Account when you confirm the purchase, or when the free trial ends. The subscription renews automatically unless it is cancelled at least 24 hours before the end of the current period. Manage or cancel it anytime in your App Store account settings. Deleting the app or your Fitnese account does not cancel it.
+• No sign-in needed: your membership belongs to your Apple Account. On a new device, tap Restore Purchases.
+• Payment is charged to your Apple Account when you confirm the purchase, or when the free trial ends. The subscription renews automatically unless it is cancelled at least 24 hours before the end of the current period. Manage or cancel it anytime in your App Store account settings. Deleting the app or its data does not cancel it.
 • Switching from Monthly to Lifetime (in Settings) does not cancel the monthly plan; cancel it in your App Store settings.
 • If your membership ends, features are locked but your data is kept and returns when you subscribe again.
 
@@ -120,11 +120,11 @@ Terms of Use: <TERMS_URL>
 Privacy Policy: <PRIVACY_URL>
 ```
 
-### What's New in this version (1.0) — count 315
+### What's New in this version (1.0) — count 333
 App Store Connect normally does not show this field for the very first version of an app (it appears from the first update). If you do not see it, skip it and reuse the text in the 1.0.1 update. The same text is used as the Google Play release notes.
 <!-- id:whats_new -->
 ```text
-First release of Fitnese: see today's workout the moment you open the app, plan your week freely, start from 6 editable templates and 143 exercises, log sets fast with a rest timer, get progressive overload suggestions, and see stats by program and muscle. Works offline and syncs to your account. English and Thai.
+First release of Fitnese: see today's workout the moment you open the app, plan your week freely, start from 6 editable templates and 143 exercises, log sets fast with a rest timer, get progressive overload suggestions, and see stats by program and muscle. Works offline with no account; back up to a file you keep. English and Thai.
 ```
 
 ### Other App Store fields
@@ -138,7 +138,7 @@ First release of Fitnese: see today's workout the moment you open the app, plan 
 | Privacy Policy URL | `<PRIVACY_URL>` (App Information) |
 | Terms of Use (EULA) | Linked in the description above (`<TERMS_URL>`). Apple requires a Terms of Use link for auto-renewable subscriptions, either in the description or as a custom EULA. |
 | Copyright | `© 2026 <DEVELOPER_NAME>` |
-| Age rating | Answer the questionnaire truthfully (see HUMAN_TASKS item 75) |
+| Age rating | Answer the questionnaire truthfully (see HUMAN_TASKS item 52) |
 
 ---
 
@@ -153,7 +153,7 @@ Same text as the App Store name block above (`Fitnese`, or the optional descript
 Plan your gym week, log sets fast and track progressive overload.
 ```
 
-### Full description — limit 4000 · count 3752
+### Full description — limit 4000 · count 3715
 <!-- id:play_desc -->
 ```text
 Fitnese is a strength-training planner and workout log: open the app, see today's workout, and start in a few taps.
@@ -193,9 +193,9 @@ TARGETS (OPTIONAL)
 • No weight-loss targets for users under 18
 
 YOUR DATA
-• Offline-first: saved on your device, then synced to your account on all your devices
-• CSV export; delete your account and data in the app anytime
-• Sign in with Google or Apple. No ads, no tracking.
+• Works offline, no account or sign-in: your data stays on your device
+• Back up to a file you keep (Drive, Files, email) and restore it on a new phone; CSV export; delete all data anytime
+• No ads, no tracking.
 • Dark theme with a soft glow, light mode, 8 accent colors or your own; English and Thai
 
 MEMBERSHIP: FITNESE PRO
@@ -203,8 +203,8 @@ Fitnese Pro unlocks every feature. There is no permanently free version.
 • Monthly: auto-renewing. Eligible new subscribers get a 7-day free trial, then pay the monthly price shown in the app.
 • Lifetime: a one-time purchase. No free trial.
 • Prices are shown in the app and come from Google Play, in your local currency.
-• You sign in with Google or Apple before starting a trial or buying, so your membership belongs to your account and works on all your devices.
-• Cancel anytime in Google Play (Payments & subscriptions > Subscriptions). Cancel during the free trial and you won't be charged; access lasts until the trial or billing period ends. Uninstalling the app or deleting your Fitnese account does not cancel the subscription.
+• No sign-in needed: your membership belongs to your Google account. On a new device, tap Restore Purchases.
+• Cancel anytime in Google Play (Payments & subscriptions > Subscriptions). Cancel during the free trial and you won't be charged; access lasts until the trial or billing period ends. Uninstalling the app or deleting its data does not cancel the subscription.
 • Switching from Monthly to Lifetime (in Settings) does not cancel the monthly plan; cancel it in Google Play.
 • If your membership ends, features are locked but your data is kept and returns when you subscribe again.
 
@@ -215,7 +215,7 @@ Terms of Use: <TERMS_URL>
 Privacy Policy: <PRIVACY_URL>
 ```
 
-### Release notes (1.0) — limit 500 · count 315
+### Release notes (1.0) — limit 500 · count 333
 Use the same text as "What's New" above.
 
 ### Other Play fields
@@ -253,11 +253,10 @@ Checked against the repository at commit `88bfff2` (HEAD of `claude/clever-bell-
 | BMR / TDEE / targets / MET; no weight-loss target under 18 | `src/domain/nutrition.ts` (`ADULT_AGE`, D28), i18n `onboarding.under18` |
 | CSV export (2 files) | `src/features/settings/exportCsv.ts`, D34 |
 | 8 accent colors or your own, dark / light / system theme | `src/theme/tokens.ts` (`ACCENT_PRESETS`) |
-| Sign in with Google / Apple only, equal prominence | `src/services/auth/supabaseAuth.ts`, D51 |
+| No account or sign-in; purchases with an anonymous RevenueCat ID, Restore Purchases via the store account | `src/services/purchases/revenueCat.ts` (`configure` without appUserID), D81 |
 | 7-day trial only for eligible users, lifetime without trial, prices from the store | `src/app/paywall.tsx`, `src/domain/entitlement/paywall.ts`, `src/services/purchases/mapping.ts`, i18n `paywall.*` |
-| Sign in before trial or purchase | `nextStepOnSelect` in `src/domain/entitlement/paywall.ts`, SPEC B4 |
 | Upgrade Monthly → Lifetime from Settings (does not cancel the monthly plan) | `src/app/(app)/(tabs)/settings.tsx` (`settings-lifetime`), i18n `paywall.upgrade.notice` |
 | Features locked but data kept when membership ends | SPEC B3, `src/features/access/AccessGate.tsx` |
-| Offline-first, sync to the account, delete account and data in the app | SPEC L, `src/features/sync/engine.ts`, `src/app/delete-account.tsx` |
+| Data only on the device; backup file + restore; delete all data on this device | D81, D82, `src/features/backup/`, `src/db/backup.ts`, `src/app/delete-data.tsx` |
 | No ads / analytics / tracking SDKs | `package.json` (none); `app.config.ts` `NSPrivacyTracking: false` |
 | References (Mifflin 1990, ISSN 2017, Compendium 2024, Epley) | `src/legal/content.ts` `REFERENCES`, screen `/references` |

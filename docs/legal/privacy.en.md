@@ -4,81 +4,80 @@ _Effective 15 October 2026_
 
 ## In short
 
-Fitnese collects only what it needs to plan and log your training. No ads, no analytics or crash-reporting SDKs, no cross-app tracking, and we never sell your data.
+Fitnese works offline. Everything you enter or log in the app (your profile, body measurements, workouts and daily log) stays on your device only. There are no user accounts and no sign-in, we run no servers or cloud database of our own, and we cannot see or access this data. No ads, no analytics or crash-reporting SDKs, no cross-app tracking, and we never sell data. The only data that leaves your device is purchase data, handled by Apple or Google and RevenueCat as described below.
 
-## What we collect
+## Data that stays on your device
 
-• Account: your user ID and email (or Apple’s private relay email) from the Google or Apple account you sign in with, plus the name and profile picture your sign-in provider may send, which our authentication provider (Supabase) may store with your account but the app does not use or display  
+The following is saved in the app’s private storage on your device and is never sent to us or anyone else:  
 • Profile and settings you enter (optional): sex, age, height, weight, activity level, goal, preferred units and settings such as the rest timer  
 • Training data: programs, weekly plan, routines, exercises (including custom exercises and notes you type), sets, weights, reps, body weight at workout time, workout times, intensity and calculated calories  
 • Daily entries you type in: calories burned/eaten and body weight  
-• Subscription status (trial/monthly/lifetime and expiry) from the App Store or Google Play via RevenueCat  
-• Technical data: IP address, device and operating-system type, app version, and an anonymous ID that RevenueCat creates when the app opens (even before you sign in), plus sign-in logs kept by our authentication provider, used for security, fraud prevention and purchase validation, not to locate you or for advertising  
-We do not collect photos, videos, location, contacts or payment card details.
+• Your setup answers and a cached copy of your latest subscription status (so the app works offline)  
+We have no copy of this data, so we cannot view, recover, correct or delete it for you remotely. Data on your device is protected by your device’s own security settings (such as your screen lock) and may be included in the operating system’s device backups if you have turned them on, under Apple’s or Google’s policies. Please do not put sensitive information in names or notes you type yourself.
 
-## Legal bases and consent
+## Data that leaves your device: purchases
 
-We process your data on these legal bases:  
-• Contract: to create and run your account, check your subscription access and sync your data between your devices.  
-• Explicit consent: health and body-related information you choose to enter (sex, age, height, weight, calories, workout results and history), which may be sensitive data under the law. You give this consent by choosing “Continue” on the sign-in screen (the sign-in screen says so), and we process and sync this data to the cloud based on that consent. You do not have to enter any health or body information at all. You can withdraw consent at any time by deleting your account and data in the app, or by asking us by email at the contact below. Withdrawing consent does not affect processing done before withdrawal.  
-• Legitimate interests: keeping the service secure and avoiding duplicate processing of subscription events.  
-• Legal obligation: where the law requires it.
+Purchases and free trials go through the App Store or Google Play, and the app checks your purchase status with RevenueCat when it opens and when you buy or restore. This involves:  
+• An anonymous ID: a random identifier that RevenueCat’s SDK creates on your device. It is not linked to your name, email or any account of ours.  
+• Purchase history: what you bought, purchase dates, trial/monthly/lifetime status, expiry, renewal and refund status, and the transaction or receipt information the store provides (including the store country and currency)  
+• Technical data needed for the connection: IP address, device and operating-system type and app version, used to validate purchases and prevent fraud, not to locate you or for advertising  
+In RevenueCat we can see purchase information only next to the anonymous ID; we never see your name, email, workouts or health data. Payments are processed by Apple or Google under their own policies, and we never see or store your card details. Data sent to RevenueCat is encrypted with HTTPS/TLS.  
+When you open a link from the app (for example the web version of a policy, a reference, or the store’s subscription page), that website’s own policy applies. We do not collect photos, videos, location or contacts.
+
+## Backup and export files
+
+“Back up data” creates a file (fitnese-backup-….json) containing all of your data in the app, including body and health information, and “Export CSV” creates spreadsheet files of your workouts and daily log. The file is created on your device and handed to the system share sheet; you choose where to save or send it (for example Google Drive, Files, LINE or email), and that service’s own policy applies. We never receive a copy. The file is not encrypted, so anyone who gets it can read it; keep it somewhere safe. “Restore from file” reads the file you choose on your device and replaces the data on this device without sending the file anywhere.
+
+## Legal bases
+
+• Data on your device: the app processes it on your device, under your control. We do not receive, store or access it. Body and health information is optional; you do not have to enter any, and you can delete it at any time.  
+• Purchase data: contract (to give you the access you bought and to restore purchases), legitimate interests (validating purchases, preventing fraud and keeping the service secure), and legal obligation where the law requires it.
 
 ## How we use it
 
-To show today’s plan, calculate targets (BMR/TDEE/macros/calories), show your stats, sync between your devices, and check access according to your subscription.  
-Providing an email (through your Google or Apple account) is necessary to create an account and buy; without it we cannot offer an account-based service. Profile and daily-log data is optional, and without it the target calculators may not show results. We do not use automated decisions that have legal or similarly significant effects on you. Values the app calculates are estimates only, and access to features depends only on the subscription status reported by the store.
-
-## Storage and sync
-
-Data is always saved on your device first. While you have access, it syncs to a cloud database (Supabase) configured with Row Level Security so users can read and change only their own account’s data. Data between the app and our servers is encrypted with HTTPS/TLS, and we access your data only as needed to run the service and fix problems. Sign-in tokens are kept in the system’s encrypted storage (Keychain/Keystore). No system is perfectly secure, and data on your device is protected by your device’s own security settings.  
-Signing out does not delete data on your device. Deleting your account or uninstalling the app removes the local data on that device. If you signed in with Google you can remove the app’s access in your Google Account security settings. Please do not put sensitive information in names or notes you type yourself.
+The app uses the data on your device to show today’s plan, calculate targets (BMR/TDEE/macros/calories) and show your stats, all calculated on the device. Purchase data is used to check your access, restore purchases, show when your trial ends or your plan renews, and answer your questions about purchases. Without purchase data (for example if you do not buy) the membership features cannot be used. Profile and daily-log data is optional, and without it the target calculators may not show results. We do not use automated decisions that have legal or similarly significant effects on you. Values the app calculates are estimates only, and access to features depends only on the purchase status reported by the store.
 
 ## Service providers
 
-• Google / Apple: sign-in  
-• Supabase: accounts and cloud database  
-• RevenueCat: purchase validation and subscription status, using an anonymous ID before sign-in and your account ID after sign-in  
-• Apple App Store / Google Play: payments, free trials and cancellations  
-Supabase and RevenueCat process data on our behalf only to run the app and are contractually required to give your data the same level of protection described in this policy. Google and Apple act as independent controllers for their own sign-in, account and payment services under their own policies. We do not sell your personal data, do not share it for cross-context behavioural advertising, and do not disclose it to anyone other than the providers above, except where the law or a competent authority requires.
+• RevenueCat: purchase validation and subscription status, using the anonymous ID  
+• Apple App Store / Google Play: payments, free trials, renewals, cancellations and refunds  
+RevenueCat processes data on our behalf only to run the app and is contractually required to give it the same level of protection described in this policy. Apple and Google act as independent controllers for their own store accounts and payment services under their own policies. We do not sell personal data, do not share it for cross-context behavioural advertising, and do not disclose it to anyone other than the providers above, except where the law or a competent authority requires.
 
 ## International transfers
 
-Our providers (Supabase, RevenueCat, Apple and Google) may store and process your data on servers outside Thailand and outside your country, such as the United States and the region we select for Supabase. When data is transferred abroad, we make sure the recipient applies appropriate safeguards as required by law, such as standard contractual clauses, or we rely on your consent.
+RevenueCat, Apple and Google may store and process purchase data on servers outside Thailand and outside your country, such as the United States. When data is transferred abroad, we make sure the recipient applies appropriate safeguards as required by law, such as standard contractual clauses. Your training and health data is not transferred anywhere unless you send a backup or export file yourself.
 
 ## Health information and disclaimer
 
-Values calculated by the app are estimates and general guidance, not medical advice. The app is not a medical device and does not diagnose or treat any condition. We don’t use your data for advertising and don’t share it with insurers or data brokers.
+Values calculated by the app are estimates and general guidance, not medical advice. The app is not a medical device and does not diagnose or treat any condition. Your health information stays on your device; it is never used for advertising and never shared with insurers or data brokers.
 
 ## Retention and deletion
 
-We keep your data while your account exists. You can delete your account and all data in the app (Account → Delete account and data). When you do:  
-• Cloud data is deleted, including your subscription event records and we ask RevenueCat to delete your customer record (if that fails, contact us and we will follow up)  
-• Data on the device where you delete is cleared. Other devices you signed in on may keep a local copy until you remove the app on that device  
-• If you signed in with Apple on an iPhone or iPad, we ask Apple to revoke the Sign in with Apple connection for you. If you signed in with Apple and the revocation fails, or you are on Android, revoke Fitnese’s access yourself in your Apple ID settings (Sign in with Apple) at appleid.apple.com  
-• Deleting your account does not cancel a store subscription; cancel it in your store account settings  
-Items you delete one by one in the app (for example a session or program) are marked deleted and no longer shown, but may remain in our systems until you delete your whole account. If your access expires, your cloud data stays but cannot sync until you subscribe again. Our providers’ backups may keep deleted data for a limited period under their own policies, and purchase records held by Apple or Google follow that store’s policy.  
-Subscription event records, which are used only to ignore duplicate notifications (they hold your user ID, event type and time, and no payment details), are deleted automatically once they are older than 90 days (removal happens the next time subscription events are processed, normally soon after 90 days).  
-If you can no longer open the app or have uninstalled it, you can ask us to delete your account and data by emailing the contact below from the address you sign in with (subject: Delete account). We will verify your identity and complete the deletion within 30 days.
+• Data on your device stays until you delete it. It is not deleted when your access ends.  
+• Delete everything: Settings → Your data → Delete all data on this device (always available, even without access, through the “Settings” button on the membership screen). This erases your workouts, profile, daily log, setup answers, cached subscription status and last-backup date. Device preferences such as language, theme and accent color are kept. Uninstalling the app also removes all of its data.  
+• Items you delete one by one (for example a session or program) are hidden immediately and may remain in the app’s database on your device until you delete all data, restore from a file or uninstall. They are never included in backup files.  
+• Backup or export files you saved elsewhere are not deleted by the app; delete them yourself wherever you keep them.  
+• Deleting your data does not cancel a store subscription; cancel it in your store account settings.  
+• Purchase data at RevenueCat is kept as long as needed to provide your access and restore purchases, and for any period the law requires. To ask for its deletion, contact us below. Because the ID is anonymous, we may ask for something that helps us find the record, such as the order number on your store receipt. Purchase records held by Apple or Google follow that store’s policy.
 
 ## Your rights
 
-You have the right to access and receive a copy of your data, correct it, delete it, restrict its use, object to processing, and receive it in a machine-readable format, and you may withdraw consent at any time (for example by deleting your account and data in the app). Withdrawing consent does not affect processing done before.  
-• In the app: you can edit most of your data yourself, export your workouts and daily log as CSV files (Settings → Export CSV, while your access is active), and always delete your account and data (Account → Delete account and data).  
-• By email: send a request to the contact below from the address you sign in with to get a copy of everything else, such as your profile and programs, or to use the other rights above. This also works if you have uninstalled the app.  
+You have the right to access and receive a copy of your data, correct it, delete it, restrict its use, object to processing, receive it in a machine-readable format, and withdraw any consent at any time.  
+• Data on your device: we do not hold it, so you exercise these rights directly in the app. You can view and edit almost everything, get a complete machine-readable copy with Settings → Your data → Back up data (always available, even without access) or Export CSV (while your access is active), and erase everything with “Delete all data on this device”.  
+• Purchase data: send a request to the contact below and we will handle it with RevenueCat. For data held by Apple or Google, use your rights with that store directly.  
 We reply within 30 days of receiving the request, free of charge. If you believe we do not comply with data protection law, you have the right to complain to the Personal Data Protection Committee (PDPC) of Thailand or to the supervisory authority in your country.
 
 ## Children and minors
 
-The app is not directed to children under 13. We do not knowingly collect data from children under 13 and will delete it if we learn we have. Users who are minors, or below the age at which the law that applies to them lets them consent on their own, need a parent or guardian’s consent to use the app. Parents may ask us to delete a child’s data through the contact below. For users under 18 who enter their age, the app does not show weight-loss targets.
+The app is not directed to children under 13, and we do not knowingly collect data from children under 13; if we learn that we hold purchase data of such a child, we will delete it. Users who are minors, or below the age at which the law that applies to them lets them consent on their own, need a parent or guardian’s consent to use the app. Parents can erase the data on the device with “Delete all data on this device” or contact us below. For users under 18 who enter their age, the app does not show weight-loss targets.
 
 ## California residents
 
-We collect identifiers (user ID, email), commercial information (subscription status) and sensitive personal information about health that you enter yourself, for the purposes above. We do not sell or share personal information for cross-context behavioural advertising, and we use sensitive information only to provide the service you request. You have the right to know, delete and correct your information, and will not be discriminated against for using these rights. Send requests by email to the contact below. An authorised agent may submit a request for you.
+The only personal information collected, through RevenueCat, is an identifier (the anonymous ID), commercial information (purchase history) and technical connection data, for the purposes above. Health information you enter stays on your device and is never received by us. We do not sell or share personal information for cross-context behavioural advertising. You have the right to know, delete and correct your information, and will not be discriminated against for using these rights. Send requests by email to the contact below. An authorised agent may submit a request for you.
 
 ## Changes
 
-We’ll announce material changes in the app or on the store page before they take effect. If we change the purposes for which we use your data, we will ask for your consent again where the law requires.
+We’ll announce material changes in the app or on the store page before they take effect. If we change the purposes for which we use data or start sending a new kind of data off your device, we will tell you first and ask for your consent where the law requires.
 
 ## Contact
 

@@ -1,11 +1,11 @@
 # ความคืบหน้า (PROGRESS)
 
-> อัปเดตหลังจบทุกงาน — ถ้าเซสชันขาด: อ่านไฟล์นี้แล้วทำงานที่ "เหลือ" ต่อตาม [TASKS.md](TASKS.md) · ตรวจกับโค้ดและ git log ณ วันที่ 2026-10-11 (หลัง `fc98e06`)
+> อัปเดตหลังจบทุกงาน — ถ้าเซสชันขาด: อ่านไฟล์นี้แล้วทำงานที่ "เหลือ" ต่อตาม [TASKS.md](TASKS.md) · ตรวจกับโค้ดและ git log ณ วันที่ 2026-10-14 (แอปออฟไลน์ล้วน D81 ครบ 5 เฟส — [SPEC_CHANGES.md](SPEC_CHANGES.md) มีผลเหนือ SPEC)
 
 ## สถานะล่าสุด
-- **เสร็จ:** P1, P2, T01–T18 (โค้ดแอป + Supabase + เทสต์ + ตรวจภาพ + เอกสารสโตร์ + ตรวจย้อนกลับทุกข้อของสเปค) และรอบแก้ตามผลตรวจสเปค 10 รอบ (ตารางด้านล่าง)
-- **กำลังทำ:** ไม่มีงานโค้ดค้าง — เอกสารตรวจสุดท้าย [FINAL_CHECK.md](FINAL_CHECK.md) (T18) กำลังถูกเขียนโดยเอเจนต์อีกตัว (ไฟล์อาจยังไม่ปรากฏใน repo ตอนอ่านหน้านี้)
-- **เหลือ (ต้องใช้มนุษย์):** ทุกอย่างใน [HUMAN_TASKS.md](HUMAN_TASKS.md) — บัญชี/คีย์จริง, สินค้าและ free trial offer ในสโตร์, ราคา, build จริงด้วย EAS, ทดสอบซื้อบนอุปกรณ์จริงตาม [TEST_PLAN.md](TEST_PLAN.md), กรอก placeholder ของเอกสารกฎหมาย/`store-metadata/` แล้วทำตาม [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) และตัดสิน [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) Q12–Q17 (Apple บน Android, 'แก้ไขการตั้งค่าเริ่มต้น', ทางลัด 'มีบัญชีแล้ว', ช่วงย้อนหลัง 7 วัน, ชื่อ/รูป Google ใน Supabase, ตรวจไอคอนกล้ามเนื้อบนเครื่องจริง)
+- **เสร็จ:** P1, P2, T01–T18 และรอบแก้ตามผลตรวจสเปค 10 รอบ (ตารางด้านล่าง) แล้วเปลี่ยนเป็นแอปออฟไลน์ล้วนตามการตัดสินของเจ้าของ 2026-10-14 (D81 เฟส 1–5: ชั้นข้อมูล, ไม่มีล็อกอิน, ตัดฝั่งเซิร์ฟเวอร์, สำรอง/กู้คืนเป็นไฟล์, เอกสาร/กฎหมาย/สโตร์) — T07 (sync) และ T08 (Supabase) ถูกแทนที่
+- **กำลังทำ:** ไม่มีงานโค้ดค้าง
+- **เหลือ (ต้องใช้มนุษย์):** ทุกอย่างใน [HUMAN_TASKS.md](HUMAN_TASKS.md) (ข้อ 1–62 — RevenueCat, สโตร์, ราคา, build จริงด้วย EAS, โฮสต์หน้ากฎหมาย), ทดสอบซื้อ/กู้คืน/สำรอง/ลบข้อมูลบนอุปกรณ์จริงตาม [TEST_PLAN.md](TEST_PLAN.md), กรอก placeholder ของ `store-metadata/` แล้วทำตาม [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) และตัดสิน [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) Q13, Q15, Q17, Q18, Q21–Q25 (โดยเฉพาะ Q21 ป้ายความเป็นส่วนตัวของ RevenueCat ก่อนส่งรีวิว)
 
 | งาน | สถานะ | หลักฐาน (commit / เทสต์) |
 |---|---|---|
@@ -17,14 +17,15 @@
 | T04 สถิติ | ✅ | `b6d232a`, `642fda6` — `__tests__/domain/stats.test.ts`, `periods.test.ts` |
 | T05 คลังท่า + เทมเพลต | ✅ | `fb8c8f7` — `__tests__/data/exercises.test.ts`, `templates.test.ts` |
 | T06 Repository | ✅ | `e26f21c` — `__tests__/db/repos.test.ts`, `migrations.test.ts` |
-| T07 Sync engine | ✅ | `149417f` — `__tests__/sync/engine.test.ts`, `cursor.test.ts` (ต่อมาเสริมใน `06a677e` — `engineRobustness.test.ts`) |
+| T07 Sync engine | ⛔ ถูกแทนที่ (D81) | เดิม `149417f` — `__tests__/sync/engine.test.ts`, `cursor.test.ts` (ต่อมาเสริมใน `06a677e` — `engineRobustness.test.ts`) |
 | D81 ออฟไลน์ล้วน — เฟส 1/5 ชั้นข้อมูล | ✅ | ตัด sync engine/คิว/เคอร์เซอร์/สถานะซิงก์ + migration `0004`/`0005` — `__tests__/db/migrations.test.ts` (อัปเกรดฐานข้อมูลยุคซิงก์), `repos.test.ts` (ไม่มีคิวซิงก์); T07 ถูกแทนที่ |
-| D81 ออฟไลน์ล้วน — เฟส 2/5 ไม่มีล็อกอิน | ✅ | ตัด Supabase Auth/Google/Apple/หน้าล็อกอิน/ล็อกเอาต์; RevenueCat นิรนาม ซื้อ/กู้คืนโดยไม่ล็อกอิน; `/delete-data` ลบข้อมูลทั้งหมดในเครื่อง + migration `0006` (D81.2) — `__tests__/flows/account.test.ts`, `offline-access.test.ts`, `app/paywall.test.tsx`, `app/delete-data.test.tsx`, `features/deleteAllData.test.ts`, `features/useRestorePurchases.test.tsx`, `app/onboarding-entitled.test.tsx`, `db/migrations.test.ts`; ยังเหลือ: โฟลเดอร์ `supabase/` + เทสต์ `__tests__/supabase/*`, ข้อความนโยบายความเป็นส่วนตัว/ข้อกำหนด และเอกสาร ARCHITECTURE/HUMAN_TASKS/FINAL_CHECK ที่ยังพูดถึงล็อกอิน (เฟสถัดไปของ D81) |
+| D81 ออฟไลน์ล้วน — เฟส 2/5 ไม่มีล็อกอิน | ✅ | ตัด Supabase Auth/Google/Apple/หน้าล็อกอิน/ล็อกเอาต์; RevenueCat นิรนาม ซื้อ/กู้คืนโดยไม่ล็อกอิน; `/delete-data` ลบข้อมูลทั้งหมดในเครื่อง + migration `0006` (D81.2) — `__tests__/flows/account.test.ts`, `offline-access.test.ts`, `app/paywall.test.tsx`, `app/delete-data.test.tsx`, `features/deleteAllData.test.ts`, `features/useRestorePurchases.test.tsx`, `app/onboarding-entitled.test.tsx`, `db/migrations.test.ts`; ส่วนที่เหลือตอนจบเฟสนี้ (`supabase/`, นโยบายฯ/ข้อกำหนด, เอกสารที่ยังพูดถึงล็อกอิน) ปิดในเฟส 3 และ 5 แล้ว |
 | D81 ออฟไลน์ล้วน — เฟส 3/5 ตัดฝั่งเซิร์ฟเวอร์ | ✅ | ลบ `supabase/`, Edge Functions, `verify-supabase.sh`, `sync-shared.js` และตัวแปลงเหตุการณ์ webhook ใน state machine (D81.3) — `__tests__/domain/entitlement.test.ts`; `expo export` + `expo prebuild` (android) ผ่าน; T08 ถูกแทนที่ |
 | D81 ออฟไลน์ล้วน — เฟส 4/5 สำรอง/กู้คืนเป็นไฟล์ | ✅ | ไฟล์สำรอง JSON มีเวอร์ชัน + แชร์ผ่านหน้าแชร์ของระบบ, กู้คืนจากไฟล์ (ตรวจ/สรุป/ยืนยัน/แทนที่ในทรานแซกชันเดียว) ในหน้าตั้งค่าและหน้าบัญชีที่เข้าได้แม้ล็อก + วันที่สำรองล่าสุด (D82) — `__tests__/domain/backup.test.ts`, `db/backup.test.ts` (round-trip กับ SQLite จริง + rollback), `features/useBackup.test.tsx`, `app/backup.test.tsx`; ยังไม่ได้ทดสอบบนเครื่องจริง (หน้าแชร์/ตัวเลือกไฟล์ของ iOS/Android) |
-| T08 Supabase backend | ✅ | `8d2ae66` — `__tests__/supabase/*`, `npm run supabase:verify` (Postgres 16 จริง), `deno check` |
+| D81 ออฟไลน์ล้วน — เฟส 5/5 เอกสาร กฎหมาย สโตร์ | ✅ | [SPEC_CHANGES.md](SPEC_CHANGES.md) (ทุกข้อของ SPEC ที่ถูกแทนที่), CLAUDE.md, D83–D84, นโยบายความเป็นส่วนตัว/ข้อกำหนดฉบับออฟไลน์ (`src/legal/content.ts` → `docs/legal/`), privacy manifest เหลือ UserID + PurchaseHistory, `store-metadata/` (ป้ายความเป็นส่วนตัว, Data safety, App Review Notes ไม่มีบัญชีทดสอบ, ข้อความหน้าร้าน), HUMAN_TASKS เขียนใหม่ ข้อ 1–62, ARCHITECTURE/DATA_MODEL/SCREENS/TEST_PLAN/OPEN_QUESTIONS/FINAL_CHECK/RELEASE_CHECKLIST — `__tests__/legal.test.ts`, `appConfig.test.ts`, `node store-metadata/check-limits.js` |
+| T08 Supabase backend | ⛔ ถูกแทนที่ (D81.3) | เดิม `8d2ae66` — ลบ `supabase/` และเทสต์ทั้งหมดแล้ว |
 | T09 ตั้งค่าเริ่มต้น | ✅ | `631ffaa`, `fb8c8f7` — `__tests__/app/onboarding.test.tsx` (+ `onboarding-entitled.test.tsx` จาก `96d13a9`) |
-| T10 Paywall/ล็อกอิน/บัญชี/กฎหมาย | ✅ | `3565f00` — `__tests__/app/paywall.test.tsx`, `gate.test.tsx`, `__tests__/flows/account.test.ts` |
+| T10 Paywall/ล็อกอิน/บัญชี/กฎหมาย | ✅ (ล็อกอินถูกตัดใน D81.2) | `3565f00` — `__tests__/app/paywall.test.tsx`, `gate.test.tsx`, `__tests__/flows/account.test.ts` |
 | T11 หน้าแรก | ✅ | `766b0e3` — `__tests__/app/today-programs.test.tsx` |
 | T12 โปรแกรม/ตาราง/คลังท่า | ✅ | `766b0e3` — `__tests__/app/today-programs.test.tsx` (+ `programs-audit.test.tsx` จาก `2d7a945`) |
 | T13 เซสชัน | ✅ | `512c94a` — `__tests__/app/session.test.tsx` |
@@ -52,18 +53,16 @@
 | 9 สถิติ/โปรไฟล์ | `5dcc15a`, merge `395d319` | 'เพิ่มเติม' ในโปรไฟล์, คำเตือน + แหล่งอ้างอิงทุกหน้าผลคำนวณ, ส่งต่อตัวกรองกรุ๊ป/ช่วงเวลาไปความแข็งแรงและประวัติ, สีกราฟ 12 สี | D72 |
 | รวมสุดท้าย | `b683352`, `fc98e06` | แก้เทสต์/lint หลังรวม; บันทึก D60–D74 | — |
 
-## ผลตรวจล่าสุด (2026-10-11)
+## ผลตรวจล่าสุด (2026-10-15, หลัง D81 เฟส 5)
 
 | รายการ | ผล |
 |---|---|
-| `npm run check` (typecheck + lint + jest) | ผ่าน — 55 ชุดเทสต์, 682 ข้อผ่าน + 1 ข้ามโดยตั้งใจ (guard `RELEASE` ของเอกสารกฎหมายใน `__tests__/legal.test.ts` ทำงานเฉพาะเมื่อ `RELEASE=1`) |
-| `npm run contrast` | ผ่านทุกสีหลักทั้งสองโหมด (ตรวจซ้ำตอนปรับเอกสารนี้: "ALL CONTRAST CHECKS PASSED") |
-| `npm run supabase:verify` | ผ่าน — migration ทั้ง 3 ไฟล์ + `supabase/tests/rls_test.sql` บน Postgres จริง |
-| `deno check` (Edge Functions) | ผ่าน |
-| `expo export` iOS / Android | ผ่านทั้งสองแพลตฟอร์ม |
-| `expo prebuild` iOS / Android | ผ่านทั้งสองแพลตฟอร์ม (สภาพแวดล้อมนี้ไม่มี Xcode/Android SDK จึง build จริงไม่ได้ — D21) |
-
-หมายเหตุ: ตัวเลขเทสต์/ผล `check`, `supabase:verify`, `deno check`, export และ prebuild มาจากการรันของเจ้าของงานในรอบปิดงาน (เอกสารนี้ไม่ได้รันชุดเทสต์ทั้งหมดซ้ำ) จำนวนชุดเทสต์ 55 ตรวจกับ `__tests__/` แล้ว
+| `npm run check` (typecheck + lint + jest) | ผ่าน — 60 ชุด / 722 ข้อ: ผ่าน 721 + ข้าม 1 (ข้ามโดยตั้งใจ: guard `RELEASE` ของเอกสารกฎหมายใน `__tests__/legal.test.ts` ทำงานเฉพาะเมื่อ `RELEASE=1`) |
+| `node store-metadata/check-limits.js` | ผ่านทุกช่อง (เหลือ placeholder ที่เจ้าของต้องกรอก 10 ชนิด — รายการใน `store-metadata/README.md`) |
+| `npm run legal:export` | สร้าง `docs/legal/*.md` ใหม่จาก `src/legal/content.ts` ฉบับออฟไลน์ |
+| `npm run contrast` | ผ่านทุกสีหลักทั้งสองโหมด (รอบ 2026-10-11 — เฟส D81 ไม่ได้แก้สี) |
+| `expo export` / `expo prebuild` | ผ่านหลังตัดฝั่งเซิร์ฟเวอร์ (D81 เฟส 3) — สภาพแวดล้อมนี้ไม่มี Xcode/Android SDK จึง build จริงไม่ได้ (D21) |
+| `npm run supabase:verify`, `deno check` | ไม่มีแล้ว (ตัด Supabase — D81.3) |
 
 ## TODO ที่ค้างในโค้ด
-(ไม่มี — `grep -rn "TODO\|FIXME" src supabase scripts` ว่าง ตรวจซ้ำเมื่อ 2026-10-11)
+(ไม่มี — `grep -rn "TODO\|FIXME" src scripts` ว่าง ตรวจซ้ำเมื่อ 2026-10-14)
