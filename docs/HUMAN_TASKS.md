@@ -49,7 +49,7 @@
 | `<TEAM_ID>` | 10 ตัวอักษร เช่น `AB12CD34EF` | 4 | `.env`/EAS `APPLE_TEAM_ID` | |
 | `<EAS_PROJECT_ID>` | UUID | 14 | EAS environment variable `EAS_PROJECT_ID` (หรือค่าคงที่ใน `app.config.ts`) → `extra.eas.projectId` | |
 | `<RC_IOS_KEY>` / `<RC_ANDROID_KEY>` | `appl_...` / `goog_...` | 17 | `EXPO_PUBLIC_RC_IOS_KEY` / `EXPO_PUBLIC_RC_ANDROID_KEY` | |
-| `<PRIVACY_URL>` / `<TERMS_URL>` | `https://...` | 13 | `EXPO_PUBLIC_PRIVACY_URL` / `EXPO_PUBLIC_TERMS_URL`, ฟอร์มสโตร์ | |
+| `<PRIVACY_URL>` / `<TERMS_URL>` | `https://fitnese-legal.vercel.app/privacy` / `https://fitnese-legal.vercel.app/terms` (ตั้งค่าใน `eas.json` แล้ว) | 13 | `EXPO_PUBLIC_PRIVACY_URL` / `EXPO_PUBLIC_TERMS_URL`, ฟอร์มสโตร์ | |
 | `<ASC_APP_ID>` | ตัวเลข 10 หลัก | 21 | `eas.json` → `submit.production.ios.ascAppId` | |
 | Google Cloud project ID | `fitnese-123456` | 7 | service account (ข้อ 34), RTDN (ข้อ 35) | |
 
@@ -150,6 +150,7 @@
   - **ที่ไหน:** เว็บโฮสต์แบบ static ใดก็ได้ที่คุณควบคุม (เว็บไซต์ของคุณ, GitHub Pages ฯลฯ) ควรมีทั้งไทยและอังกฤษ — นี่เป็น "เว็บ" อย่างเดียวที่แอปต้องมี (ไม่มี backend)
   - **สร้างหน้าเว็บให้แล้ว:** `site/` (HTML นิ่ง ไทย+อังกฤษในหน้าเดียวต่อเอกสาร: `/privacy`, `/terms`, `/references`) สร้างจาก `docs/legal/*.md` ด้วย `python3 scripts/build-legal-site.py` (ต้อง `pip install markdown`) — ถ้าแก้ `src/legal/content.ts` ให้รัน `npm run legal:export` แล้วสร้างใหม่และ deploy ซ้ำ ใช้ deploy บน Vercel/Netlify/GitHub Pages โดยชี้ root ไปที่ `site/`
   - **ใส่ค่า:** หน้า Privacy ต้องมีหัวข้อ "การเก็บรักษาและการลบข้อมูล" (มีอยู่แล้ว) — แอปไม่มีบัญชี จึงไม่ต้องมีหน้า "ขอลบบัญชีบนเว็บ" ของ Google Play
+  - **สถานะ:** สร้างโปรเจกต์ Vercel `fitnese-legal` แล้ว (โดเมน `fitnese-legal.vercel.app`, Root Directory `site`) — ต้องตั้ง Production Branch ให้เป็นสาขาที่มีโฟลเดอร์ `site/` (หรือ merge เข้า `main`) และปิด Vercel Authentication แล้วเปิด `/privacy` กับ `/terms` ทดสอบในหน้าต่างไม่ระบุตัวตนก่อนส่งสโตร์ · ค่า URL ใส่ใน `eas.json` (`build.base.env`) ให้แล้ว ถ้าเปลี่ยนโดเมนต้องแก้ที่นั่นด้วย
   - **ผลลัพธ์ →** `<PRIVACY_URL>`, `<TERMS_URL>` → `EXPO_PUBLIC_PRIVACY_URL`, `EXPO_PUBLIC_TERMS_URL` (ข้อ 18–19), App Store Connect (ข้อ 21, 49), Play Console (ข้อ 50–51)
 
 ---
