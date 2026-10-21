@@ -54,7 +54,7 @@
 2. **ตัดสินสิทธิ์ที่เดียว (B8)** — `src/domain/entitlement/machine.ts` + `src/features/access/useAccess.ts` ทุกหน้าใช้ร่วมกัน ห้ามเขียนเงื่อนไขสิทธิ์กระจาย
 3. **ไม่มีตัวนับเวลาทดลองในแอป (B2)** — สถานะทั้งหมดมาจาก customerInfo ของ RevenueCat แอปเก็บแค่ "แคช" สำหรับออฟไลน์ (B9)
 4. **ข้อมูลที่ออกจากเครื่องมีแค่การซื้อ** — RevenueCat `configure` โดยไม่ส่ง appUserID ไม่เรียก `logIn`/`logOut`/`setAttributes` (ต้องตรงกับ privacy manifest และนโยบายฯ — D83)
-5. **ไม่มีคีย์จริงก็รันได้** — `src/services/registry.ts` ใช้ mock adapter เมื่อ `EXPO_PUBLIC_USE_MOCKS=1` หรือ dev build ที่ยังไม่มีคีย์ RevenueCat (release build จะไม่แอบใช้ mock)
+5. **ไม่มีคีย์จริงก็รันได้** — `src/services/registry.ts` ใช้ mock adapter เมื่อ `EXPO_PUBLIC_USE_MOCKS=1` หรือ dev build ที่ยังไม่มีคีย์ RevenueCat (release build จะไม่แอบใช้ mock — ยกเว้น APK ทดลองจากโปรไฟล์ `tryout`, D85)
 
 ## 2. โครงโฟลเดอร์
 
@@ -201,7 +201,7 @@
 | ลบข้อมูล (B12 ตาม SPEC_CHANGES) | `wipeLocalData` ลบตารางผู้ใช้ทุกตาราง + ร่าง + แคชสิทธิ์ + ค่าตั้งค่าของผู้ใช้ในทรานแซกชันเดียว ยืนยัน 2 ขั้น ไม่ยกเลิกสมาชิกในสโตร์ (แจ้งผู้ใช้พร้อมทางลัด) |
 | ข้อมูลขั้นต่ำ (B13) | ไม่มีบัญชี/อีเมล/ชื่อ ข้อมูลสุขภาพไม่ออกจากเครื่อง |
 | คีย์ใน .env | `EXPO_PUBLIC_*` เป็นคีย์สาธารณะ (RevenueCat public SDK key) ไม่มี secret ฝั่งเซิร์ฟเวอร์ |
-| release build | ไม่ใช้ mock เด็ดขาด (`decideMocks`) — กัน "ซื้อฟรี" (B2, D47) |
+| release build | ไม่ใช้ mock เด็ดขาด (`decideMocks`) — กัน "ซื้อฟรี" (B2, D47) ข้อยกเว้นเดียว: APK โปรไฟล์ EAS `tryout` (`EXPO_PUBLIC_TRYOUT_BUILD=1`, D85) ใช้สโตร์จำลอง + package id `.tryout` + ป้ายบนจอ ห้ามส่งสโตร์ |
 
 ## 7. เหตุผลที่เลือกเทคโนโลยี
 

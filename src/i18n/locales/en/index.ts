@@ -17,6 +17,7 @@ import settings from './settings';
 import appearance from './appearance';
 import legal from './legal';
 import backup from './backup';
+import tryout from './tryout';
 
 // แต่ละหมวดอยู่คนละไฟล์ เพิ่ม key ในไฟล์ของหมวดนั้นๆ
 const en = {
@@ -39,6 +40,7 @@ const en = {
   appearance,
   legal,
   backup,
+  tryout,
 };
 
 export default en;

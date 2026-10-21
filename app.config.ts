@@ -1,7 +1,13 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
 // ค่าที่ต้องเปลี่ยนก่อน build จริง อ่านจาก .env (ดู docs/HUMAN_TASKS.md)
-const BUNDLE_ID = process.env.APP_BUNDLE_ID || 'com.example.fitnese';
+const BASE_BUNDLE_ID = process.env.APP_BUNDLE_ID || 'com.example.fitnese';
+// slug ต้องตรงกับโปรเจกต์บน expo.dev ถ้าเจ้าของตั้งชื่อต่างจาก 'fitnese' ให้ตั้ง APP_SLUG (ไม่กระทบ build ที่ส่งสโตร์นอกจากชื่อโปรเจกต์)
+const SLUG = process.env.APP_SLUG || 'fitnese';
+// บิลด์ทดลอง APK (D85, โปรไฟล์ EAS `tryout`): ชื่อ/รหัสแอปแยก เพื่อไม่ให้ถูกส่งสโตร์หรือทับแอปจริง และติดตั้งคู่กันได้
+const TRYOUT = process.env.EXPO_PUBLIC_TRYOUT_BUILD === '1';
+const BUNDLE_ID = TRYOUT ? `${BASE_BUNDLE_ID}.tryout` : BASE_BUNDLE_ID;
+const APP_NAME = TRYOUT ? 'Fitnese (Test)' : 'Fitnese';
 // รหัสโปรเจกต์ EAS: ได้จาก `eas init` — ตั้งเป็นตัวแปร EAS_PROJECT_ID (EAS environment variable) หรือวางค่าแทน '' ตรงนี้
 const EAS_PROJECT_ID = process.env.EAS_PROJECT_ID || '';
 
@@ -22,8 +28,8 @@ const COLLECTED_DATA_TYPES = [
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: 'Fitnese',
-  slug: 'fitnese',
+  name: APP_NAME,
+  slug: SLUG,
   scheme: 'fitnese',
   version: '1.0.0',
   orientation: 'portrait',

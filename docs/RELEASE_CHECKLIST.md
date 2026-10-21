@@ -81,6 +81,7 @@
 | `development` | development build บนเครื่องจริง | `developmentClient: true`, `distribution: internal` | `development` |
 | `development-simulator` | iOS Simulator (ถ่ายภาพหน้าจอ, ดีบัก) | extends `development` + `ios.simulator: true` | `development` |
 | `preview` | ทดสอบภายในที่พฤติกรรมเหมือน release | `distribution: internal`, Android เป็น APK | `preview` |
+| `tryout` | APK ลองเองบน Android ก่อนขึ้นสโตร์ — **ห้ามส่งสโตร์ ห้ามแจก** (D85) | `distribution: internal`, Android เป็น APK, `env.EXPO_PUBLIC_TRYOUT_BUILD=1` → สโตร์จำลอง + ป้ายบนจอ + package/bundle id ต่อท้าย `.tryout` + ชื่อ "Fitnese (Test)" | `preview` |
 | `production` | ส่งสโตร์ | `autoIncrement: true` (เพิ่ม build number / versionCode ให้เอง) · distribution = store (ค่าเริ่มต้น) | `production` |
 
 `submit.production`: iOS `ascAppId` (ต้องเปลี่ยนจาก `REPLACE_WITH_APP_STORE_CONNECT_APP_ID` เป็นเลข Apple ID ของแอป, HUMAN_TASKS ข้อ 21) · Android `serviceAccountKeyPath: ./secrets/google-play-service-account.json`, `track: internal`, `releaseStatus: draft` (ต้องเข้า Play Console กด rollout เอง)
@@ -112,11 +113,13 @@ eas submit --platform ios --profile production --latest
 eas submit --platform android --profile production --latest
 ```
 
+- **ห้ามส่ง build `tryout` ไปสโตร์ (`eas submit`) เด็ดขาด** และก่อน build `preview`/`production` ต้องตรวจว่า flag ของบิลด์ทดลองไม่รั่ว: `grep -n EXPO_PUBLIC_TRYOUT_BUILD .env eas.json` ต้องเห็นเฉพาะในโปรไฟล์ `tryout` ของ `eas.json` (ไม่มีใน `.env`) · `eas env:list --environment preview` และ `--environment production` ต้องไม่มี `EXPO_PUBLIC_TRYOUT_BUILD` · `npx expo config --type public` (ไม่ตั้ง flag) ต้องได้ชื่อ `Fitnese` และ package/bundle id ที่ไม่ลงท้าย `.tryout` (เทสต์ `easConfig`/`appConfig` กันฝั่งไฟล์ในโปรเจกต์ให้แล้ว)
 - ห้ามใช้ `--local` ถ้า `.env` ในเครื่องตั้ง `EXPO_PUBLIC_USE_MOCKS=1` หรือคีย์ทดสอบ (build ในคลาวด์ไม่อ่าน `.env` เพราะอยู่ใน `.gitignore` แต่ build ในเครื่องอ่านได้)
 - แอปไม่มี OTA update (ไม่มี `expo-updates`) ทุกการแก้โค้ดหรือแก้ `EXPO_PUBLIC_*` ต้อง build และ submit ใหม่
 - iOS build ครั้งแรก EAS จะถามล็อกอิน Apple เพื่อสร้าง certificate / provisioning profile (HUMAN_TASKS ข้อ 20, 26)
 
 - [ ] `eas.json`: `ascAppId` เป็นตัวเลขจริง · ไฟล์ `secrets/google-play-service-account.json` มีอยู่ (ไม่ถูก commit)
+- [ ] ไม่มี `EXPO_PUBLIC_TRYOUT_BUILD` ใน `.env` และ EAS environment `preview`/`production`; ไม่เคย `eas submit` build `tryout`
 - [ ] build `preview` ทั้งสองแพลตฟอร์มติดตั้งและใช้งานได้ แตะซื้อแล้วเห็นหน้าซื้อของสโตร์จริง (ไม่ใช่ mock)
 - [ ] build `production` สำเร็จทั้งสองแพลตฟอร์ม จดเลข build ไว้ในบันทึกผลทดสอบ
 

@@ -19,6 +19,7 @@ import settings from './settings';
 import appearance from './appearance';
 import legal from './legal';
 import backup from './backup';
+import tryout from './tryout';
 
 // แต่ละหมวดอยู่คนละไฟล์ เพิ่ม key ในไฟล์ของหมวดนั้นๆ
 const th: LocaleShape<typeof en> = {
@@ -41,6 +42,7 @@ const th: LocaleShape<typeof en> = {
   appearance,
   legal,
   backup,
+  tryout,
 };
 
 export default th;

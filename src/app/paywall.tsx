@@ -24,6 +24,7 @@ import { useManageSubscriptions } from '../features/access/useManageSubscription
 import { useRestorePurchases } from '../features/access/useRestorePurchases';
 import { openLegal } from '../features/legal/openLegal';
 import { PlanOption } from '../features/access/PlanOption';
+import { TryoutBanner } from '../features/access/TryoutBanner';
 import { billedTerms, buildPaywallModel, type PlanKind, type StorePlan } from '../domain/entitlement/paywall';
 import type { PurchaseResult } from '../services/purchases/types';
 import { useEntitlement } from '../stores/entitlement';
@@ -149,6 +150,7 @@ export default function PaywallScreen() {
         )
       }
     >
+      <TryoutBanner />
       <HeroTitle
         title={t(`paywall.headline.${model.headline}`)}
         subtitle={t(`paywall.sub.${model.headline}`, { store })}

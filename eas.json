@@ -28,6 +28,13 @@
       "environment": "preview",
       "android": { "buildType": "apk" }
     },
+    "tryout": {
+      "extends": "base",
+      "distribution": "internal",
+      "environment": "preview",
+      "android": { "buildType": "apk" },
+      "env": { "EXPO_PUBLIC_TRYOUT_BUILD": "1" }
+    },
     "production": {
       "extends": "base",
       "environment": "production",

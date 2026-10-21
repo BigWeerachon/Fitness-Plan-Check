@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet } from 'react-native';
 import { AppText, CardGroup, HeroTitle, ListRow, Screen, SectionTitle, StackHeader } from '../components';
 import { describeSubscription } from '../features/access/subscriptionInfo';
+import { TryoutBanner } from '../features/access/TryoutBanner';
 import { useAccess } from '../features/access/useAccess';
 import { useManageSubscriptions } from '../features/access/useManageSubscriptions';
 import { useRestorePurchases } from '../features/access/useRestorePurchases';
@@ -31,6 +32,7 @@ export default function AccountScreen() {
 
   return (
     <Screen header={<StackHeader />} testID="account">
+      <TryoutBanner />
       <HeroTitle title={t('account.title')} compact />
 
       <SectionTitle>{t('account.sections.appearance')}</SectionTitle>

@@ -23,6 +23,7 @@ import type { LengthUnit, WeightUnit } from '../../../db/schema';
 import { isSameWeightStep, preferredWeightStepKg, weightStepChoices } from '../../../domain/progression';
 import { offersLifetimeUpgrade } from '../../../domain/entitlement/paywall';
 import { describeSubscription } from '../../../features/access/subscriptionInfo';
+import { TryoutBanner } from '../../../features/access/TryoutBanner';
 import { useAccess } from '../../../features/access/useAccess';
 import { useManageSubscriptions } from '../../../features/access/useManageSubscriptions';
 import { useRestorePurchases } from '../../../features/access/useRestorePurchases';
@@ -82,6 +83,7 @@ export default function SettingsScreen() {
 
   return (
     <Screen withTabBar testID="settings">
+      <TryoutBanner />
       <HeroTitle title={t('settings.title')} />
 
       <SectionTitle>{t('settings.sections.appearance')}</SectionTitle>
