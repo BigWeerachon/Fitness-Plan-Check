@@ -148,6 +148,7 @@
 - [ ] **13. โฮสต์หน้า Privacy / Terms และจด URL**
   - **ทำไม:** สโตร์ต้องการ URL สาธารณะ ปุ่ม "Open web version" ในหน้า `/legal/[doc]` ของแอปจะแสดงเมื่อมี URL นี้ (ถ้าว่าง แอปแสดงฉบับในแอปอย่างเดียว)
   - **ที่ไหน:** เว็บโฮสต์แบบ static ใดก็ได้ที่คุณควบคุม (เว็บไซต์ของคุณ, GitHub Pages ฯลฯ) ควรมีทั้งไทยและอังกฤษ — นี่เป็น "เว็บ" อย่างเดียวที่แอปต้องมี (ไม่มี backend)
+  - **สร้างหน้าเว็บให้แล้ว:** `site/` (HTML นิ่ง ไทย+อังกฤษในหน้าเดียวต่อเอกสาร: `/privacy`, `/terms`, `/references`) สร้างจาก `docs/legal/*.md` ด้วย `python3 scripts/build-legal-site.py` (ต้อง `pip install markdown`) — ถ้าแก้ `src/legal/content.ts` ให้รัน `npm run legal:export` แล้วสร้างใหม่และ deploy ซ้ำ ใช้ deploy บน Vercel/Netlify/GitHub Pages โดยชี้ root ไปที่ `site/`
   - **ใส่ค่า:** หน้า Privacy ต้องมีหัวข้อ "การเก็บรักษาและการลบข้อมูล" (มีอยู่แล้ว) — แอปไม่มีบัญชี จึงไม่ต้องมีหน้า "ขอลบบัญชีบนเว็บ" ของ Google Play
   - **ผลลัพธ์ →** `<PRIVACY_URL>`, `<TERMS_URL>` → `EXPO_PUBLIC_PRIVACY_URL`, `EXPO_PUBLIC_TERMS_URL` (ข้อ 18–19), App Store Connect (ข้อ 21, 49), Play Console (ข้อ 50–51)
 
