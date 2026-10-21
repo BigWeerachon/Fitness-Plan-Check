@@ -145,12 +145,12 @@
   - **ใส่ค่า:** สคริปต์ใส่บรรทัดหมายเหตุ "> เทมเพลต — / > Template —" เฉพาะตอนที่ยังมี placeholder เหลือ ตรวจ `head -3 docs/legal/privacy.en.md` ก่อนเผยแพร่
   - **ผลลัพธ์ →** ไฟล์ Markdown พร้อมโฮสต์
 
-- [ ] **13. โฮสต์หน้า Privacy / Terms และจด URL**
+- [x] **13. โฮสต์หน้า Privacy / Terms และจด URL** (เสร็จ 2026-10-21: เปิด `/privacy` และ `/terms` ได้จริงโดยไม่ต้องล็อกอิน)
   - **ทำไม:** สโตร์ต้องการ URL สาธารณะ ปุ่ม "Open web version" ในหน้า `/legal/[doc]` ของแอปจะแสดงเมื่อมี URL นี้ (ถ้าว่าง แอปแสดงฉบับในแอปอย่างเดียว)
   - **ที่ไหน:** เว็บโฮสต์แบบ static ใดก็ได้ที่คุณควบคุม (เว็บไซต์ของคุณ, GitHub Pages ฯลฯ) ควรมีทั้งไทยและอังกฤษ — นี่เป็น "เว็บ" อย่างเดียวที่แอปต้องมี (ไม่มี backend)
   - **สร้างหน้าเว็บให้แล้ว:** `site/` (HTML นิ่ง ไทย+อังกฤษในหน้าเดียวต่อเอกสาร: `/privacy`, `/terms`, `/references`) สร้างจาก `docs/legal/*.md` ด้วย `python3 scripts/build-legal-site.py` (ต้อง `pip install markdown`) — ถ้าแก้ `src/legal/content.ts` ให้รัน `npm run legal:export` แล้วสร้างใหม่และ deploy ซ้ำ ใช้ deploy บน Vercel/Netlify/GitHub Pages โดยชี้ root ไปที่ `site/`
   - **ใส่ค่า:** หน้า Privacy ต้องมีหัวข้อ "การเก็บรักษาและการลบข้อมูล" (มีอยู่แล้ว) — แอปไม่มีบัญชี จึงไม่ต้องมีหน้า "ขอลบบัญชีบนเว็บ" ของ Google Play
-  - **สถานะ:** สร้างโปรเจกต์ Vercel `fitnese-legal` แล้ว (โดเมน `fitnese-legal.vercel.app`, Root Directory `site`) — ต้องตั้ง Production Branch ให้เป็นสาขาที่มีโฟลเดอร์ `site/` (หรือ merge เข้า `main`) และปิด Vercel Authentication แล้วเปิด `/privacy` กับ `/terms` ทดสอบในหน้าต่างไม่ระบุตัวตนก่อนส่งสโตร์ · ค่า URL ใส่ใน `eas.json` (`build.base.env`) ให้แล้ว ถ้าเปลี่ยนโดเมนต้องแก้ที่นั่นด้วย
+  - **สถานะ:** โปรเจกต์ Vercel `fitnese-legal` (โดเมน `fitnese-legal.vercel.app`, Root Directory `site`) ใช้งานได้แล้ว ตอนนี้ Production Branch ตั้งเป็น `claude/clever-bell-dxizpd` — **หลัง merge PR เข้า `main` ให้ตั้ง Production Branch กลับเป็น `main`** · ถ้าแก้ `src/legal/content.ts` ต้อง `npm run legal:export`, สร้าง `site/` ใหม่ และ push เพื่อ deploy ซ้ำ · ค่า URL อยู่ใน `eas.json` (`build.base.env`) ถ้าเปลี่ยนโดเมนต้องแก้ที่นั่นด้วย · โปรเจกต์ Vercel `fitplancheck` (ถ้ามี) เป็นของที่ import ซ้ำ ลบทิ้งได้
   - **ผลลัพธ์ →** `<PRIVACY_URL>`, `<TERMS_URL>` → `EXPO_PUBLIC_PRIVACY_URL`, `EXPO_PUBLIC_TERMS_URL` (ข้อ 18–19), App Store Connect (ข้อ 21, 49), Play Console (ข้อ 50–51)
 
 ---
