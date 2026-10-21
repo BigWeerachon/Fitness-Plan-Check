@@ -6,6 +6,12 @@ const BASE_BUNDLE_ID = process.env.APP_BUNDLE_ID || 'com.example.fitnese';
 const SLUG = process.env.APP_SLUG || 'fitnese';
 // บิลด์ทดลอง APK (D85, โปรไฟล์ EAS `tryout`): ชื่อ/รหัสแอปแยก เพื่อไม่ให้ถูกส่งสโตร์หรือทับแอปจริง และติดตั้งคู่กันได้
 const TRYOUT = process.env.EXPO_PUBLIC_TRYOUT_BUILD === '1';
+// กันธงทดลองหลุดเข้า build อื่นบนคลาวด์ (เช่น ตัวแปรบนแดชบอร์ด EAS ของ preview/production) — EAS ตั้ง EAS_BUILD_PROFILE ให้เครื่อง build
+if (TRYOUT && process.env.EAS_BUILD_PROFILE && process.env.EAS_BUILD_PROFILE !== 'tryout') {
+  throw new Error(
+    `EXPO_PUBLIC_TRYOUT_BUILD=1 is only allowed in the "tryout" EAS profile (building "${process.env.EAS_BUILD_PROFILE}"). Remove the variable from the EAS environment / shell / .env (D85).`,
+  );
+}
 const BUNDLE_ID = TRYOUT ? `${BASE_BUNDLE_ID}.tryout` : BASE_BUNDLE_ID;
 const APP_NAME = TRYOUT ? 'Fitnese (Test)' : 'Fitnese';
 // รหัสโปรเจกต์ EAS: ได้จาก `eas init` — ตั้งเป็นตัวแปร EAS_PROJECT_ID (EAS environment variable) หรือวางค่าแทน '' ตรงนี้

@@ -22,18 +22,20 @@
 # 1) ล็อกอิน Expo (สมัครฟรีที่ https://expo.dev ถ้ายังไม่มี)
 npx eas-cli@latest login
 
-# 2) ผูกโปรเจกต์กับ EAS ครั้งแรกครั้งเดียว — ใช้ project ID ที่เห็นในหน้าโปรเจกต์บน expo.dev
-npx eas-cli@latest init --id <projectId>
-#    ถ้า eas init แก้ app.config.ts ให้เองไม่ได้ (ไฟล์เป็นแบบเขียนโค้ด) ให้ทำอย่างใดอย่างหนึ่ง:
-#      ก) วาง ID ลงในค่าคงที่ EAS_PROJECT_ID ที่ต้นไฟล์ app.config.ts (แล้ว commit) หรือ
-#      ข) npx eas-cli@latest env:create --environment preview --name EAS_PROJECT_ID --value <projectId> --visibility plaintext
-#    (ไฟล์ .env ไม่ถูกอัปโหลดไปเครื่อง build บนคลาวด์ จึงใส่ใน .env อย่างเดียวไม่พอ ใช้ .env เฉพาะรันในเครื่อง)
+# 2) ผูกโปรเจกต์กับ EAS — ใช้ project ID ที่เห็นในหน้าโปรเจกต์บน expo.dev
+#    (ก) เปิด app.config.ts วาง ID ลงในค่าคงที่ EAS_PROJECT_ID ที่ต้นไฟล์ แล้ว commit
+#    (ข) รัน `npx eas-cli@latest init --id <projectId>` เพื่อตรวจ — ถ้า eas พิมพ์เตือนว่า
+#        "Your project uses dynamic app configuration, and cannot be automatically modified"
+#        แล้วจบด้วย error ถือว่า **ปกติ** (ไฟล์ตั้งค่าเป็นแบบเขียนโค้ด eas แก้เองไม่ได้) ขอแค่ทำ (ก) แล้ว
+#        (ถ้าไม่อยากแก้ไฟล์ ให้ใส่ EAS_PROJECT_ID=<projectId> นำหน้าคำสั่ง eas ทุกครั้งในเชลล์แทน)
+#    หมายเหตุ: eas-cli ไม่อ่านไฟล์ .env และอ่านตัวแปรบนเซิร์ฟเวอร์ EAS (eas env:create) ไม่ได้จนกว่าโปรเจกต์จะถูกผูก
+#    จึงห้ามใช้ eas env:create กับ EAS_PROJECT_ID / APP_SLUG ในขั้นนี้ (.env ใช้เฉพาะตอนรัน/build ในเครื่อง)
 
 # 3) build APK ทดลอง (ทำบนคลาวด์ของ EAS ใช้เวลาประมาณ 10–20 นาที)
 npx eas-cli@latest build --profile tryout --platform android
 ```
 
-- ถ้า eas บอกว่า slug ไม่ตรงกับโปรเจกต์ (ชื่อโปรเจกต์บน expo.dev ไม่ใช่ `fitnese`) ให้ตั้ง `APP_SLUG` เป็น slug ของโปรเจกต์บน expo.dev: `npx eas-cli@latest env:create --environment preview --name APP_SLUG --value <slug> --visibility plaintext` (ใส่ใน `.env` ด้วยถ้าจะรันในเครื่อง) แล้ว build ใหม่ — ค่าเริ่มต้นคือ `fitnese`
+- ถ้า eas บอกว่า slug ไม่ตรงกับโปรเจกต์ (ชื่อโปรเจกต์บน expo.dev ไม่ใช่ `fitnese`) ให้ส่ง `APP_SLUG` เป็น slug ของโปรเจกต์บน expo.dev ในเชลล์ทุกครั้งที่รัน `eas init` / `eas build`: `APP_SLUG=<slug> npx eas-cli@latest build --profile tryout --platform android` (หรือแก้ค่าเริ่มต้น `'fitnese'` ที่ต้นไฟล์ `app.config.ts` แล้ว commit) — ค่าเริ่มต้นคือ `fitnese`
 - **ครั้งแรก** EAS จะถามเรื่อง keystore ว่า *"Generate a new Android Keystore?"* → ตอบ **yes** (EAS สร้างและเก็บให้เอง ไม่ต้องจดอะไร)
 - เมื่อ build เสร็จ เปิดหน้า build (ลิงก์ที่ eas พิมพ์ให้ หรือที่ expo.dev → โปรเจกต์ → Builds) แล้ว **ดาวน์โหลดไฟล์ `.apk`** หรือสแกน **QR code** ในหน้านั้นด้วยมือถือ
 - บนมือถือ: เปิดไฟล์ที่ดาวน์โหลด → ถ้าเครื่องถามให้เปิด **"ติดตั้งแอปที่ไม่รู้จัก" (Install unknown apps)** ให้อนุญาตให้เบราว์เซอร์/แอปไฟล์ที่ใช้เปิดไฟล์ (Settings → Apps → Special access → Install unknown apps) แล้วกดติดตั้ง ถ้ามี Play Protect เตือน ให้เลือก "ติดตั้งต่อ" (APK นี้เซ็นด้วย keystore ของคุณเอง ไม่ได้มาจาก Play)
@@ -50,7 +52,7 @@ npx eas-cli@latest build --profile tryout --platform android
 
 - **APK `tryout` ห้ามส่งสโตร์และห้ามแจกให้คนทั่วไป** — ไม่มีระบบชำระเงินจริง เป็นของไว้ลองเอง (มี package id `.tryout` ทำให้ Google Play / App Store รับเป็นแอปจริงไม่ได้อยู่แล้ว)
 - **การซื้อจริงต้องใช้ build สโตร์ (`production`) ที่ทำทีหลัง** ตามส่วน A–Q — ต้องมีบัญชีสโตร์ สินค้า และคีย์ RevenueCat ก่อน
-- **ห้ามสร้างตัวแปร `EXPO_PUBLIC_TRYOUT_BUILD` ในที่อื่น** (เช่น `eas env:create` หรือ `.env`) — โปรไฟล์ `tryout` ตั้งให้เองแล้ว ถ้าไปตั้งซ้ำที่อื่น build ที่ควรเป็นของจริงอาจกลายเป็นสโตร์จำลอง (เทสต์ในโปรเจกต์กันฝั่ง `eas.json` ไว้ แต่กันค่าฝั่ง EAS/`.env` ไม่ได้)
+- **ห้ามสร้างตัวแปร `EXPO_PUBLIC_TRYOUT_BUILD` ในที่อื่น** (เช่น `eas env:create` หรือ `.env`) — โปรไฟล์ `tryout` ตั้งให้เองแล้ว ถ้าไปตั้งซ้ำที่อื่น build ที่ควรเป็นของจริงอาจกลายเป็นสโตร์จำลอง (เทสต์ในโปรเจกต์กันฝั่ง `eas.json` ไว้ทั้งระดับบนและ `android.env`/`ios.env` ส่วนฝั่ง EAS dashboard ที่ build บนคลาวด์ `app.config.ts` จะทำให้ build ล้มถ้าธงนี้โผล่ในโปรไฟล์อื่น แต่ build ในเครื่อง (`--local`) กันได้เฉพาะการตรวจด้วย `grep` ตามเช็กลิสต์)
 - แก้โค้ดแล้วอยากลองใหม่ → รันคำสั่ง build ข้อ 3 อีกครั้ง (แอปไม่มี OTA update) แล้วติดตั้งทับ ข้อมูลในแอปไม่หายเมื่อติดตั้งทับ
 
 ---
@@ -258,7 +260,7 @@ npx eas-cli@latest build --profile tryout --platform android
 
     | ตัวแปร | ใช้ที่ | ได้มาจาก | ค่าสำหรับ build จริง | ความลับ? |
     |---|---|---|---|---|
-    | `EXPO_PUBLIC_USE_MOCKS` | `src/services/config.ts` → `src/services/registry.ts` | ตั้งเอง | **`0`** (ถ้าเป็น `1` ใน dev build / พรีวิวเว็บ จะใช้สโตร์จำลอง; release build บนมือถือไม่ใช้ mock แม้ตั้ง `1` ผิด) | ไม่ |
+    | `EXPO_PUBLIC_USE_MOCKS` | `src/services/config.ts` → `src/services/registry.ts` | ตั้งเอง | **`0`** (ถ้าเป็น `1` ใน dev build / พรีวิวเว็บ จะใช้สโตร์จำลอง; release build บนมือถือไม่ใช้ mock แม้ตั้ง `1` ผิด — ยกเว้นโปรไฟล์ `tryout`, D85) | ไม่ |
     | `EXPO_PUBLIC_MOCK_SCENARIO` | `MockPurchasesService` (เฉพาะโหมด mock) | ตั้งเอง: `new` · `trial_used` · `trialing` · `monthly` · `lifetime` · `expired` · `billing_grace` · `billing_retry` | ไม่มีผลเมื่อ mock ปิด (ปล่อย `new`) | ไม่ |
     | `EXPO_PUBLIC_RC_IOS_KEY` | RevenueCat บน iOS | ข้อ 17 | `appl_...` | ไม่ (public SDK key) |
     | `EXPO_PUBLIC_RC_ANDROID_KEY` | RevenueCat บน Android | ข้อ 17 | `goog_...` | ไม่ (public SDK key) |
@@ -268,7 +270,7 @@ npx eas-cli@latest build --profile tryout --platform android
     | `APPLE_TEAM_ID` | `app.config.ts` (`ios.appleTeamId`) | ข้อ 4 | `<TEAM_ID>` | ไม่ |
     | `EAS_PROJECT_ID` | `app.config.ts` (`extra.eas.projectId`) | ข้อ 14 | `<EAS_PROJECT_ID>` | ไม่ |
 
-  - **กฎของโค้ดที่ควรรู้:** ถ้า `EXPO_PUBLIC_USE_MOCKS` ไม่ใช่ `1` แต่ไม่มีคีย์ RevenueCat เลย — dev build และพรีวิวเว็บจะสลับไปใช้ mock เอง ส่วน release build บนมือถือ **ไม่ใช้ mock เด็ดขาด** และจะ error แทน (`decideMocks()` / `missingKeys()` ใน `src/services/config.ts`)
+  - **กฎของโค้ดที่ควรรู้:** ถ้า `EXPO_PUBLIC_USE_MOCKS` ไม่ใช่ `1` แต่ไม่มีคีย์ RevenueCat เลย — dev build และพรีวิวเว็บจะสลับไปใช้ mock เอง ส่วน release build บนมือถือ **ไม่ใช้ mock เด็ดขาด** และจะ error แทน (ยกเว้นโปรไฟล์ `tryout`, D85; `decideMocks()` / `missingKeys()` ใน `src/services/config.ts`)
   - **ผลลัพธ์ →** `.env` ในเครื่อง (ห้าม commit)
 
 - [ ] **19. ใส่ค่าชุดเดียวกันใน EAS environment variables**
@@ -629,6 +631,6 @@ npx eas-cli@latest build --profile tryout --platform android
 - **สถานะสิทธิ์ (B8–B9):** state machine ตัวเดียว (`src/domain/entitlement/machine.ts`), แคชสิทธิ์ในเครื่อง + ผ่อนผัน 48 ชม. ตอนออฟไลน์ (D06), ไม่มีตัวนับทดลองในแอป
 - **ข้อมูลในเครื่อง (D81, D82):** SQLite + migration ที่รักษาข้อมูลเดิมตอนอัปเดต, สำรองเป็นไฟล์ JSON ผ่านหน้าแชร์ของระบบ, กู้คืนจากไฟล์ที่ตรวจความถูกต้องและแทนที่ข้อมูลในทรานแซกชันเดียว, ลบข้อมูลทั้งหมดในเครื่อง (ยืนยัน 2 ขั้น + เตือนว่าไม่ยกเลิกสมาชิก), ส่งออก CSV
 - **Native config ใน `app.config.ts`:** bundle id/package จาก `APP_BUNDLE_ID`, `ITSAppUsesNonExemptEncryption: false`, privacy manifest แบบไม่ติดตามที่ประกาศเฉพาะข้อมูลการซื้อ, ตัดสิทธิ์ Android ที่ไม่ใช้, ชื่อแอปแยกภาษาไทย/อังกฤษ
-- **โหมด mock:** รันและทดสอบได้ครบโดยไม่มีคีย์ (`EXPO_PUBLIC_USE_MOCKS=1` + `EXPO_PUBLIC_MOCK_SCENARIO`) และ release build จะไม่แอบใช้ mock เมื่อคีย์ขาด
+- **โหมด mock:** รันและทดสอบได้ครบโดยไม่มีคีย์ (`EXPO_PUBLIC_USE_MOCKS=1` + `EXPO_PUBLIC_MOCK_SCENARIO`) และ release build จะไม่แอบใช้ mock เมื่อคีย์ขาด (ยกเว้นโปรไฟล์ `tryout`, D85)
 - **เนื้อหาและคุณภาพ:** i18n ไทย/อังกฤษครบ, contrast WCAG AA ทุกสีหลัก (`npm run contrast`), ปุ่ม ≥ 48, นโยบายฯ/ข้อกำหนดฉบับออฟไลน์ + หน้าแหล่งอ้างอิง (H6) + `npm run legal:export`, ไอคอน/splash, โปรไฟล์ build ใน `eas.json`
 - **เทสต์อัตโนมัติ:** `npm run check` = typecheck + lint + jest ครอบคลุมสูตร, state machine ทุกสถานะ, Paywall, การซื้อ/กู้คืนแบบนิรนาม, การแคชสิทธิ์ออฟไลน์, สำรอง/กู้คืน (รวมไฟล์เสียและ schema เก่า), ลบข้อมูลทั้งหมด, migration

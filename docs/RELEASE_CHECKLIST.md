@@ -109,8 +109,9 @@ eas build --profile production --platform android
 #   หรือ eas build --profile production --platform all
 
 # 4) submit (ครั้งแรกของ Android ต้องอัปโหลด .aab เองผ่านเว็บ 1 ครั้ง — HUMAN_TASKS ข้อ 29)
-eas submit --platform ios --profile production --latest
-eas submit --platform android --profile production --latest
+# ใช้ --id <buildId> ของ build โปรไฟล์ production เท่านั้น (ดูรหัสที่ `eas build:list --build-profile production`) อย่าใช้ --latest เพราะ build ล่าสุดอาจเป็น tryout
+eas submit --platform ios --profile production --id <buildId>
+eas submit --platform android --profile production --id <buildId>
 ```
 
 - **ห้ามส่ง build `tryout` ไปสโตร์ (`eas submit`) เด็ดขาด** และก่อน build `preview`/`production` ต้องตรวจว่า flag ของบิลด์ทดลองไม่รั่ว: `grep -n EXPO_PUBLIC_TRYOUT_BUILD .env eas.json` ต้องเห็นเฉพาะในโปรไฟล์ `tryout` ของ `eas.json` (ไม่มีใน `.env`) · `eas env:list --environment preview` และ `--environment production` ต้องไม่มี `EXPO_PUBLIC_TRYOUT_BUILD` · `npx expo config --type public` (ไม่ตั้ง flag) ต้องได้ชื่อ `Fitnese` และ package/bundle id ที่ไม่ลงท้าย `.tryout` (เทสต์ `easConfig`/`appConfig` กันฝั่งไฟล์ในโปรเจกต์ให้แล้ว)
@@ -142,7 +143,7 @@ eas submit --platform android --profile production --latest
 
 | ตัวแปร | ค่าใน production | หมายเหตุ |
 |---|---|---|
-| `EXPO_PUBLIC_USE_MOCKS` | `0` | release build บนมือถือ **ไม่ใช้ mock เสมอ** แม้ตั้งเป็น `1` (`decideMocks` ใน `src/services/config.ts`, D47, `__tests__/services/config.test.ts`) แต่ต้องตั้ง `0` ไว้ให้ชัด · preview ก็ต้อง `0` |
+| `EXPO_PUBLIC_USE_MOCKS` | `0` | release build บนมือถือ **ไม่ใช้ mock เสมอ** (ยกเว้นโปรไฟล์ `tryout`, D85) แม้ตั้งเป็น `1` (`decideMocks` ใน `src/services/config.ts`, D47, `__tests__/services/config.test.ts`) แต่ต้องตั้ง `0` ไว้ให้ชัด · preview ก็ต้อง `0` |
 | `EXPO_PUBLIC_MOCK_SCENARIO` | ไม่ต้องตั้ง (ค่าเริ่มต้น `new`) | มีผลเฉพาะโหมด mock |
 | `EXPO_PUBLIC_RC_IOS_KEY` | `appl_…` | บังคับ (คีย์ภายนอกตัวเดียวของแอป — ขาดทั้งสองตัว = release ใช้ไม่ได้) ส่งทั้งสองสโตร์จึงต้องมีทั้งคู่ |
 | `EXPO_PUBLIC_RC_ANDROID_KEY` | `goog_…` | **ห้าม** ใช้ secret key `sk_…` |
@@ -280,6 +281,7 @@ eas submit --platform android --profile production --latest
 | 9 | คำเตือนสุขภาพ + ลิงก์แหล่งอ้างอิงครบตาม SPEC H5/H6 ใน build ที่ส่ง; ปุ่ม Restore / จัดการสมาชิก / Privacy / Terms / แหล่งอ้างอิง / สำรอง / กู้คืนจากไฟล์ / ลบข้อมูลทั้งหมด ใช้ได้ (รวมตอนถูกล็อก) | N1.3, หัวข้อ 11 |
 | 10 | ภาพหน้าจอจาก build จริง ข้อความหน้าร้านไม่อ้างฟีเจอร์ที่ไม่มี (ไม่มีคำว่าล็อกอิน/ซิงก์/บัญชี); App Review Notes ตรงกับเมนูจริง | หัวข้อ 9, 10 |
 | 11 | `eas.json` มี `ascAppId` จริง, `version` และเลข build ถูกต้อง, บัญชีสโตร์พร้อม (Paid Apps Agreement Active, Play ผ่านเงื่อนไข Closed testing ถ้าต้องมี) | หัวข้อ 2, 3, 7 |
+| 12 | **(Blocker)** ไฟล์ที่จะส่งสโตร์ไม่ใช่บิลด์ `tryout`: package/bundle id ไม่ลงท้าย `.tryout`, ชื่อแอปไม่ใช่ "Fitnese (Test)", `eas env:list --environment preview` และ `--environment production` ไม่มี `EXPO_PUBLIC_TRYOUT_BUILD`, และส่งด้วย `--id <buildId>` ของ build `production` | หัวข้อ 2, 4 |
 
 **ถ้าข้อใดข้อหนึ่งด้านล่างเกิดขึ้น = No-Go**
 

@@ -13,6 +13,19 @@ interface Profile {
   env?: Record<string, string>;
   node?: string;
 }
+const FLAG = 'EXPO_PUBLIC_TRYOUT_BUILD';
+
+/** เดินทั้งโปรไฟล์ (รวม android.env / ios.env ที่ซ้อนอยู่) แล้วคืนเส้นทางของ object ที่มี key ของธงทดลอง */
+function findFlagPaths(node: unknown, path = ''): string[] {
+  if (node === null || typeof node !== 'object') return [];
+  const found: string[] = [];
+  for (const [key, value] of Object.entries(node)) {
+    if (key === FLAG) found.push(path);
+    else found.push(...findFlagPaths(value, path ? `${path}.${key}` : key));
+  }
+  return found;
+}
+
 const eas = JSON.parse(readFileSync(join(__dirname, '..', 'eas.json'), 'utf8')) as {
   cli: { appVersionSource: string };
   build: Record<string, Profile>;
@@ -73,13 +86,23 @@ describe('eas.json (build profiles)', () => {
     expect(eas.build.tryout.autoIncrement).toBeFalsy();
   });
 
-  it('no other profile (base included) sets the tryout flag, so no store build can carry it (D85, B2)', () => {
+  it('no other profile (base included) sets the tryout flag anywhere, so no store build can carry it (D85, B2)', () => {
     for (const [name, profile] of Object.entries(eas.build)) {
       if (name === 'tryout') continue;
-      expect(profile.env?.EXPO_PUBLIC_TRYOUT_BUILD).toBeUndefined();
+      expect(findFlagPaths(profile)).toEqual([]);
     }
     // โปรไฟล์ที่สืบทอดมาจาก tryout ก็ต้องไม่มี (ไม่มีโปรไฟล์ไหน extends tryout)
     expect(Object.values(eas.build).filter((p) => p.extends === 'tryout')).toEqual([]);
+  });
+
+  it('tryout sets the flag only in its top-level env', () => {
+    expect(findFlagPaths(eas.build.tryout)).toEqual(['env']);
+  });
+
+  it('the scan catches a flag nested under a platform env (regression for the guard itself)', () => {
+    expect(findFlagPaths({ android: { env: { EXPO_PUBLIC_TRYOUT_BUILD: '1' } } })).toEqual(['android.env']);
+    expect(findFlagPaths({ ios: { env: { EXPO_PUBLIC_TRYOUT_BUILD: '1' } } })).toEqual(['ios.env']);
+    expect(findFlagPaths({ env: { OTHER: '1' } })).toEqual([]);
   });
 
   it('there is no submit profile for tryout', () => {

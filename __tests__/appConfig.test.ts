@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, jest } from '@jest/globals';
 import type { ConfigContext } from 'expo/config';
 import createConfig from '../app.config';
 
-const VARS = ['EXPO_PUBLIC_TRYOUT_BUILD', 'APP_BUNDLE_ID', 'APP_SLUG'] as const;
+const VARS = ['EXPO_PUBLIC_TRYOUT_BUILD', 'APP_BUNDLE_ID', 'APP_SLUG', 'EAS_BUILD_PROFILE'] as const;
 const saved = Object.fromEntries(VARS.map((k) => [k, process.env[k]]));
 
 afterEach(() => {
@@ -114,5 +114,20 @@ describe('app.config privacy manifest (SPEC N1, B13)', () => {
     ]) {
       expect(pluginNames).not.toContain(removed);
     }
+  });
+
+  it('fails the build when the tryout flag leaks into another EAS profile', () => {
+    for (const profile of ['production', 'preview', 'development']) {
+      expect(() => configWith({ EXPO_PUBLIC_TRYOUT_BUILD: '1', EAS_BUILD_PROFILE: profile })).toThrow(
+        /tryout/,
+      );
+    }
+  });
+
+  it('allows the flag in the tryout profile and ignores profiles without the flag', () => {
+    expect(configWith({ EXPO_PUBLIC_TRYOUT_BUILD: '1', EAS_BUILD_PROFILE: 'tryout' }).name).toBe(
+      'Fitnese (Test)',
+    );
+    expect(configWith({ EAS_BUILD_PROFILE: 'production' }).name).toBe('Fitnese');
   });
 });
