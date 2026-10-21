@@ -1,0 +1,116 @@
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { StyleSheet, View } from 'react-native';
+import { AppText, Button, Chip, Screen, StackHeader, TextField, HeroTitle } from '../../../components';
+import { customExerciseRepo } from '../../../db/repos/customExerciseRepo';
+import type { Equipment, MuscleGroup } from '../../../db/schema';
+import { EQUIPMENT, MUSCLE_GROUPS } from '../../../data/exerciseLibrary';
+import { addExerciseToRoutine } from '../../../features/programs/addExerciseToRoutine';
+import { spacing } from '../../../theme/tokens';
+
+/**
+ * สร้างท่าเอง (SPEC F7): ต้องมีกลุ่มกล้ามเนื้อหลัก 1 กลุ่ม + กลุ่มรอง/อุปกรณ์/โน้ต
+ * ถ้ามี ?editId จะเป็นโหมดแก้ไขท่าที่สร้างเองเดิม (ฟอร์มเดียวกัน)
+ */
+export default function NewExerciseScreen() {
+  const { t } = useTranslation();
+  const { routineId, editId } = useLocalSearchParams<{ routineId?: string; editId?: string }>();
+  const existing = editId ? customExerciseRepo.get(editId) : undefined;
+  const [name, setName] = useState(existing?.name ?? '');
+  const [primary, setPrimary] = useState<MuscleGroup | null>(existing?.primaryMuscle ?? null);
+  const [secondary, setSecondary] = useState<MuscleGroup[]>(existing?.secondaryMuscles ?? []);
+  const [equipment, setEquipment] = useState<Equipment>(existing?.equipment ?? 'other');
+  const [notes, setNotes] = useState(existing?.notes ?? '');
+  const valid = name.trim().length > 0 && primary !== null;
+
+  const save = () => {
+    if (!valid || !primary) return;
+    const values = {
+      name: name.trim(),
+      primaryMuscle: primary,
+      secondaryMuscles: secondary.filter((m) => m !== primary),
+      equipment,
+      notes: notes.trim() || null,
+    };
+    if (existing) {
+      customExerciseRepo.update(existing.id, values);
+      router.back();
+      return;
+    }
+    const ex = customExerciseRepo.create(values);
+    if (routineId) addExerciseToRoutine(routineId, ex.id);
+    router.back();
+  };
+
+  return (
+    <Screen
+      header={<StackHeader title={existing ? t('exercises.editTitle') : t('exercises.newTitle')} />}
+      testID="exercise-new"
+    >
+      <HeroTitle title={existing ? t('exercises.editExercise') : t('exercises.createCustom')} compact />
+      <View style={styles.gap}>
+        <TextField
+          label={t('exercises.name')}
+          placeholder={t('exercises.namePlaceholder')}
+          value={name}
+          onChangeText={setName}
+          error={name.length > 0 && !name.trim() ? t('errors.required') : null}
+          testID="custom-name"
+        />
+        <AppText variant="caption" secondary>
+          {t('exercises.primary')}
+        </AppText>
+        <View style={styles.chips} accessibilityRole="radiogroup" accessibilityLabel={t('exercises.primary')}>
+          {MUSCLE_GROUPS.map((m) => (
+            <Chip
+              key={m}
+              label={t(`exercises.muscles.${m}`)}
+              selected={primary === m}
+              onPress={() => setPrimary(m)}
+              testID={`primary-${m}`}
+            />
+          ))}
+        </View>
+        <AppText variant="caption" secondary>
+          {t('exercises.secondary')}
+        </AppText>
+        <View style={styles.chips}>
+          {MUSCLE_GROUPS.filter((m) => m !== primary).map((m) => (
+            <Chip
+              key={m}
+              role="checkbox"
+              label={t(`exercises.muscles.${m}`)}
+              selected={secondary.includes(m)}
+              onPress={() => setSecondary((s) => (s.includes(m) ? s.filter((x) => x !== m) : [...s, m]))}
+            />
+          ))}
+        </View>
+        <AppText variant="caption" secondary>
+          {t('exercises.equipmentLabel')}
+        </AppText>
+        <View
+          style={styles.chips}
+          accessibilityRole="radiogroup"
+          accessibilityLabel={t('exercises.equipmentLabel')}
+        >
+          {EQUIPMENT.map((e) => (
+            <Chip
+              key={e}
+              label={t(`exercises.equipment.${e}`)}
+              selected={equipment === e}
+              onPress={() => setEquipment(e)}
+            />
+          ))}
+        </View>
+        <TextField label={t('exercises.notes')} value={notes} onChangeText={setNotes} multiline />
+        <Button title={t('exercises.saveExercise')} onPress={save} disabled={!valid} testID="custom-save" />
+      </View>
+    </Screen>
+  );
+}
+
+const styles = StyleSheet.create({
+  gap: { gap: spacing.md },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+});

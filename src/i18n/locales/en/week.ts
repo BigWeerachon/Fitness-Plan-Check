@@ -1,0 +1,26 @@
+const week = {
+  title: 'Weekly schedule',
+  program: 'Program for the whole week',
+  switched: 'Switched the whole week to {{name}}.',
+  weekStart: 'Week starts on',
+  monday: 'Monday',
+  sunday: 'Sunday',
+  routinesHint: 'Tap the days for each routine. The switch turns a routine on or off in the schedule.',
+  enabledA11y: '{{name}} in schedule',
+  copyDay: 'Copy from another day',
+  copyFrom: 'Copy from',
+  copyTo: 'To',
+  copy: 'Copy',
+  copied: '{{to}} now matches {{from}}.',
+  upcoming: 'Next 7 days',
+  upcomingHint: 'Tap a date to change just that day.',
+  rest: 'Rest',
+  free: 'Free session',
+  changed: 'changed',
+  dayTitle: 'Change {{date}}',
+  usePlan: 'Use the weekly plan',
+  noProgram: 'Choose a program first',
+  noProgramBody: 'Your weekly schedule belongs to a program.',
+} as const;
+
+export default week;

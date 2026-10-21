@@ -1,0 +1,110 @@
+import { router, useLocalSearchParams } from 'expo-router';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { StyleSheet, View } from 'react-native';
+import {
+  AppText,
+  Button,
+  Card,
+  ErrorState,
+  HeroTitle,
+  MuscleIcon,
+  Screen,
+  StackHeader,
+} from '../../../components';
+import { customExerciseRepo } from '../../../db/repos/customExerciseRepo';
+import { exerciseName, localized } from '../../../data/exerciseLibrary';
+import { useRepoQuery } from '../../../features/data/useRepoQuery';
+import { exerciseInfo } from '../../../features/exercises/resolve';
+import { currentLanguage } from '../../../i18n';
+import { muscleNames } from '../../../i18n/format';
+import { spacing } from '../../../theme/tokens';
+import { confirmDestructive } from '../../../utils/confirmDestructive';
+
+/** รายละเอียดท่า: กลุ่มกล้ามเนื้อหลัก/รอง อุปกรณ์ คำอธิบายสั้นที่เขียนเอง (F7, F9) และลิงก์กราฟความแข็งแรง (I4) */
+export default function ExerciseDetailScreen() {
+  const { t } = useTranslation();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const lang = currentLanguage();
+  const ex = useRepoQuery(() => exerciseInfo(id), id);
+  if (!ex) {
+    return (
+      <Screen header={<StackHeader />}>
+        <ErrorState />
+      </Screen>
+    );
+  }
+  const name = exerciseName(ex, lang);
+  return (
+    <Screen header={<StackHeader title={t('exercises.detailTitle')} />} testID="exercise-detail">
+      <HeroTitle title={name} subtitle={t(`exercises.equipment.${ex.equipment}`)} compact />
+      <View style={styles.gap}>
+        <Card>
+          <AppText variant="caption" secondary>
+            {t('exercises.primary')}
+          </AppText>
+          <View style={styles.muscleRow}>
+            <MuscleIcon muscle={ex.primary} size={32} />
+            <AppText variant="headline" accent>
+              {t(`exercises.muscles.${ex.primary}`)}
+            </AppText>
+          </View>
+          {ex.secondary.length > 0 ? (
+            <>
+              <AppText variant="caption" secondary style={styles.top}>
+                {t('exercises.secondary')}
+              </AppText>
+              <AppText>{muscleNames(t, ex.secondary)}</AppText>
+            </>
+          ) : null}
+        </Card>
+        {ex.description ? (
+          <Card>
+            <AppText variant="caption" secondary>
+              {t('exercises.howTo')}
+            </AppText>
+            <AppText>{localized(ex.description, lang)}</AppText>
+          </Card>
+        ) : null}
+        <Button
+          title={t('stats.strengthTitle')}
+          kind="secondary"
+          icon="trending-up-outline"
+          onPress={() => router.push({ pathname: '/stats/exercise/[id]', params: { id } })}
+        />
+        {ex.isCustom ? (
+          <Button
+            title={t('exercises.editExercise')}
+            kind="secondary"
+            icon="create-outline"
+            onPress={() => router.push({ pathname: '/exercises/new', params: { editId: id } })}
+            testID="exercise-edit"
+          />
+        ) : null}
+        {ex.isCustom ? (
+          <Button
+            title={t('exercises.deleteExercise')}
+            kind="danger"
+            onPress={() =>
+              confirmDestructive(t, {
+                title: t('exercises.deleteExercise'),
+                message: t('exercises.deleteConfirm'),
+                confirmLabel: t('common.delete'),
+                onConfirm: () => {
+                  customExerciseRepo.remove(id);
+                  router.back();
+                },
+              })
+            }
+          />
+        ) : null}
+      </View>
+    </Screen>
+  );
+}
+
+const styles = StyleSheet.create({
+  gap: { gap: spacing.md },
+  top: { marginTop: spacing.sm },
+  muscleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+});

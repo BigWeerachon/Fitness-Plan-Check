@@ -1,0 +1,2004 @@
+[
+  {
+    "id": "barbell_bench_press",
+    "name": {
+      "en": "Barbell Bench Press",
+      "th": "เบนช์เพรส (บาร์เบล)"
+    },
+    "primary": "chest",
+    "secondary": ["triceps", "shoulders"],
+    "equipment": "barbell",
+    "description": {
+      "en": "Lower the bar to mid-chest with shoulder blades squeezed together, then press it straight back up.",
+      "th": "ลดบาร์ลงแตะกลางอกโดยบีบสะบักเข้าหากัน แล้วดันบาร์กลับขึ้นตรงๆ"
+    }
+  },
+  {
+    "id": "incline_barbell_bench_press",
+    "name": {
+      "en": "Incline Barbell Bench Press",
+      "th": "อินคลายน์เบนช์เพรส (บาร์เบล)"
+    },
+    "primary": "chest",
+    "secondary": ["shoulders", "triceps"],
+    "equipment": "barbell",
+    "description": {
+      "en": "On a 30–45° bench, lower the bar to the upper chest and press up.",
+      "th": "ปรับม้านั่งเอียง 30–45° ลดบาร์ลงที่อกส่วนบนแล้วดันขึ้น"
+    }
+  },
+  {
+    "id": "decline_bench_press",
+    "name": {
+      "en": "Decline Bench Press",
+      "th": "ดีไคลน์เบนช์เพรส"
+    },
+    "primary": "chest",
+    "secondary": ["triceps"],
+    "equipment": "barbell",
+    "description": {
+      "en": "With hips above head on a decline bench, lower the bar to the lower chest and press.",
+      "th": "นอนบนม้านั่งหัวต่ำ ลดบาร์ลงที่อกส่วนล่างแล้วดันขึ้น"
+    }
+  },
+  {
+    "id": "dumbbell_bench_press",
+    "name": {
+      "en": "Dumbbell Bench Press",
+      "th": "ดัมเบลเบนช์เพรส"
+    },
+    "primary": "chest",
+    "secondary": ["triceps", "shoulders"],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "Press two dumbbells from chest level until arms are straight, keeping wrists over elbows.",
+      "th": "ดันดัมเบลสองข้างจากระดับอกจนแขนตึง ให้ข้อมืออยู่เหนือข้อศอก"
+    }
+  },
+  {
+    "id": "incline_dumbbell_press",
+    "name": {
+      "en": "Incline Dumbbell Press",
+      "th": "อินคลายน์ดัมเบลเพรส"
+    },
+    "primary": "chest",
+    "secondary": ["shoulders", "triceps"],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "On an incline bench, press the dumbbells up and slightly together over the upper chest.",
+      "th": "บนม้านั่งเอียง ดันดัมเบลขึ้นเหนืออกส่วนบนให้ปลายเข้าหากันเล็กน้อย"
+    }
+  },
+  {
+    "id": "dumbbell_fly",
+    "name": {
+      "en": "Dumbbell Fly",
+      "th": "ดัมเบลฟลาย"
+    },
+    "primary": "chest",
+    "secondary": ["shoulders"],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "With a slight bend in the elbows, open the arms wide until you feel a chest stretch, then hug back up.",
+      "th": "งอศอกเล็กน้อย กางแขนออกจนรู้สึกอกยืด แล้วโอบแขนกลับขึ้น"
+    }
+  },
+  {
+    "id": "incline_dumbbell_fly",
+    "name": {
+      "en": "Incline Dumbbell Fly",
+      "th": "อินคลายน์ดัมเบลฟลาย"
+    },
+    "primary": "chest",
+    "secondary": ["shoulders"],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "A fly on an incline bench to bias the upper chest; keep the arc slow and controlled.",
+      "th": "ท่าฟลายบนม้านั่งเอียงเน้นอกส่วนบน เคลื่อนแขนเป็นวงโค้งช้าๆ"
+    }
+  },
+  {
+    "id": "cable_crossover",
+    "name": {
+      "en": "Cable Crossover",
+      "th": "เคเบิลครอสโอเวอร์"
+    },
+    "primary": "chest",
+    "secondary": ["shoulders"],
+    "equipment": "cable",
+    "description": {
+      "en": "From high pulleys, bring the handles down and together in front of the hips, squeezing the chest.",
+      "th": "ดึงด้ามจับจากรอกสูงลงมาประกบกันหน้าสะโพก บีบอกค้างไว้ครู่หนึ่ง"
+    }
+  },
+  {
+    "id": "low_to_high_cable_fly",
+    "name": {
+      "en": "Low-to-High Cable Fly",
+      "th": "เคเบิลฟลายจากล่างขึ้นบน"
+    },
+    "primary": "chest",
+    "secondary": ["shoulders"],
+    "equipment": "cable",
+    "description": {
+      "en": "From low pulleys, sweep the handles up to chin height to work the upper chest.",
+      "th": "ดึงด้ามจับจากรอกต่ำขึ้นมาระดับคาง เน้นอกส่วนบน"
+    }
+  },
+  {
+    "id": "machine_chest_press",
+    "name": {
+      "en": "Machine Chest Press",
+      "th": "เชสต์เพรส (เครื่อง)"
+    },
+    "primary": "chest",
+    "secondary": ["triceps", "shoulders"],
+    "equipment": "machine",
+    "description": {
+      "en": "Set the handles at mid-chest height and press forward without locking the elbows hard.",
+      "th": "ปรับด้ามจับให้อยู่ระดับกลางอก ดันไปข้างหน้าโดยไม่ล็อกศอกแรง"
+    }
+  },
+  {
+    "id": "pec_deck",
+    "name": {
+      "en": "Pec Deck",
+      "th": "เพ็กเด็ค (เครื่องบีบอก)"
+    },
+    "primary": "chest",
+    "secondary": ["shoulders"],
+    "equipment": "machine",
+    "description": {
+      "en": "Bring the pads or handles together in front of you with soft elbows, then return slowly.",
+      "th": "บีบแขนเข้าหากันด้านหน้าโดยงอศอกเล็กน้อย แล้วคืนกลับช้าๆ"
+    }
+  },
+  {
+    "id": "smith_machine_bench_press",
+    "name": {
+      "en": "Smith Machine Bench Press",
+      "th": "เบนช์เพรส (สมิธแมชชีน)"
+    },
+    "primary": "chest",
+    "secondary": ["triceps", "shoulders"],
+    "equipment": "machine",
+    "description": {
+      "en": "A bench press on a guided bar; position the bench so the bar touches mid-chest.",
+      "th": "เบนช์เพรสบนบาร์ที่มีรางนำ จัดม้านั่งให้บาร์ลงแตะกลางอก"
+    }
+  },
+  {
+    "id": "dumbbell_pullover",
+    "name": {
+      "en": "Dumbbell Pullover",
+      "th": "ดัมเบลพูลโอเวอร์"
+    },
+    "primary": "chest",
+    "secondary": ["back", "triceps"],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "Lying across a bench, lower one dumbbell behind your head with nearly straight arms, then pull it back over the chest.",
+      "th": "นอนขวางม้านั่ง ลดดัมเบลไปด้านหลังศีรษะโดยแขนเกือบตึง แล้วดึงกลับมาเหนืออก"
+    }
+  },
+  {
+    "id": "push_up",
+    "name": {
+      "en": "Push-Up",
+      "th": "วิดพื้น (Push-up)"
+    },
+    "primary": "chest",
+    "secondary": ["triceps", "shoulders", "core"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "Keep a straight line from head to heels, lower the chest close to the floor and push back up.",
+      "th": "ลำตัวตรงจากศีรษะถึงส้นเท้า ลดอกลงใกล้พื้นแล้วดันกลับขึ้น"
+    }
+  },
+  {
+    "id": "incline_push_up",
+    "name": {
+      "en": "Incline Push-Up",
+      "th": "วิดพื้นมือวางบนที่สูง"
+    },
+    "primary": "chest",
+    "secondary": ["triceps", "shoulders"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "Hands on a bench or box makes the push-up easier — a great way to build up to floor push-ups.",
+      "th": "วางมือบนม้านั่งหรือกล่องทำให้ง่ายขึ้น เหมาะสำหรับฝึกก่อนวิดพื้นปกติ"
+    }
+  },
+  {
+    "id": "decline_push_up",
+    "name": {
+      "en": "Decline Push-Up",
+      "th": "วิดพื้นเท้าวางบนที่สูง"
+    },
+    "primary": "chest",
+    "secondary": ["shoulders", "triceps"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "Feet on a bench shifts more load to the upper chest and shoulders.",
+      "th": "วางเท้าบนม้านั่งเพื่อเพิ่มน้ำหนักไปที่อกส่วนบนและไหล่"
+    }
+  },
+  {
+    "id": "wide_push_up",
+    "name": {
+      "en": "Wide Push-Up",
+      "th": "วิดพื้นมือกว้าง"
+    },
+    "primary": "chest",
+    "secondary": ["shoulders"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "Place hands wider than shoulders and keep elbows pointing out at about 45–60°.",
+      "th": "วางมือกว้างกว่าไหล่ ศอกกางออกราว 45–60°"
+    }
+  },
+  {
+    "id": "chest_dip",
+    "name": {
+      "en": "Chest Dip",
+      "th": "ดิปเน้นอก"
+    },
+    "primary": "chest",
+    "secondary": ["triceps", "shoulders"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "On parallel bars, lean the torso forward and lower until the shoulders are just below the elbows.",
+      "th": "บนบาร์คู่ เอนลำตัวไปข้างหน้า ลดตัวลงจนไหล่ต่ำกว่าศอกเล็กน้อย"
+    }
+  },
+  {
+    "id": "deadlift",
+    "name": {
+      "en": "Deadlift",
+      "th": "เดดลิฟต์"
+    },
+    "primary": "back",
+    "secondary": ["hamstrings", "glutes", "forearms"],
+    "equipment": "barbell",
+    "description": {
+      "en": "With a flat back and the bar over mid-foot, push the floor away and stand up tall.",
+      "th": "หลังตรง บาร์อยู่เหนือกลางเท้า ดันพื้นแล้วยืนขึ้นเต็มตัว"
+    }
+  },
+  {
+    "id": "barbell_row",
+    "name": {
+      "en": "Barbell Row",
+      "th": "บาร์เบลโรว์"
+    },
+    "primary": "back",
+    "secondary": ["biceps", "forearms"],
+    "equipment": "barbell",
+    "description": {
+      "en": "Hinge forward with a flat back and row the bar to the lower ribs.",
+      "th": "โน้มตัวไปข้างหน้าหลังตรง ดึงบาร์เข้าหาซี่โครงล่าง"
+    }
+  },
+  {
+    "id": "pendlay_row",
+    "name": {
+      "en": "Pendlay Row",
+      "th": "เพนด์เลย์โรว์"
+    },
+    "primary": "back",
+    "secondary": ["biceps"],
+    "equipment": "barbell",
+    "description": {
+      "en": "Each rep starts from the floor with the torso near parallel; pull the bar explosively to the chest.",
+      "th": "ทุกครั้งเริ่มจากพื้น ลำตัวเกือบขนานพื้น ดึงบาร์เข้าหาอกอย่างรวดเร็ว"
+    }
+  },
+  {
+    "id": "t_bar_row",
+    "name": {
+      "en": "T-Bar Row",
+      "th": "ทีบาร์โรว์"
+    },
+    "primary": "back",
+    "secondary": ["biceps"],
+    "equipment": "barbell",
+    "description": {
+      "en": "Straddle the bar, hinge forward and row the handle to your chest.",
+      "th": "คร่อมบาร์ โน้มตัวแล้วดึงด้ามจับเข้าหาอก"
+    }
+  },
+  {
+    "id": "one_arm_dumbbell_row",
+    "name": {
+      "en": "One-Arm Dumbbell Row",
+      "th": "ดัมเบลโรว์แขนเดียว"
+    },
+    "primary": "back",
+    "secondary": ["biceps"],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "Support yourself on a bench and pull the dumbbell toward your hip.",
+      "th": "ใช้มือและเข่าค้ำม้านั่ง ดึงดัมเบลเข้าหาสะโพก"
+    }
+  },
+  {
+    "id": "chest_supported_dumbbell_row",
+    "name": {
+      "en": "Chest-Supported Dumbbell Row",
+      "th": "ดัมเบลโรว์นอนคว่ำม้านั่งเอียง"
+    },
+    "primary": "back",
+    "secondary": ["biceps"],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "Lie face down on an incline bench and row both dumbbells without using momentum.",
+      "th": "นอนคว่ำบนม้านั่งเอียง ดึงดัมเบลทั้งสองข้างโดยไม่เหวี่ยงตัว"
+    }
+  },
+  {
+    "id": "lat_pulldown",
+    "name": {
+      "en": "Lat Pulldown",
+      "th": "แลตพูลดาวน์"
+    },
+    "primary": "back",
+    "secondary": ["biceps"],
+    "equipment": "cable",
+    "description": {
+      "en": "Pull the bar to the upper chest while driving the elbows down toward your sides.",
+      "th": "ดึงบาร์ลงมาที่อกส่วนบน โดยกดศอกลงข้างลำตัว"
+    }
+  },
+  {
+    "id": "close_grip_pulldown",
+    "name": {
+      "en": "Close-Grip Pulldown",
+      "th": "พูลดาวน์มือแคบ"
+    },
+    "primary": "back",
+    "secondary": ["biceps"],
+    "equipment": "cable",
+    "description": {
+      "en": "Use a narrow handle and pull to the chest, keeping the torso still.",
+      "th": "ใช้ด้ามจับแคบ ดึงลงมาที่อก ลำตัวนิ่ง"
+    }
+  },
+  {
+    "id": "seated_cable_row",
+    "name": {
+      "en": "Seated Cable Row",
+      "th": "ซีทเต็ดเคเบิลโรว์"
+    },
+    "primary": "back",
+    "secondary": ["biceps"],
+    "equipment": "cable",
+    "description": {
+      "en": "Sit tall and pull the handle to the stomach, squeezing the shoulder blades together.",
+      "th": "นั่งหลังตรง ดึงด้ามจับเข้าหาท้อง บีบสะบักเข้าหากัน"
+    }
+  },
+  {
+    "id": "straight_arm_pulldown",
+    "name": {
+      "en": "Straight-Arm Pulldown",
+      "th": "สเตรตอาร์มพูลดาวน์"
+    },
+    "primary": "back",
+    "secondary": ["core"],
+    "equipment": "cable",
+    "description": {
+      "en": "With arms almost straight, sweep the bar from eye level down to the thighs.",
+      "th": "แขนเกือบตึง กวาดบาร์จากระดับสายตาลงมาที่ต้นขา"
+    }
+  },
+  {
+    "id": "machine_row",
+    "name": {
+      "en": "Machine Row",
+      "th": "แมชชีนโรว์"
+    },
+    "primary": "back",
+    "secondary": ["biceps"],
+    "equipment": "machine",
+    "description": {
+      "en": "Chest against the pad, pull the handles back until the elbows pass the torso.",
+      "th": "อกแนบเบาะ ดึงด้ามจับจนศอกเลยลำตัว"
+    }
+  },
+  {
+    "id": "pull_up",
+    "name": {
+      "en": "Pull-Up",
+      "th": "ดึงข้อ (Pull-up)"
+    },
+    "primary": "back",
+    "secondary": ["biceps", "forearms"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "From a dead hang with an overhand grip, pull until the chin clears the bar.",
+      "th": "ห้อยตัวมือคว่ำ ดึงตัวขึ้นจนคางพ้นบาร์"
+    }
+  },
+  {
+    "id": "chin_up",
+    "name": {
+      "en": "Chin-Up",
+      "th": "ดึงข้อมือหงาย (Chin-up)"
+    },
+    "primary": "back",
+    "secondary": ["biceps"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "An underhand-grip pull-up that brings the biceps in more.",
+      "th": "ดึงข้อแบบหงายมือ ใช้ไบเซ็ปช่วยมากขึ้น"
+    }
+  },
+  {
+    "id": "assisted_pull_up",
+    "name": {
+      "en": "Assisted Pull-Up",
+      "th": "ดึงข้อแบบเครื่องช่วยแรง"
+    },
+    "primary": "back",
+    "secondary": ["biceps"],
+    "equipment": "machine",
+    "description": {
+      "en": "A counterweight takes part of your body weight so you can practise full pull-ups.",
+      "th": "เครื่องช่วยรับน้ำหนักตัวบางส่วน ให้ฝึกดึงข้อได้เต็มช่วง"
+    }
+  },
+  {
+    "id": "inverted_row",
+    "name": {
+      "en": "Inverted Row",
+      "th": "อินเวิร์ตโรว์ (ดึงตัวนอนหงาย)"
+    },
+    "primary": "back",
+    "secondary": ["biceps", "core"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "Hang under a low bar with a straight body and pull your chest up to it.",
+      "th": "นอนหงายใต้บาร์ต่ำ ลำตัวตรง ดึงอกขึ้นไปหาบาร์"
+    }
+  },
+  {
+    "id": "rack_pull",
+    "name": {
+      "en": "Rack Pull",
+      "th": "แร็กพูล"
+    },
+    "primary": "back",
+    "secondary": ["glutes", "forearms"],
+    "equipment": "barbell",
+    "description": {
+      "en": "A deadlift from pins set around knee height to focus on the lockout.",
+      "th": "เดดลิฟต์จากหมุดระดับเข่า เน้นช่วงยืดตัวขึ้น"
+    }
+  },
+  {
+    "id": "back_extension",
+    "name": {
+      "en": "Back Extension",
+      "th": "แบ็กเอกซ์เทนชัน"
+    },
+    "primary": "back",
+    "secondary": ["glutes", "hamstrings"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "On a hyperextension bench, lower the torso with a neutral spine and raise it back in line with the legs.",
+      "th": "บนม้านั่งไฮเปอร์เอกซ์เทนชัน ลดลำตัวลงหลังตรงแล้วยกกลับให้แนวเดียวกับขา"
+    }
+  },
+  {
+    "id": "superman",
+    "name": {
+      "en": "Superman Hold",
+      "th": "ซูเปอร์แมน"
+    },
+    "primary": "back",
+    "secondary": ["glutes"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "Lying face down, lift arms and legs a few centimetres and hold.",
+      "th": "นอนคว่ำ ยกแขนและขาขึ้นจากพื้นเล็กน้อยแล้วค้างไว้"
+    }
+  },
+  {
+    "id": "barbell_shrug",
+    "name": {
+      "en": "Barbell Shrug",
+      "th": "ยักไหล่ (บาร์เบล)"
+    },
+    "primary": "back",
+    "secondary": ["forearms"],
+    "equipment": "barbell",
+    "description": {
+      "en": "Hold the bar at arm’s length and lift the shoulders straight up toward the ears.",
+      "th": "ถือบาร์แขนตึง ยกไหล่ขึ้นตรงๆ เข้าหาหู"
+    }
+  },
+  {
+    "id": "dumbbell_shrug",
+    "name": {
+      "en": "Dumbbell Shrug",
+      "th": "ยักไหล่ (ดัมเบล)"
+    },
+    "primary": "back",
+    "secondary": ["forearms"],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "Hold dumbbells at your sides and shrug straight up, pausing at the top.",
+      "th": "ถือดัมเบลข้างลำตัว ยกไหล่ขึ้นตรงๆ ค้างด้านบนครู่หนึ่ง"
+    }
+  },
+  {
+    "id": "overhead_press",
+    "name": {
+      "en": "Overhead Press",
+      "th": "โอเวอร์เฮดเพรส (บาร์เบล)"
+    },
+    "primary": "shoulders",
+    "secondary": ["triceps", "core"],
+    "equipment": "barbell",
+    "description": {
+      "en": "Standing with glutes tight, press the bar from the collarbones to straight overhead.",
+      "th": "ยืนเกร็งก้น ดันบาร์จากไหปลาร้าขึ้นเหนือศีรษะจนแขนตึง"
+    }
+  },
+  {
+    "id": "seated_dumbbell_press",
+    "name": {
+      "en": "Seated Dumbbell Shoulder Press",
+      "th": "ดัมเบลโชลเดอร์เพรส (นั่ง)"
+    },
+    "primary": "shoulders",
+    "secondary": ["triceps"],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "Seated with back support, press the dumbbells from ear height to overhead.",
+      "th": "นั่งพิงพนัก ดันดัมเบลจากระดับหูขึ้นเหนือศีรษะ"
+    }
+  },
+  {
+    "id": "arnold_press",
+    "name": {
+      "en": "Arnold Press",
+      "th": "อาร์โนลด์เพรส"
+    },
+    "primary": "shoulders",
+    "secondary": ["triceps"],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "Start palms facing you and rotate them outward as you press overhead.",
+      "th": "เริ่มฝ่ามือหันเข้าตัว แล้วหมุนออกขณะดันขึ้นเหนือศีรษะ"
+    }
+  },
+  {
+    "id": "machine_shoulder_press",
+    "name": {
+      "en": "Machine Shoulder Press",
+      "th": "โชลเดอร์เพรส (เครื่อง)"
+    },
+    "primary": "shoulders",
+    "secondary": ["triceps"],
+    "equipment": "machine",
+    "description": {
+      "en": "Set the seat so the handles start at shoulder height and press up.",
+      "th": "ปรับเบาะให้ด้ามจับเริ่มที่ระดับไหล่ แล้วดันขึ้น"
+    }
+  },
+  {
+    "id": "lateral_raise",
+    "name": {
+      "en": "Dumbbell Lateral Raise",
+      "th": "ดัมเบลยกข้าง (Lateral raise)"
+    },
+    "primary": "shoulders",
+    "secondary": [],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "Raise the dumbbells out to the sides to shoulder height, leading with the elbows.",
+      "th": "ยกดัมเบลออกด้านข้างถึงระดับไหล่ โดยนำด้วยศอก"
+    }
+  },
+  {
+    "id": "cable_lateral_raise",
+    "name": {
+      "en": "Cable Lateral Raise",
+      "th": "เคเบิลยกข้าง"
+    },
+    "primary": "shoulders",
+    "secondary": [],
+    "equipment": "cable",
+    "description": {
+      "en": "One arm at a time from a low pulley, lift to shoulder height with constant tension.",
+      "th": "ทีละข้างจากรอกต่ำ ยกถึงระดับไหล่ แรงตึงสม่ำเสมอตลอดช่วง"
+    }
+  },
+  {
+    "id": "front_raise",
+    "name": {
+      "en": "Front Raise",
+      "th": "ยกหน้า (Front raise)"
+    },
+    "primary": "shoulders",
+    "secondary": ["chest"],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "Lift the weights in front of you to eye level with a slight bend in the elbows.",
+      "th": "ยกน้ำหนักไปข้างหน้าถึงระดับสายตา ศอกงอเล็กน้อย"
+    }
+  },
+  {
+    "id": "rear_delt_fly",
+    "name": {
+      "en": "Rear Delt Fly",
+      "th": "รีเออร์เดลต์ฟลาย"
+    },
+    "primary": "shoulders",
+    "secondary": ["back"],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "Hinge forward and raise the dumbbells out to the sides to work the back of the shoulders.",
+      "th": "โน้มตัวไปข้างหน้า กางดัมเบลออกด้านข้างเพื่อเน้นไหล่หลัง"
+    }
+  },
+  {
+    "id": "reverse_pec_deck",
+    "name": {
+      "en": "Reverse Pec Deck",
+      "th": "รีเวิร์สเพ็กเด็ค"
+    },
+    "primary": "shoulders",
+    "secondary": ["back"],
+    "equipment": "machine",
+    "description": {
+      "en": "Facing the pad, sweep the handles back until the arms are in line with the body.",
+      "th": "หันหน้าเข้าเบาะ กางแขนไปด้านหลังจนแนวเดียวกับลำตัว"
+    }
+  },
+  {
+    "id": "face_pull",
+    "name": {
+      "en": "Face Pull",
+      "th": "เฟซพูล"
+    },
+    "primary": "shoulders",
+    "secondary": ["back"],
+    "equipment": "cable",
+    "description": {
+      "en": "Pull a rope toward your face, splitting the ends and rotating the hands back.",
+      "th": "ดึงเชือกเข้าหาใบหน้า แยกปลายเชือกออกและหมุนมือไปด้านหลัง"
+    }
+  },
+  {
+    "id": "upright_row",
+    "name": {
+      "en": "Upright Row",
+      "th": "อัปไรต์โรว์"
+    },
+    "primary": "shoulders",
+    "secondary": ["back"],
+    "equipment": "barbell",
+    "description": {
+      "en": "Pull the bar up along the body to chest height with elbows leading; use a comfortable grip width.",
+      "th": "ดึงบาร์ขึ้นชิดลำตัวถึงระดับอก นำด้วยศอก จับกว้างพอสบายไหล่"
+    }
+  },
+  {
+    "id": "landmine_press",
+    "name": {
+      "en": "Landmine Press",
+      "th": "แลนด์ไมน์เพรส"
+    },
+    "primary": "shoulders",
+    "secondary": ["chest", "triceps"],
+    "equipment": "barbell",
+    "description": {
+      "en": "Press the end of a barbell anchored in a corner up and forward, one arm or two.",
+      "th": "ดันปลายบาร์ที่ยึดไว้กับมุมขึ้นและไปข้างหน้า ทำทีละแขนหรือสองแขน"
+    }
+  },
+  {
+    "id": "pike_push_up",
+    "name": {
+      "en": "Pike Push-Up",
+      "th": "ไพค์พุชอัพ"
+    },
+    "primary": "shoulders",
+    "secondary": ["triceps"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "With hips high in an inverted V, bend the elbows to bring the head toward the floor and press back.",
+      "th": "ยกสะโพกสูงเป็นรูปตัว V คว่ำ งอศอกให้ศีรษะลงใกล้พื้นแล้วดันกลับ"
+    }
+  },
+  {
+    "id": "handstand_push_up",
+    "name": {
+      "en": "Wall Handstand Push-Up",
+      "th": "วิดพื้นแนวดิ่งพิงผนัง"
+    },
+    "primary": "shoulders",
+    "secondary": ["triceps", "core"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "In a handstand against a wall, lower the head toward the floor and press back up. Advanced.",
+      "th": "ตั้งท่าแฮนด์สแตนด์พิงผนัง ลดศีรษะลงใกล้พื้นแล้วดันขึ้น (ระดับสูง)"
+    }
+  },
+  {
+    "id": "band_pull_apart",
+    "name": {
+      "en": "Band Pull-Apart",
+      "th": "แบนด์พูลอะพาร์ต"
+    },
+    "primary": "shoulders",
+    "secondary": ["back"],
+    "equipment": "band",
+    "description": {
+      "en": "Hold a band at chest height and pull it apart until it touches the chest.",
+      "th": "ถือยางยืดระดับอก กางแขนดึงยางจนแตะอก"
+    }
+  },
+  {
+    "id": "barbell_curl",
+    "name": {
+      "en": "Barbell Curl",
+      "th": "บาร์เบลเคิร์ล"
+    },
+    "primary": "biceps",
+    "secondary": ["forearms"],
+    "equipment": "barbell",
+    "description": {
+      "en": "Curl the bar up without swinging the torso, then lower it under control.",
+      "th": "งอแขนยกบาร์ขึ้นโดยไม่เหวี่ยงลำตัว แล้วลดลงช้าๆ"
+    }
+  },
+  {
+    "id": "ez_bar_curl",
+    "name": {
+      "en": "EZ-Bar Curl",
+      "th": "อีแซดบาร์เคิร์ล"
+    },
+    "primary": "biceps",
+    "secondary": ["forearms"],
+    "equipment": "barbell",
+    "description": {
+      "en": "The angled grip of an EZ bar is easier on the wrists; keep the elbows at your sides.",
+      "th": "บาร์ EZ จับแบบเอียงช่วยลดภาระข้อมือ ศอกแนบลำตัว"
+    }
+  },
+  {
+    "id": "dumbbell_curl",
+    "name": {
+      "en": "Dumbbell Curl",
+      "th": "ดัมเบลเคิร์ล"
+    },
+    "primary": "biceps",
+    "secondary": ["forearms"],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "Curl the dumbbells while turning the palms up, keeping the elbows still.",
+      "th": "งอแขนยกดัมเบลพร้อมหมุนฝ่ามือขึ้น ศอกอยู่กับที่"
+    }
+  },
+  {
+    "id": "hammer_curl",
+    "name": {
+      "en": "Hammer Curl",
+      "th": "แฮมเมอร์เคิร์ล"
+    },
+    "primary": "biceps",
+    "secondary": ["forearms"],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "Curl with palms facing each other to work the biceps and forearms together.",
+      "th": "งอแขนโดยฝ่ามือหันเข้าหากัน ทำงานทั้งไบเซ็ปและปลายแขน"
+    }
+  },
+  {
+    "id": "incline_dumbbell_curl",
+    "name": {
+      "en": "Incline Dumbbell Curl",
+      "th": "อินคลายน์ดัมเบลเคิร์ล"
+    },
+    "primary": "biceps",
+    "secondary": [],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "Seated back on an incline bench, let the arms hang behind the body and curl.",
+      "th": "นั่งพิงม้านั่งเอียง ปล่อยแขนห้อยไปด้านหลังแล้วงอแขนขึ้น"
+    }
+  },
+  {
+    "id": "preacher_curl",
+    "name": {
+      "en": "Preacher Curl",
+      "th": "พรีชเชอร์เคิร์ล"
+    },
+    "primary": "biceps",
+    "secondary": ["forearms"],
+    "equipment": "barbell",
+    "description": {
+      "en": "With the upper arms on a preacher pad, curl the bar and lower it fully.",
+      "th": "วางต้นแขนบนเบาะพรีชเชอร์ งอแขนยกบาร์แล้วลดลงจนสุด"
+    }
+  },
+  {
+    "id": "concentration_curl",
+    "name": {
+      "en": "Concentration Curl",
+      "th": "คอนเซนเทรชันเคิร์ล"
+    },
+    "primary": "biceps",
+    "secondary": [],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "Seated with the elbow braced against the inner thigh, curl one dumbbell slowly.",
+      "th": "นั่งวางศอกพิงด้านในต้นขา งอแขนยกดัมเบลทีละข้างช้าๆ"
+    }
+  },
+  {
+    "id": "cable_curl",
+    "name": {
+      "en": "Cable Curl",
+      "th": "เคเบิลเคิร์ล"
+    },
+    "primary": "biceps",
+    "secondary": ["forearms"],
+    "equipment": "cable",
+    "description": {
+      "en": "Curl a bar or rope from a low pulley for constant tension.",
+      "th": "งอแขนดึงบาร์หรือเชือกจากรอกต่ำ แรงตึงต่อเนื่อง"
+    }
+  },
+  {
+    "id": "machine_biceps_curl",
+    "name": {
+      "en": "Machine Biceps Curl",
+      "th": "ไบเซ็ปเคิร์ล (เครื่อง)"
+    },
+    "primary": "biceps",
+    "secondary": [],
+    "equipment": "machine",
+    "description": {
+      "en": "Line the elbows up with the machine pivot and curl through a full range.",
+      "th": "จัดศอกให้ตรงแกนหมุนของเครื่อง แล้วงอแขนให้สุดช่วง"
+    }
+  },
+  {
+    "id": "band_curl",
+    "name": {
+      "en": "Band Curl",
+      "th": "เคิร์ลด้วยยางยืด"
+    },
+    "primary": "biceps",
+    "secondary": ["forearms"],
+    "equipment": "band",
+    "description": {
+      "en": "Stand on a resistance band and curl the handles up.",
+      "th": "ยืนเหยียบยางยืด แล้วงอแขนดึงด้ามจับขึ้น"
+    }
+  },
+  {
+    "id": "close_grip_bench_press",
+    "name": {
+      "en": "Close-Grip Bench Press",
+      "th": "เบนช์เพรสมือแคบ"
+    },
+    "primary": "triceps",
+    "secondary": ["chest", "shoulders"],
+    "equipment": "barbell",
+    "description": {
+      "en": "Grip about shoulder width and keep the elbows tucked as you press.",
+      "th": "จับบาร์กว้างประมาณไหล่ หุบศอกแนบลำตัวขณะดัน"
+    }
+  },
+  {
+    "id": "skull_crusher",
+    "name": {
+      "en": "Skull Crusher",
+      "th": "สกัลครัชเชอร์"
+    },
+    "primary": "triceps",
+    "secondary": [],
+    "equipment": "barbell",
+    "description": {
+      "en": "Lying on a bench, bend only at the elbows to lower an EZ bar toward the forehead, then extend.",
+      "th": "นอนบนม้านั่ง งอเฉพาะศอกลดบาร์ EZ ลงหาหน้าผาก แล้วเหยียดกลับ"
+    }
+  },
+  {
+    "id": "overhead_dumbbell_extension",
+    "name": {
+      "en": "Overhead Dumbbell Extension",
+      "th": "ดัมเบลเหยียดแขนเหนือศีรษะ"
+    },
+    "primary": "triceps",
+    "secondary": [],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "Hold one dumbbell overhead with both hands, lower it behind the head and extend.",
+      "th": "ถือดัมเบลหนึ่งลูกเหนือศีรษะด้วยสองมือ ลดลงหลังศีรษะแล้วเหยียดขึ้น"
+    }
+  },
+  {
+    "id": "triceps_pushdown",
+    "name": {
+      "en": "Triceps Pushdown",
+      "th": "ไตรเซ็ปพุชดาวน์"
+    },
+    "primary": "triceps",
+    "secondary": [],
+    "equipment": "cable",
+    "description": {
+      "en": "Elbows pinned to your sides, push the bar down until the arms are straight.",
+      "th": "ศอกแนบลำตัว กดบาร์ลงจนแขนเหยียดตรง"
+    }
+  },
+  {
+    "id": "rope_pushdown",
+    "name": {
+      "en": "Rope Pushdown",
+      "th": "โรปพุชดาวน์"
+    },
+    "primary": "triceps",
+    "secondary": [],
+    "equipment": "cable",
+    "description": {
+      "en": "Push the rope down and spread the ends apart at the bottom.",
+      "th": "กดเชือกลงแล้วแยกปลายเชือกออกด้านล่าง"
+    }
+  },
+  {
+    "id": "overhead_cable_extension",
+    "name": {
+      "en": "Overhead Cable Extension",
+      "th": "เคเบิลเหยียดแขนเหนือศีรษะ"
+    },
+    "primary": "triceps",
+    "secondary": [],
+    "equipment": "cable",
+    "description": {
+      "en": "Facing away from the pulley, extend the rope forward and overhead.",
+      "th": "หันหลังให้รอก เหยียดเชือกไปข้างหน้าเหนือศีรษะ"
+    }
+  },
+  {
+    "id": "dumbbell_kickback",
+    "name": {
+      "en": "Dumbbell Kickback",
+      "th": "ดัมเบลคิกแบ็ก"
+    },
+    "primary": "triceps",
+    "secondary": [],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "Hinge forward with the upper arm parallel to the floor and straighten the elbow behind you.",
+      "th": "โน้มตัว ต้นแขนขนานพื้น แล้วเหยียดศอกไปด้านหลัง"
+    }
+  },
+  {
+    "id": "bench_dip",
+    "name": {
+      "en": "Bench Dip",
+      "th": "ดิปม้านั่ง"
+    },
+    "primary": "triceps",
+    "secondary": ["chest", "shoulders"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "Hands on a bench behind you, bend the elbows to lower the hips and press back up.",
+      "th": "วางมือบนม้านั่งด้านหลัง งอศอกลดสะโพกลงแล้วดันกลับขึ้น"
+    }
+  },
+  {
+    "id": "triceps_dip",
+    "name": {
+      "en": "Triceps Dip",
+      "th": "ดิปบาร์คู่ (เน้นไตรเซ็ป)"
+    },
+    "primary": "triceps",
+    "secondary": ["chest", "shoulders"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "On parallel bars with the torso upright, lower until the elbows are at about 90°.",
+      "th": "บนบาร์คู่ ลำตัวตั้งตรง ลดตัวลงจนศอกงอราว 90°"
+    }
+  },
+  {
+    "id": "diamond_push_up",
+    "name": {
+      "en": "Diamond Push-Up",
+      "th": "วิดพื้นมือเพชร"
+    },
+    "primary": "triceps",
+    "secondary": ["chest"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "Hands close together under the chest forming a diamond; keep the elbows close.",
+      "th": "วางมือชิดกันใต้อกเป็นรูปเพชร ศอกแนบลำตัว"
+    }
+  },
+  {
+    "id": "machine_triceps_extension",
+    "name": {
+      "en": "Machine Triceps Extension",
+      "th": "ไตรเซ็ปเอกซ์เทนชัน (เครื่อง)"
+    },
+    "primary": "triceps",
+    "secondary": [],
+    "equipment": "machine",
+    "description": {
+      "en": "Extend the elbows against the machine pads through a full range.",
+      "th": "เหยียดศอกดันเบาะของเครื่องให้สุดช่วง"
+    }
+  },
+  {
+    "id": "wrist_curl",
+    "name": {
+      "en": "Wrist Curl",
+      "th": "ริสต์เคิร์ล (งอข้อมือ)"
+    },
+    "primary": "forearms",
+    "secondary": [],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "Forearms on the thighs, palms up, curl the weight with only the wrists.",
+      "th": "วางปลายแขนบนต้นขา หงายมือ งอเฉพาะข้อมือยกน้ำหนัก"
+    }
+  },
+  {
+    "id": "reverse_wrist_curl",
+    "name": {
+      "en": "Reverse Wrist Curl",
+      "th": "รีเวิร์สริสต์เคิร์ล"
+    },
+    "primary": "forearms",
+    "secondary": [],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "Same as a wrist curl with palms facing down to train the top of the forearm.",
+      "th": "เหมือนริสต์เคิร์ลแต่คว่ำมือ เน้นปลายแขนด้านบน"
+    }
+  },
+  {
+    "id": "reverse_curl",
+    "name": {
+      "en": "Reverse Curl",
+      "th": "รีเวิร์สเคิร์ล"
+    },
+    "primary": "forearms",
+    "secondary": ["biceps"],
+    "equipment": "barbell",
+    "description": {
+      "en": "Curl the bar with an overhand grip, keeping the wrists straight.",
+      "th": "งอแขนยกบาร์โดยคว่ำมือ ข้อมือตรง"
+    }
+  },
+  {
+    "id": "farmers_walk",
+    "name": {
+      "en": "Farmer’s Walk",
+      "th": "ฟาร์เมอร์วอล์ก"
+    },
+    "primary": "forearms",
+    "secondary": ["core", "back"],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "Walk tall while carrying heavy weights at your sides.",
+      "th": "เดินตัวตรงพร้อมถือน้ำหนักมากไว้ข้างลำตัว"
+    }
+  },
+  {
+    "id": "dead_hang",
+    "name": {
+      "en": "Dead Hang",
+      "th": "ห้อยตัวบนบาร์"
+    },
+    "primary": "forearms",
+    "secondary": ["back", "shoulders"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "Hang from a pull-up bar with relaxed shoulders for time to build grip.",
+      "th": "ห้อยตัวบนบาร์ดึงข้อค้างไว้ตามเวลาเพื่อฝึกแรงบีบมือ"
+    }
+  },
+  {
+    "id": "plate_pinch",
+    "name": {
+      "en": "Plate Pinch",
+      "th": "หนีบแผ่นน้ำหนัก"
+    },
+    "primary": "forearms",
+    "secondary": [],
+    "equipment": "other",
+    "description": {
+      "en": "Pinch two smooth weight plates together with the fingers and hold.",
+      "th": "ใช้นิ้วหนีบแผ่นน้ำหนักสองแผ่นประกบกันแล้วค้างไว้"
+    }
+  },
+  {
+    "id": "back_squat",
+    "name": {
+      "en": "Back Squat",
+      "th": "สควอต (บาร์เบลบนหลัง)"
+    },
+    "primary": "quads",
+    "secondary": ["glutes", "hamstrings", "core"],
+    "equipment": "barbell",
+    "description": {
+      "en": "With the bar on the upper back, sit down between the hips until thighs are at least parallel, then stand.",
+      "th": "วางบาร์บนหลังส่วนบน นั่งลงจนต้นขาขนานพื้นหรือต่ำกว่า แล้วยืนขึ้น"
+    }
+  },
+  {
+    "id": "front_squat",
+    "name": {
+      "en": "Front Squat",
+      "th": "ฟรอนต์สควอต"
+    },
+    "primary": "quads",
+    "secondary": ["glutes", "core"],
+    "equipment": "barbell",
+    "description": {
+      "en": "The bar rests on the front of the shoulders; keep the elbows high and the torso upright.",
+      "th": "วางบาร์ด้านหน้าไหล่ ยกศอกสูง ลำตัวตั้งตรง"
+    }
+  },
+  {
+    "id": "goblet_squat",
+    "name": {
+      "en": "Goblet Squat",
+      "th": "ก็อบเล็ตสควอต"
+    },
+    "primary": "quads",
+    "secondary": ["glutes", "core"],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "Hold a dumbbell at the chest and squat deep with the elbows inside the knees.",
+      "th": "ถือดัมเบลไว้ที่อก สควอตลึกให้ศอกอยู่ด้านในเข่า"
+    }
+  },
+  {
+    "id": "leg_press",
+    "name": {
+      "en": "Leg Press",
+      "th": "เลกเพรส"
+    },
+    "primary": "quads",
+    "secondary": ["glutes", "hamstrings"],
+    "equipment": "machine",
+    "description": {
+      "en": "Lower the platform until the knees reach about 90° without the lower back lifting off the pad.",
+      "th": "ลดแป้นลงจนเข่างอราว 90° โดยหลังล่างไม่ลอยจากเบาะ"
+    }
+  },
+  {
+    "id": "hack_squat",
+    "name": {
+      "en": "Hack Squat",
+      "th": "แฮกสควอต (เครื่อง)"
+    },
+    "primary": "quads",
+    "secondary": ["glutes"],
+    "equipment": "machine",
+    "description": {
+      "en": "Shoulders under the pads, squat down the sled and drive back up through the whole foot.",
+      "th": "ไหล่อยู่ใต้เบาะ สควอตลงตามราง แล้วดันขึ้นด้วยทั้งเท้า"
+    }
+  },
+  {
+    "id": "leg_extension",
+    "name": {
+      "en": "Leg Extension",
+      "th": "เลกเอกซ์เทนชัน"
+    },
+    "primary": "quads",
+    "secondary": [],
+    "equipment": "machine",
+    "description": {
+      "en": "Straighten the knees against the pad and lower slowly.",
+      "th": "เหยียดเข่าดันเบาะขึ้น แล้วลดลงช้าๆ"
+    }
+  },
+  {
+    "id": "bulgarian_split_squat",
+    "name": {
+      "en": "Bulgarian Split Squat",
+      "th": "บัลแกเรียนสปลิตสควอต"
+    },
+    "primary": "quads",
+    "secondary": ["glutes", "hamstrings"],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "Rear foot on a bench, lower the back knee toward the floor and drive up with the front leg.",
+      "th": "วางเท้าหลังบนม้านั่ง ลดเข่าหลังลงหาพื้น แล้วดันขึ้นด้วยขาหน้า"
+    }
+  },
+  {
+    "id": "walking_lunge",
+    "name": {
+      "en": "Walking Lunge",
+      "th": "ลันจ์เดิน"
+    },
+    "primary": "quads",
+    "secondary": ["glutes", "hamstrings"],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "Step forward into a lunge and bring the back foot through into the next step.",
+      "th": "ก้าวไปข้างหน้าลงท่าลันจ์ แล้วก้าวขาหลังต่อเป็นก้าวถัดไป"
+    }
+  },
+  {
+    "id": "bodyweight_squat",
+    "name": {
+      "en": "Bodyweight Squat",
+      "th": "สควอตน้ำหนักตัว"
+    },
+    "primary": "quads",
+    "secondary": ["glutes", "core"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "Feet shoulder-width apart, sit back and down, keep the chest up and stand.",
+      "th": "ยืนเท้ากว้างเท่าไหล่ นั่งลงไปด้านหลัง อกตั้ง แล้วยืนขึ้น"
+    }
+  },
+  {
+    "id": "lunge",
+    "name": {
+      "en": "Lunge",
+      "th": "ลันจ์ (น้ำหนักตัว)"
+    },
+    "primary": "quads",
+    "secondary": ["glutes", "hamstrings"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "Step forward and lower until both knees are about 90°, then push back to standing.",
+      "th": "ก้าวไปข้างหน้า ลดตัวจนเข่าทั้งสองงอราว 90° แล้วดันกลับมายืน"
+    }
+  },
+  {
+    "id": "reverse_lunge",
+    "name": {
+      "en": "Reverse Lunge",
+      "th": "ลันจ์ถอยหลัง"
+    },
+    "primary": "quads",
+    "secondary": ["glutes"],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "Step backward into the lunge — gentler on the knees than a forward lunge.",
+      "th": "ก้าวถอยหลังลงท่าลันจ์ ถนอมเข่ามากกว่าลันจ์ไปข้างหน้า"
+    }
+  },
+  {
+    "id": "step_up",
+    "name": {
+      "en": "Step-Up",
+      "th": "สเต็ปอัป"
+    },
+    "primary": "quads",
+    "secondary": ["glutes"],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "Step onto a box with one foot and stand up fully without pushing off the back leg.",
+      "th": "ก้าวขึ้นกล่องด้วยขาเดียวแล้วยืนเต็มตัว โดยไม่ถีบด้วยขาหลัง"
+    }
+  },
+  {
+    "id": "jump_squat",
+    "name": {
+      "en": "Jump Squat",
+      "th": "สควอตกระโดด"
+    },
+    "primary": "quads",
+    "secondary": ["glutes", "calves"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "Squat down and jump explosively, landing softly into the next rep.",
+      "th": "สควอตลงแล้วกระโดดขึ้นแรงๆ ลงพื้นนุ่มๆ ต่อครั้งถัดไป"
+    }
+  },
+  {
+    "id": "wall_sit",
+    "name": {
+      "en": "Wall Sit",
+      "th": "นั่งพิงผนัง (Wall sit)"
+    },
+    "primary": "quads",
+    "secondary": ["glutes"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "Slide down a wall until the thighs are parallel to the floor and hold.",
+      "th": "ไถลหลังลงตามผนังจนต้นขาขนานพื้นแล้วค้างไว้"
+    }
+  },
+  {
+    "id": "smith_machine_squat",
+    "name": {
+      "en": "Smith Machine Squat",
+      "th": "สควอต (สมิธแมชชีน)"
+    },
+    "primary": "quads",
+    "secondary": ["glutes"],
+    "equipment": "machine",
+    "description": {
+      "en": "A squat on a guided bar; place the feet slightly forward of the bar.",
+      "th": "สควอตบนบาร์ที่มีรางนำ วางเท้าล้ำหน้าบาร์เล็กน้อย"
+    }
+  },
+  {
+    "id": "pistol_squat",
+    "name": {
+      "en": "Pistol Squat",
+      "th": "พิสทอลสควอต"
+    },
+    "primary": "quads",
+    "secondary": ["glutes", "core"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "Squat on one leg with the other held straight in front; hold a support while learning.",
+      "th": "สควอตขาเดียวโดยยื่นอีกขาไปข้างหน้า จับหลักช่วยระหว่างฝึก"
+    }
+  },
+  {
+    "id": "burpee",
+    "name": {
+      "en": "Burpee",
+      "th": "เบอร์พี"
+    },
+    "primary": "quads",
+    "secondary": ["chest", "core", "shoulders"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "Squat, kick the feet back to a plank, return and jump up — one smooth rep.",
+      "th": "สควอต ถีบเท้าไปด้านหลังเป็นแพลงก์ ดึงกลับแล้วกระโดดขึ้นต่อเนื่องกัน"
+    }
+  },
+  {
+    "id": "romanian_deadlift",
+    "name": {
+      "en": "Romanian Deadlift",
+      "th": "โรมาเนียนเดดลิฟต์"
+    },
+    "primary": "hamstrings",
+    "secondary": ["glutes", "back"],
+    "equipment": "barbell",
+    "description": {
+      "en": "Push the hips back with soft knees, lower the bar along the legs until the hamstrings stretch, then stand.",
+      "th": "ดันสะโพกไปด้านหลัง เข่างอเล็กน้อย ลดบาร์ตามขาจนต้นขาหลังยืด แล้วยืนขึ้น"
+    }
+  },
+  {
+    "id": "dumbbell_romanian_deadlift",
+    "name": {
+      "en": "Dumbbell Romanian Deadlift",
+      "th": "โรมาเนียนเดดลิฟต์ (ดัมเบล)"
+    },
+    "primary": "hamstrings",
+    "secondary": ["glutes", "back"],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "The same hip hinge holding dumbbells close to the thighs.",
+      "th": "ท่าพับสะโพกแบบเดียวกัน โดยถือดัมเบลชิดต้นขา"
+    }
+  },
+  {
+    "id": "stiff_leg_deadlift",
+    "name": {
+      "en": "Stiff-Leg Deadlift",
+      "th": "สติฟเลกเดดลิฟต์"
+    },
+    "primary": "hamstrings",
+    "secondary": ["glutes", "back"],
+    "equipment": "barbell",
+    "description": {
+      "en": "Keep the knees nearly straight and hinge as far as your hamstrings allow with a flat back.",
+      "th": "เข่าเกือบตึง พับสะโพกเท่าที่ต้นขาหลังยืดได้โดยหลังตรง"
+    }
+  },
+  {
+    "id": "lying_leg_curl",
+    "name": {
+      "en": "Lying Leg Curl",
+      "th": "ไลอิงเลกเคิร์ล"
+    },
+    "primary": "hamstrings",
+    "secondary": ["calves"],
+    "equipment": "machine",
+    "description": {
+      "en": "Lying face down, curl the pad toward your glutes and lower slowly.",
+      "th": "นอนคว่ำ งอเข่าดึงเบาะเข้าหาก้น แล้วลดลงช้าๆ"
+    }
+  },
+  {
+    "id": "seated_leg_curl",
+    "name": {
+      "en": "Seated Leg Curl",
+      "th": "ซีทเต็ดเลกเคิร์ล"
+    },
+    "primary": "hamstrings",
+    "secondary": [],
+    "equipment": "machine",
+    "description": {
+      "en": "Seated with the thigh pad snug, curl the lower pad down and back.",
+      "th": "นั่งให้เบาะกดต้นขาแน่น งอเข่าดึงเบาะล่างลงไปด้านหลัง"
+    }
+  },
+  {
+    "id": "good_morning",
+    "name": {
+      "en": "Good Morning",
+      "th": "กู๊ดมอร์นิง"
+    },
+    "primary": "hamstrings",
+    "secondary": ["back", "glutes"],
+    "equipment": "barbell",
+    "description": {
+      "en": "With a light bar on the back, hinge forward from the hips with a flat back and return.",
+      "th": "วางบาร์เบาๆ บนหลัง พับสะโพกโน้มตัวไปข้างหน้าหลังตรง แล้วกลับขึ้น"
+    }
+  },
+  {
+    "id": "nordic_curl",
+    "name": {
+      "en": "Nordic Hamstring Curl",
+      "th": "นอร์ดิกเคิร์ล"
+    },
+    "primary": "hamstrings",
+    "secondary": [],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "Kneeling with ankles held down, lower your body forward as slowly as you can.",
+      "th": "คุกเข่าให้คนหรืออุปกรณ์ล็อกข้อเท้า แล้วค่อยๆ เอนตัวลงไปข้างหน้าให้ช้าที่สุด"
+    }
+  },
+  {
+    "id": "single_leg_romanian_deadlift",
+    "name": {
+      "en": "Single-Leg Romanian Deadlift",
+      "th": "โรมาเนียนเดดลิฟต์ขาเดียว"
+    },
+    "primary": "hamstrings",
+    "secondary": ["glutes", "core"],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "Balance on one leg and hinge forward while the free leg extends behind you.",
+      "th": "ยืนขาเดียว พับสะโพกโน้มตัว ขาอีกข้างเหยียดไปด้านหลัง"
+    }
+  },
+  {
+    "id": "glute_ham_raise",
+    "name": {
+      "en": "Glute-Ham Raise",
+      "th": "กลูตแฮมเรส"
+    },
+    "primary": "hamstrings",
+    "secondary": ["glutes"],
+    "equipment": "machine",
+    "description": {
+      "en": "On a GHD bench, lower the torso forward and pull back up with the hamstrings.",
+      "th": "บนเครื่อง GHD ลดลำตัวไปข้างหน้า แล้วดึงกลับด้วยต้นขาหลัง"
+    }
+  },
+  {
+    "id": "stability_ball_leg_curl",
+    "name": {
+      "en": "Stability Ball Leg Curl",
+      "th": "เลกเคิร์ลบนบอล"
+    },
+    "primary": "hamstrings",
+    "secondary": ["glutes", "core"],
+    "equipment": "other",
+    "description": {
+      "en": "Lying on your back with heels on a ball, lift the hips and roll the ball toward you.",
+      "th": "นอนหงายวางส้นเท้าบนบอล ยกสะโพกแล้วงอเข่ากลิ้งบอลเข้าหาตัว"
+    }
+  },
+  {
+    "id": "hip_thrust",
+    "name": {
+      "en": "Barbell Hip Thrust",
+      "th": "ฮิปทรัสต์ (บาร์เบล)"
+    },
+    "primary": "glutes",
+    "secondary": ["hamstrings"],
+    "equipment": "barbell",
+    "description": {
+      "en": "Upper back on a bench, drive the hips up until the body is flat and squeeze the glutes.",
+      "th": "พิงหลังส่วนบนกับม้านั่ง ดันสะโพกขึ้นจนลำตัวตรง บีบก้น"
+    }
+  },
+  {
+    "id": "glute_bridge",
+    "name": {
+      "en": "Glute Bridge",
+      "th": "กลูตบริดจ์"
+    },
+    "primary": "glutes",
+    "secondary": ["hamstrings", "core"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "Lying on your back with knees bent, lift the hips until they line up with knees and shoulders.",
+      "th": "นอนหงายชันเข่า ยกสะโพกขึ้นจนแนวเดียวกับเข่าและไหล่"
+    }
+  },
+  {
+    "id": "single_leg_glute_bridge",
+    "name": {
+      "en": "Single-Leg Glute Bridge",
+      "th": "กลูตบริดจ์ขาเดียว"
+    },
+    "primary": "glutes",
+    "secondary": ["hamstrings"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "A glute bridge driving through one leg while the other stays raised.",
+      "th": "กลูตบริดจ์ที่ใช้ขาเดียวดัน อีกขายกค้างไว้"
+    }
+  },
+  {
+    "id": "cable_glute_kickback",
+    "name": {
+      "en": "Cable Glute Kickback",
+      "th": "เคเบิลคิกแบ็ก (ก้น)"
+    },
+    "primary": "glutes",
+    "secondary": ["hamstrings"],
+    "equipment": "cable",
+    "description": {
+      "en": "With an ankle strap, kick the leg straight back without arching the lower back.",
+      "th": "คล้องสายที่ข้อเท้า เตะขาไปด้านหลังตรงๆ โดยไม่แอ่นหลังล่าง"
+    }
+  },
+  {
+    "id": "hip_abduction_machine",
+    "name": {
+      "en": "Hip Abduction Machine",
+      "th": "ฮิปแอบดักชัน (เครื่อง)"
+    },
+    "primary": "glutes",
+    "secondary": [],
+    "equipment": "machine",
+    "description": {
+      "en": "Seated, push the knees outward against the pads and return slowly.",
+      "th": "นั่งดันเข่าออกด้านข้างต้านเบาะ แล้วคืนกลับช้าๆ"
+    }
+  },
+  {
+    "id": "sumo_deadlift",
+    "name": {
+      "en": "Sumo Deadlift",
+      "th": "ซูโม่เดดลิฟต์"
+    },
+    "primary": "glutes",
+    "secondary": ["hamstrings", "quads", "back"],
+    "equipment": "barbell",
+    "description": {
+      "en": "Take a wide stance with hands inside the knees and stand up by spreading the floor.",
+      "th": "ยืนเท้ากว้าง มือจับบาร์ด้านในเข่า ยืนขึ้นโดยดันพื้นออกด้านข้าง"
+    }
+  },
+  {
+    "id": "kettlebell_swing",
+    "name": {
+      "en": "Kettlebell Swing",
+      "th": "เคตเทิลเบลสวิง"
+    },
+    "primary": "glutes",
+    "secondary": ["hamstrings", "back", "core"],
+    "equipment": "kettlebell",
+    "description": {
+      "en": "Hinge and snap the hips forward to swing the bell to chest height; arms just guide it.",
+      "th": "พับสะโพกแล้วดีดสะโพกไปข้างหน้าเหวี่ยงเคตเทิลเบลถึงระดับอก แขนแค่ประคอง"
+    }
+  },
+  {
+    "id": "donkey_kick",
+    "name": {
+      "en": "Donkey Kick",
+      "th": "ดองกีคิก"
+    },
+    "primary": "glutes",
+    "secondary": ["hamstrings"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "On all fours, push one heel up toward the ceiling with the knee bent.",
+      "th": "คุกเข่ามือยันพื้น ดันส้นเท้าข้างหนึ่งขึ้นหาเพดานโดยงอเข่า"
+    }
+  },
+  {
+    "id": "fire_hydrant",
+    "name": {
+      "en": "Fire Hydrant",
+      "th": "ไฟร์ไฮแดรนต์"
+    },
+    "primary": "glutes",
+    "secondary": [],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "On all fours, lift one bent knee out to the side without rotating the torso.",
+      "th": "คุกเข่ามือยันพื้น ยกเข่าข้างหนึ่งออกด้านข้างโดยลำตัวไม่บิด"
+    }
+  },
+  {
+    "id": "banded_lateral_walk",
+    "name": {
+      "en": "Banded Lateral Walk",
+      "th": "เดินข้างคล้องยางยืด"
+    },
+    "primary": "glutes",
+    "secondary": ["quads"],
+    "equipment": "band",
+    "description": {
+      "en": "With a band around the legs and a slight squat, step sideways keeping tension.",
+      "th": "คล้องยางยืดที่ขา ย่อเข่าเล็กน้อย ก้าวเดินด้านข้างโดยรักษาแรงตึง"
+    }
+  },
+  {
+    "id": "cable_pull_through",
+    "name": {
+      "en": "Cable Pull-Through",
+      "th": "เคเบิลพูลทรู"
+    },
+    "primary": "glutes",
+    "secondary": ["hamstrings"],
+    "equipment": "cable",
+    "description": {
+      "en": "Facing away from a low pulley, hinge back and drive the hips forward to stand.",
+      "th": "หันหลังให้รอกต่ำ พับสะโพกไปด้านหลังแล้วดันสะโพกมาข้างหน้าเพื่อยืน"
+    }
+  },
+  {
+    "id": "curtsy_lunge",
+    "name": {
+      "en": "Curtsy Lunge",
+      "th": "เคิร์ตซีลันจ์"
+    },
+    "primary": "glutes",
+    "secondary": ["quads"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "Step one leg diagonally behind the other and lower, like a curtsy.",
+      "th": "ก้าวขาข้างหนึ่งไขว้ไปด้านหลังเฉียงๆ แล้วย่อตัวลง"
+    }
+  },
+  {
+    "id": "standing_calf_raise",
+    "name": {
+      "en": "Standing Calf Raise",
+      "th": "ยกส้นเท้ายืน (เครื่อง)"
+    },
+    "primary": "calves",
+    "secondary": [],
+    "equipment": "machine",
+    "description": {
+      "en": "Rise onto the balls of the feet as high as possible, pause and lower below the step.",
+      "th": "เขย่งปลายเท้าให้สูงที่สุด ค้างไว้ แล้วลดส้นลงต่ำกว่าขั้น"
+    }
+  },
+  {
+    "id": "seated_calf_raise",
+    "name": {
+      "en": "Seated Calf Raise",
+      "th": "ยกส้นเท้านั่ง (เครื่อง)"
+    },
+    "primary": "calves",
+    "secondary": [],
+    "equipment": "machine",
+    "description": {
+      "en": "Seated with knees under the pad, raise the heels through a full range.",
+      "th": "นั่งให้เบาะกดเข่า ยกส้นเท้าให้สุดช่วง"
+    }
+  },
+  {
+    "id": "bodyweight_calf_raise",
+    "name": {
+      "en": "Bodyweight Calf Raise",
+      "th": "ยกส้นเท้า (น้ำหนักตัว)"
+    },
+    "primary": "calves",
+    "secondary": [],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "Stand on the edge of a step and raise and lower the heels slowly.",
+      "th": "ยืนบนขอบขั้นบันได ยกและลดส้นเท้าช้าๆ"
+    }
+  },
+  {
+    "id": "single_leg_calf_raise",
+    "name": {
+      "en": "Single-Leg Calf Raise",
+      "th": "ยกส้นเท้าขาเดียว"
+    },
+    "primary": "calves",
+    "secondary": [],
+    "equipment": "dumbbell",
+    "description": {
+      "en": "One foot at a time, holding a dumbbell for extra load.",
+      "th": "ทำทีละขา ถือดัมเบลเพิ่มน้ำหนักได้"
+    }
+  },
+  {
+    "id": "leg_press_calf_raise",
+    "name": {
+      "en": "Leg Press Calf Raise",
+      "th": "ยกส้นเท้าบนเลกเพรส"
+    },
+    "primary": "calves",
+    "secondary": [],
+    "equipment": "machine",
+    "description": {
+      "en": "With the balls of the feet on the bottom of the platform, push it with the ankles only.",
+      "th": "วางปลายเท้าที่ขอบล่างของแป้น ดันด้วยข้อเท้าเท่านั้น"
+    }
+  },
+  {
+    "id": "jump_rope",
+    "name": {
+      "en": "Jump Rope",
+      "th": "กระโดดเชือก"
+    },
+    "primary": "calves",
+    "secondary": ["quads"],
+    "equipment": "other",
+    "description": {
+      "en": "Small, quick hops on the balls of the feet while turning the rope with the wrists.",
+      "th": "กระโดดเบาๆ เร็วๆ บนปลายเท้า หมุนเชือกด้วยข้อมือ"
+    }
+  },
+  {
+    "id": "plank",
+    "name": {
+      "en": "Plank",
+      "th": "แพลงก์"
+    },
+    "primary": "core",
+    "secondary": ["shoulders"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "On forearms and toes, hold a straight line and brace the stomach.",
+      "th": "ยันพื้นด้วยปลายแขนและปลายเท้า ลำตัวตรง เกร็งหน้าท้องค้างไว้"
+    }
+  },
+  {
+    "id": "side_plank",
+    "name": {
+      "en": "Side Plank",
+      "th": "ไซด์แพลงก์"
+    },
+    "primary": "core",
+    "secondary": ["glutes"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "On one forearm with the body sideways and hips lifted in a straight line.",
+      "th": "ยันพื้นด้วยปลายแขนข้างเดียว ลำตัวตะแคง ยกสะโพกให้ตรง"
+    }
+  },
+  {
+    "id": "crunch",
+    "name": {
+      "en": "Crunch",
+      "th": "ครันช์"
+    },
+    "primary": "core",
+    "secondary": [],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "Curl the shoulders off the floor toward the hips without pulling on the neck.",
+      "th": "ม้วนไหล่ขึ้นจากพื้นเข้าหาสะโพกโดยไม่ดึงคอ"
+    }
+  },
+  {
+    "id": "bicycle_crunch",
+    "name": {
+      "en": "Bicycle Crunch",
+      "th": "ครันช์ปั่นจักรยาน"
+    },
+    "primary": "core",
+    "secondary": [],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "Bring opposite elbow and knee together while the other leg extends, alternating sides.",
+      "th": "นำศอกและเข่าฝั่งตรงข้ามเข้าหากัน อีกขาเหยียด สลับข้าง"
+    }
+  },
+  {
+    "id": "hanging_leg_raise",
+    "name": {
+      "en": "Hanging Leg Raise",
+      "th": "ยกขาห้อยบาร์"
+    },
+    "primary": "core",
+    "secondary": ["forearms"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "Hanging from a bar, raise the legs without swinging, curling the pelvis up at the top.",
+      "th": "ห้อยบาร์ ยกขาขึ้นโดยไม่แกว่ง ม้วนเชิงกรานขึ้นด้านบน"
+    }
+  },
+  {
+    "id": "lying_leg_raise",
+    "name": {
+      "en": "Lying Leg Raise",
+      "th": "นอนยกขา"
+    },
+    "primary": "core",
+    "secondary": [],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "Lying on your back, raise straight legs to vertical and lower without arching.",
+      "th": "นอนหงาย ยกขาตรงขึ้นตั้งฉาก แล้วลดลงโดยหลังไม่แอ่น"
+    }
+  },
+  {
+    "id": "cable_crunch",
+    "name": {
+      "en": "Cable Crunch",
+      "th": "เคเบิลครันช์"
+    },
+    "primary": "core",
+    "secondary": [],
+    "equipment": "cable",
+    "description": {
+      "en": "Kneeling under a high pulley, crunch the ribs toward the hips.",
+      "th": "คุกเข่าใต้รอกสูง ม้วนลำตัวให้ซี่โครงเข้าหาสะโพก"
+    }
+  },
+  {
+    "id": "ab_wheel_rollout",
+    "name": {
+      "en": "Ab Wheel Rollout",
+      "th": "ล้อบริหารหน้าท้อง"
+    },
+    "primary": "core",
+    "secondary": ["shoulders", "back"],
+    "equipment": "other",
+    "description": {
+      "en": "From the knees, roll forward as far as you can without the lower back sagging, then roll back.",
+      "th": "จากท่าคุกเข่า กลิ้งล้อไปข้างหน้าให้ไกลที่สุดโดยหลังล่างไม่แอ่น แล้วกลิ้งกลับ"
+    }
+  },
+  {
+    "id": "russian_twist",
+    "name": {
+      "en": "Russian Twist",
+      "th": "รัสเซียนทวิสต์"
+    },
+    "primary": "core",
+    "secondary": [],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "Leaning back with feet up or down, rotate the torso side to side.",
+      "th": "เอนหลัง ยกเท้าหรือวางพื้น บิดลำตัวซ้ายขวา"
+    }
+  },
+  {
+    "id": "mountain_climber",
+    "name": {
+      "en": "Mountain Climber",
+      "th": "เมาน์เทนไคลม์เบอร์"
+    },
+    "primary": "core",
+    "secondary": ["shoulders", "quads"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "In a high plank, drive the knees toward the chest one after the other.",
+      "th": "ในท่าแพลงก์แขนตึง สลับดึงเข่าเข้าหาอกอย่างต่อเนื่อง"
+    }
+  },
+  {
+    "id": "dead_bug",
+    "name": {
+      "en": "Dead Bug",
+      "th": "เดดบัก"
+    },
+    "primary": "core",
+    "secondary": [],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "On your back with arms and knees up, extend opposite arm and leg while the lower back stays down.",
+      "th": "นอนหงายยกแขนและเข่า เหยียดแขนขาฝั่งตรงข้ามโดยหลังล่างแนบพื้น"
+    }
+  },
+  {
+    "id": "bird_dog",
+    "name": {
+      "en": "Bird Dog",
+      "th": "เบิร์ดด็อก"
+    },
+    "primary": "core",
+    "secondary": ["back", "glutes"],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "On all fours, reach one arm and the opposite leg out long and hold briefly.",
+      "th": "คุกเข่ามือยันพื้น เหยียดแขนและขาฝั่งตรงข้ามออกไปแล้วค้างไว้ครู่หนึ่ง"
+    }
+  },
+  {
+    "id": "pallof_press",
+    "name": {
+      "en": "Pallof Press",
+      "th": "พอลลอฟเพรส"
+    },
+    "primary": "core",
+    "secondary": [],
+    "equipment": "cable",
+    "description": {
+      "en": "Stand side-on to a cable and press the handle straight out, resisting the twist.",
+      "th": "ยืนข้างลำตัวหันให้รอก ดันด้ามจับออกไปตรงๆ โดยต้านไม่ให้ลำตัวบิด"
+    }
+  },
+  {
+    "id": "hollow_hold",
+    "name": {
+      "en": "Hollow Body Hold",
+      "th": "ฮอลโลว์โฮลด์"
+    },
+    "primary": "core",
+    "secondary": [],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "On your back, lift shoulders and legs slightly with the lower back pressed down and hold.",
+      "th": "นอนหงาย ยกไหล่และขาขึ้นเล็กน้อย กดหลังล่างแนบพื้นแล้วค้างไว้"
+    }
+  },
+  {
+    "id": "sit_up",
+    "name": {
+      "en": "Sit-Up",
+      "th": "ซิทอัพ"
+    },
+    "primary": "core",
+    "secondary": [],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "With knees bent, roll the torso all the way up and lower under control.",
+      "th": "ชันเข่า ม้วนลำตัวขึ้นจนนั่ง แล้วลดลงอย่างควบคุม"
+    }
+  },
+  {
+    "id": "v_up",
+    "name": {
+      "en": "V-Up",
+      "th": "วีอัพ"
+    },
+    "primary": "core",
+    "secondary": [],
+    "equipment": "bodyweight",
+    "description": {
+      "en": "Lift the straight legs and torso at the same time to reach for the toes.",
+      "th": "ยกขาตรงและลำตัวขึ้นพร้อมกัน เอื้อมมือแตะปลายเท้า"
+    }
+  },
+  {
+    "id": "cable_woodchopper",
+    "name": {
+      "en": "Cable Woodchopper",
+      "th": "เคเบิลวู้ดชอปเปอร์"
+    },
+    "primary": "core",
+    "secondary": ["shoulders"],
+    "equipment": "cable",
+    "description": {
+      "en": "Pull the handle diagonally across the body, rotating through the trunk.",
+      "th": "ดึงด้ามจับเฉียงผ่านลำตัว หมุนลำตัวช่วงกลาง"
+    }
+  },
+  {
+    "id": "turkish_get_up",
+    "name": {
+      "en": "Turkish Get-Up",
+      "th": "เตอร์กิชเกตอัป"
+    },
+    "primary": "core",
+    "secondary": ["shoulders", "glutes"],
+    "equipment": "kettlebell",
+    "description": {
+      "en": "Holding a kettlebell overhead, move from lying to standing and back in controlled steps.",
+      "th": "ถือเคตเทิลเบลเหนือศีรษะ ลุกจากท่านอนขึ้นยืนแล้วกลับลงเป็นขั้นๆ"
+    }
+  }
+]

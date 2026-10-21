@@ -7,6 +7,7 @@
 | ไฟล์ | คืออะไร |
 |---|---|
 | [`docs/SPEC.md`](docs/SPEC.md) | สเปคแอปฉบับเต็ม (แหล่งความจริงหลัก) |
+| [`docs/SPEC_CHANGES.md`](docs/SPEC_CHANGES.md) | การเปลี่ยนแปลงสเปคที่เจ้าของตัดสินภายหลัง (แอปออฟไลน์ล้วน 2026-10-14) — มีผลเหนือ SPEC.md ในข้อที่ขัดกัน |
 | [`docs/reference/theme-reference.jpg`](docs/reference/theme-reference.jpg) | ภาพอ้างอิงธีม (ธีมมืด แสงเรืองม่วง การ์ดเทาเข้ม แถบเมนูแคปซูล) |
 | [`prompts/PHASE_1.md`](prompts/PHASE_1.md) | Prompt เฟส 1: วางโครงสร้าง เอกสาร และโครงโปรเจกต์ |
 | [`prompts/PHASE_2.md`](prompts/PHASE_2.md) | Prompt เฟส 2: สร้างแอปจนเสร็จ |
@@ -19,6 +20,8 @@
 4. คัดลอก Prompt ใน `prompts/PHASE_2.md` ไปวาง เพื่อสร้างจนเสร็จ
 5. ถ้าเซสชันขาดกลางทาง ให้สั่ง "อ่าน docs/PROGRESS.md แล้วทำเฟส 2 ต่อจากจุดที่ค้าง"
 
+> เฟส 1–2 ทำเสร็จแล้ว และแอปเปลี่ยนเป็นออฟไลน์ล้วนภายหลัง (2026-10-14) — Prompt ทั้งสองเป็นประวัติ กฎเรื่อง Supabase/ล็อกอิน/ซิงก์ในนั้นถูกแทนที่โดย [`docs/SPEC_CHANGES.md`](docs/SPEC_CHANGES.md) งานต่อจากนี้ให้อ่าน [`CLAUDE.md`](CLAUDE.md) และ [`docs/PROGRESS.md`](docs/PROGRESS.md)
+
 ## ภาพรวมสเปค
 
 - ตารางออกกำลังกายรายสัปดาห์แบบอิสระ + หน้าแรกเป็นการ์ดของวันนี้
@@ -26,7 +29,8 @@
 - Progressive overload (Double / Linear) ปรับได้ระหว่างฝึก
 - คำนวณ BMR / TDEE / เป้าสารอาหาร (เป็นคำแนะนำเท่านั้น)
 - สถิติ % ตามกรุ๊ป ประเภท routine และกลุ่มกล้ามเนื้อ รายวัน/สัปดาห์/เดือน/ปี
-- ล็อกอิน Google / Apple ก่อนเริ่มทดลอง
+- ออฟไลน์ล้วน: ข้อมูลอยู่บนเครื่องเท่านั้น ไม่ต้องสมัครบัญชีหรือล็อกอิน
+- สำรองข้อมูลเป็นไฟล์ที่ผู้ใช้เก็บเอง และกู้คืนจากไฟล์บนเครื่องใหม่ได้
 - ทดลองฟรี 7 วันผ่านสโตร์ จากนั้นรายเดือน (~19 บาท) หรือซื้อขาด (~99 บาท) ตามราคาขั้นต่ำของแต่ละสโตร์
 
-Tech stack: Expo (React Native) + TypeScript, expo-sqlite + Drizzle, Supabase, RevenueCat
+Tech stack: Expo (React Native) + TypeScript, expo-sqlite + Drizzle, RevenueCat (ไม่มี backend ของเราเอง)

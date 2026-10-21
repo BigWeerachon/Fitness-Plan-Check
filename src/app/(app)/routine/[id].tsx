@@ -1,0 +1,316 @@
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Alert, StyleSheet, View } from 'react-native';
+import {
+  AppText,
+  Button,
+  CardGroup,
+  EmptyState,
+  ErrorState,
+  HeroTitle,
+  IconButton,
+  ListRow,
+  Screen,
+  SectionTitle,
+  Sheet,
+  StackHeader,
+  TextField,
+} from '../../../components';
+import { profileRepo } from '../../../db/repos/profileRepo';
+import { programRepo, routineRepo } from '../../../db/repos/programRepo';
+import { routineExerciseRepo } from '../../../db/repos/routineExerciseRepo';
+import { weekPlanRepo } from '../../../db/repos/weekPlanRepo';
+import type { RoutineExercise } from '../../../db/schema';
+import { moveItem } from '../../../domain/listOrder';
+import { DEFAULT_REST_SEC } from '../../../domain/schedule';
+import { formatWeight } from '../../../domain/units';
+import { useRepoQuery } from '../../../features/data/useRepoQuery';
+import { exerciseDisplayName, exerciseInfo } from '../../../features/exercises/resolve';
+import { ExerciseSettingsSheet } from '../../../features/programs/ExerciseSettingsSheet';
+import { RoutineTypePicker } from '../../../features/programs/RoutineTypePicker';
+import { startSession } from '../../../features/session/sessionFlow';
+import { spacing } from '../../../theme/tokens';
+import { confirmDestructive } from '../../../utils/confirmDestructive';
+
+type TransferMode = 'copy' | 'move';
+
+/** แก้ไข routine: ชื่อ, แท็กประเภท (F5), ท่า + เซ็ตเป้าหมาย + progression (G2), คัดลอก/ย้ายข้ามกรุ๊ป (F3) */
+export default function RoutineScreen() {
+  const { t, i18n } = useTranslation();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const data = useRepoQuery(() => {
+    const routine = routineRepo.get(id);
+    if (!routine) return null;
+    const profile = profileRepo.get();
+    return {
+      routine,
+      program: programRepo.get(routine.programId),
+      exercises: routineExerciseRepo.listByRoutine(id),
+      programs: programRepo.list(),
+      unit: profile?.weightUnit ?? 'kg',
+      defaultRestSec: profile?.restTimerSec ?? DEFAULT_REST_SEC,
+    };
+  }, `${id}|${i18n.language}`);
+  const [editing, setEditing] = useState<RoutineExercise | null>(null);
+  const [menu, setMenu] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [name, setName] = useState('');
+  const [transferMode, setTransferMode] = useState<TransferMode | null>(null);
+
+  if (!data) {
+    return (
+      <Screen header={<StackHeader />}>
+        <ErrorState />
+      </Screen>
+    );
+  }
+  const { routine, exercises, unit } = data;
+  // ย้ายได้เฉพาะกรุ๊ปอื่น ส่วนคัดลอกไปกรุ๊ปเดิมก็ได้
+  const targets = data.programs.filter((p) => transferMode === 'copy' || p.id !== routine.programId);
+
+  const reorder = (index: number, delta: -1 | 1) => {
+    const next = moveItem(
+      exercises.map((e) => e.id),
+      index,
+      delta,
+    );
+    if (next) routineExerciseRepo.reorder(id, next);
+  };
+
+  const remove = () =>
+    confirmDestructive(t, {
+      title: t('programs.deleteRoutine'),
+      message: t('programs.deleteRoutineConfirm'),
+      confirmLabel: t('common.delete'),
+      onConfirm: () => {
+        routineRepo.remove(id);
+        router.back();
+      },
+    });
+
+  // คัดลอก/ย้ายไปโปรแกรมปลายทาง; ถ้าปลายทางคือโปรแกรมที่ใช้งานอยู่ ต้องมีแถวในตารางสัปดาห์ด้วย
+  // (คัดลอกแล้ว copyTo ไม่คืนค่า = ไม่มี routine ใหม่ให้ใส่ตาราง แต่ยังแจ้งว่าคัดลอกแล้วเหมือนเดิม)
+  const transferRoutine = (mode: TransferMode, targetProgramId: string) => {
+    let routineIdInTarget: string | undefined;
+    if (mode === 'copy') {
+      routineIdInTarget = routineRepo.copyTo(id, targetProgramId)?.id;
+    } else {
+      routineRepo.moveTo(id, targetProgramId);
+      routineIdInTarget = id;
+    }
+    if (routineIdInTarget && profileRepo.get()?.activeProgramId === targetProgramId) {
+      weekPlanRepo.ensureEntry(targetProgramId, routineIdInTarget);
+    }
+    Alert.alert(t(mode === 'copy' ? 'programs.copied' : 'programs.moved'));
+    setTransferMode(null);
+  };
+
+  const summary = (e: RoutineExercise) => {
+    const reps =
+      e.repMin === e.repMax
+        ? t('programs.setsRepsFixed', { sets: e.sets, reps: e.repMin })
+        : t('programs.setsReps', { sets: e.sets, min: e.repMin, max: e.repMax });
+    const target =
+      e.targetWeightKg != null
+        ? `${t('programs.currentTarget')}: ${formatWeight(e.targetWeightKg, unit)} ${t(`common.units.${unit}`)} × ${e.targetReps ?? e.repMin}`
+        : t('programs.noTarget');
+    return [reps, t(`programs.modes.${e.progressionMode}`), target].join(' · ');
+  };
+
+  return (
+    <Screen
+      header={
+        <StackHeader
+          title={data.program?.name}
+          right={
+            <IconButton
+              icon="ellipsis-vertical"
+              label={t('a11y.menu')}
+              onPress={() => setMenu(true)}
+              testID="routine-menu"
+            />
+          }
+        />
+      }
+      testID="routine-editor"
+    >
+      <HeroTitle title={routine.name} subtitle={t(`programs.types.${routine.type}`)} compact />
+
+      <SectionTitle>{t('programs.routineType')}</SectionTitle>
+      <RoutineTypePicker value={routine.type} onChange={(type) => routineRepo.update(id, { type })} />
+
+      <SectionTitle>{t('programs.exercisesTitle')}</SectionTitle>
+      {exercises.length === 0 ? (
+        <EmptyState
+          icon="barbell-outline"
+          title={t('programs.noExercises')}
+          body={t('programs.noExercisesBody')}
+        />
+      ) : (
+        <CardGroup>
+          {exercises.map((e, i) => {
+            const label = exerciseDisplayName(e.exerciseId);
+            const muscle = exerciseInfo(e.exerciseId)?.primary;
+            return (
+              <View key={e.id}>
+                <ListRow
+                  title={label}
+                  value={`${muscle ? `${t(`exercises.muscles.${muscle}`)} · ` : ''}${summary(e)}`}
+                  onPress={() => setEditing(e)}
+                  testID={`rex-${e.exerciseId}`}
+                />
+                <View style={styles.tools}>
+                  <IconButton
+                    icon="arrow-up"
+                    size={20}
+                    label={`${t('programs.moveUp')}: ${label}`}
+                    onPress={() => reorder(i, -1)}
+                    disabled={i === 0}
+                  />
+                  <IconButton
+                    icon="arrow-down"
+                    size={20}
+                    label={`${t('programs.moveDown')}: ${label}`}
+                    onPress={() => reorder(i, 1)}
+                    disabled={i === exercises.length - 1}
+                  />
+                  <IconButton
+                    icon="trash-outline"
+                    size={20}
+                    label={`${t('programs.removeExercise')}: ${label}`}
+                    onPress={() => routineExerciseRepo.remove(e.id)}
+                  />
+                </View>
+              </View>
+            );
+          })}
+        </CardGroup>
+      )}
+      <View style={styles.actions}>
+        <Button
+          title={t('programs.addExercise')}
+          icon="add"
+          kind="secondary"
+          onPress={() => router.push({ pathname: '/exercises', params: { routineId: id } })}
+          testID="routine-add-exercise"
+        />
+        {exercises.length > 0 ? (
+          <Button
+            title={t('programs.startRoutine')}
+            icon="play"
+            onPress={() => {
+              const { session } = startSession({ routineId: id });
+              router.push({ pathname: '/session/[id]', params: { id: session.id } });
+            }}
+            testID="routine-start"
+          />
+        ) : null}
+      </View>
+
+      <ExerciseSettingsSheet
+        visible={!!editing}
+        title={editing ? exerciseDisplayName(editing.exerciseId) : ''}
+        value={editing}
+        unit={unit}
+        defaultRestSec={data.defaultRestSec}
+        onClose={() => setEditing(null)}
+        onSave={(patch) => {
+          if (editing) routineExerciseRepo.update(editing.id, patch);
+          setEditing(null);
+        }}
+      />
+
+      <Sheet visible={menu} onClose={() => setMenu(false)} title={routine.name}>
+        <CardGroup>
+          <ListRow
+            title={t('programs.rename')}
+            icon="create-outline"
+            onPress={() => {
+              setMenu(false);
+              setName(routine.name);
+              setRenaming(true);
+            }}
+          />
+          <ListRow
+            title={t('programs.copyTo')}
+            testID="routine-copy"
+            icon="copy-outline"
+            onPress={() => {
+              setMenu(false);
+              setTransferMode('copy');
+            }}
+          />
+          <ListRow
+            title={t('programs.moveTo')}
+            testID="routine-move"
+            icon="arrow-redo-outline"
+            onPress={() => {
+              setMenu(false);
+              setTransferMode('move');
+            }}
+          />
+          <ListRow
+            title={t('programs.deleteRoutine')}
+            icon="trash-outline"
+            danger
+            onPress={() => {
+              setMenu(false);
+              remove();
+            }}
+          />
+        </CardGroup>
+      </Sheet>
+
+      <Sheet visible={renaming} onClose={() => setRenaming(false)} title={t('programs.rename')}>
+        <TextField label={t('programs.routineName')} value={name} onChangeText={setName} />
+        <Button
+          title={t('common.save')}
+          disabled={!name.trim()}
+          onPress={() => {
+            routineRepo.update(id, { name });
+            setRenaming(false);
+          }}
+        />
+      </Sheet>
+
+      <Sheet
+        visible={transferMode !== null}
+        onClose={() => setTransferMode(null)}
+        title={t('programs.pickProgram')}
+      >
+        {targets.length === 0 ? (
+          <EmptyState
+            icon="folder-open-outline"
+            title={t('programs.noOtherPrograms')}
+            body={t('programs.noOtherProgramsBody')}
+          />
+        ) : (
+          <CardGroup>
+            {targets.map((p) => (
+              <ListRow
+                key={p.id}
+                title={p.name}
+                testID={`move-target-${p.id}`}
+                onPress={() => transferMode && transferRoutine(transferMode, p.id)}
+              />
+            ))}
+          </CardGroup>
+        )}
+        <AppText variant="caption" secondary>
+          {transferMode === 'copy' ? t('programs.copyTo') : t('programs.moveTo')}
+        </AppText>
+      </Sheet>
+    </Screen>
+  );
+}
+
+const styles = StyleSheet.create({
+  tools: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: spacing.md,
+    marginTop: -spacing.sm,
+  },
+  actions: { marginTop: spacing.lg, gap: spacing.sm },
+});

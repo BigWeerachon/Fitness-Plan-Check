@@ -1,0 +1,86 @@
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { weekOrder, weekdayLong, weekdayShort } from '../i18n/format';
+import { MIN_TOUCH } from '../theme/tokens';
+import { usePalette } from '../theme/useTheme';
+import { AppText } from './AppText';
+
+/**
+ * แถวตัวอักษรย่อวันในสัปดาห์ (อา จ อ พ พฤ ศ ส) ใต้ข้อความของแถว (SPEC DS)
+ * วันที่เกี่ยวข้องเป็นสีหลักตัวหนาและมีจุดเล็กเหนือตัวอักษร วันอื่นเป็นสีเทา
+ * ถ้าส่ง onToggleDay มา แต่ละวันจะกดเปิด/ปิดได้ (หน้าตารางประจำสัปดาห์ SPEC E)
+ */
+export function WeekdayDots({
+  active,
+  weekStart = 1,
+  dimmed,
+  onToggleDay,
+  label,
+  highlightDay,
+}: {
+  active: number[];
+  weekStart?: number;
+  dimmed?: boolean;
+  onToggleDay?: (day: number) => void;
+  /** ชื่อของแถว ใช้ประกอบคำอ่านของ screen reader */
+  label?: string;
+  /** วันนี้ (ขีดเส้นใต้เบาๆ) */
+  highlightDay?: number;
+}) {
+  const p = usePalette();
+  const { t } = useTranslation();
+  const order = weekOrder(weekStart);
+  const summary = order
+    .map((d) => t(active.includes(d) ? 'a11y.weekdayOn' : 'a11y.weekdayOff', { day: weekdayLong(d) }))
+    .join(', ');
+
+  const cells = order.map((d) => {
+    const isActive = active.includes(d);
+    const color = isActive && !dimmed ? p.accent : p.textSecondary;
+    const cell = (
+      <View style={styles.cell}>
+        <View style={[styles.dot, { backgroundColor: isActive ? color : 'transparent' }]} />
+        <AppText
+          variant={isActive ? 'dayLetterOn' : 'dayLetter'}
+          color={color}
+          style={[!isActive && styles.off, highlightDay === d && { textDecorationLine: 'underline' }]}
+          maxFontSizeMultiplier={1.3}
+        >
+          {weekdayShort(d)}
+        </AppText>
+      </View>
+    );
+    if (!onToggleDay) return <React.Fragment key={d}>{cell}</React.Fragment>;
+    return (
+      <Pressable
+        key={d}
+        onPress={() => onToggleDay(d)}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: isActive }}
+        accessibilityLabel={label ? `${label}, ${weekdayLong(d)}` : weekdayLong(d)}
+        style={styles.touch}
+        testID={`weekday-${d}`}
+      >
+        {cell}
+      </Pressable>
+    );
+  });
+
+  // โหมดกดได้: แต่ละวันกว้างเท่ากันเต็มแถว ไม่มีช่องว่างที่กดไม่ติด สูง 48 (A2)
+  if (onToggleDay) return <View style={styles.toggleRow}>{cells}</View>;
+  return (
+    <View style={styles.row} accessible accessibilityLabel={label ? `${label}. ${summary}` : summary}>
+      {cells}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  row: { flexDirection: 'row', gap: 8, alignItems: 'flex-end' },
+  cell: { alignItems: 'center', minWidth: 18 },
+  toggleRow: { flexDirection: 'row', alignSelf: 'stretch' },
+  touch: { flex: 1, minHeight: MIN_TOUCH, alignItems: 'center', justifyContent: 'center' },
+  dot: { width: 4, height: 4, borderRadius: 2, marginBottom: 2 },
+  off: { opacity: 0.6 },
+});
